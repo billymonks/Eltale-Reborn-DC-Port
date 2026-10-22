@@ -17,6 +17,7 @@ TARGET     := $(BUILD)/quest64-dc.elf
 
 RUNTIME_C   := $(wildcard runtime/src/*.c)
 RUNTIME_CXX := $(wildcard runtime/src/*.cpp)
+RUNTIME_H   := $(wildcard runtime/src/*.h)
 STUBS_C     := $(BUILD)/runtime_stubs.c
 DECLS_H     := $(BUILD)/runtime_decls.h
 
@@ -75,11 +76,11 @@ $(OBJ_DIR)/recomp/lookup.o: $(RECOMP_DIR)/lookup.cpp runtime/include/recomp.h
 	@mkdir -p $(dir $@)
 	kos-cc -x c $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h runtime/src/ultra.h
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H)
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h runtime/src/ultra.h
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H)
 	@mkdir -p $(dir $@)
 	kos-c++ $(CFLAGS_RT) -c $< -o $@
 

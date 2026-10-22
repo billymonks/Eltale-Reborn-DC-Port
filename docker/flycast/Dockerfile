@@ -4,7 +4,7 @@ FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl xvfb xauth \
+        ca-certificates curl xvfb xauth imagemagick \
         libgl1 libegl1 libglx-mesa0 libgl1-mesa-dri libvulkan1 \
         libx11-6 libxext6 libxrandr2 libxi6 libxcursor1 libxinerama1 libxxf86vm1 \
         libasound2t64 libpulse0 libudev1 libcurl4t64 \

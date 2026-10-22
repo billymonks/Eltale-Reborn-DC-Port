@@ -2,8 +2,10 @@
 // AI functions that only need to keep their state for now.
 
 #include <kos.h>
+#include <dc/vblank.h>
 #include <stdio.h>
 
+#include "gfx.h"
 #include "ultra.h"
 
 // NTSC retrace interval: 1 / 59.94 Hz.
@@ -62,16 +64,27 @@ static void log_progress(void) {
         (unsigned)stat_gfx_tasks, (unsigned)stat_audio_tasks, (unsigned)stat_dma_count, (unsigned)(stat_dma_bytes / 1024),
         (unsigned)MEM_HU(0, 0x8007B2E0u), (int)MEM_W(0, 0x8007B2E4u), (int)MEM_W(0, 0x80084EECu),
         (int)MEM_W(0, 0x80084EE4u), (int)MEM_W(0, 0x80084EE8u));
+    gfx_print_stats();
+}
+
+// The VI retrace follows the Dreamcast's own vertical blank, so the game's frames line up with
+// the PowerVR's buffer flips.
+static semaphore_t vblank_sem;
+
+static void on_vblank(uint32_t code, void* data) {
+    (void)code;
+    (void)data;
+    sem_signal(&vblank_sem);
 }
 
 static void* events_thread(void* param) {
     (void)param;
-    uint64_t next_vi_ns = timer_ns_gettime64() + VI_INTERVAL_NS;
     uint32_t remaining_retraces = 1;
 
     for (;;) {
         uint64_t now_us = timer_us_gettime64();
-        uint64_t deadline_us = next_vi_ns / 1000;
+        // A retrace arrives within 17 ms; this bound only matters if vblanks stop.
+        uint64_t deadline_us = now_us + 2 * VI_INTERVAL_NS / 1000;
 
         sched_lock();
         for (int i = 0; i < MAX_TIMERS; i++) {
@@ -81,14 +94,12 @@ static void* events_thread(void* param) {
         }
         sched_unlock();
 
+        bool retrace = false;
         if (deadline_us > now_us) {
-            uint64_t wait_ms = (deadline_us - now_us) / 1000;
-            if (wait_ms > 0) {
-                thd_sleep((int)wait_ms);
-            } else {
-                thd_pass();
-            }
-            continue;
+            int wait_ms = (int)((deadline_us - now_us + 999) / 1000);
+            retrace = sem_wait_timed(&vblank_sem, wait_ms) == 0;
+        } else {
+            retrace = sem_trywait(&vblank_sem) == 0;
         }
 
         // Timers that are due.
@@ -110,8 +121,7 @@ static void* events_thread(void* param) {
             }
         }
 
-        if (timer_ns_gettime64() >= next_vi_ns) {
-            next_vi_ns += VI_INTERVAL_NS;
+        if (retrace) {
             stat_vi_count++;
             if (vi_next_fb != 0) {
                 vi_current_fb = vi_next_fb;
@@ -134,6 +144,8 @@ static void* events_thread(void* param) {
 
 void events_init(void) {
     boot_us = timer_us_gettime64();
+    sem_init(&vblank_sem, 0);
+    vblank_handler_add(on_vblank, NULL);
 
     kthread_attr_t attr = {0};
     attr.stack_size = 16 * 1024;
@@ -225,6 +237,7 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
 
     if (type == M_GFXTASK) {
         stat_gfx_tasks++;
+        gfx_run_task(task);
         events_post(OS_EVENT_SP);
         events_post(OS_EVENT_DP);
     } else {
