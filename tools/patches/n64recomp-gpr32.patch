@@ -1,0 +1,154 @@
+diff --git a/include/recompiler/context.h b/include/recompiler/context.h
+index 7b8c1f7..4c368c0 100644
+--- a/include/recompiler/context.h
++++ b/include/recompiler/context.h
+@@ -263,6 +263,10 @@ namespace N64Recomp {
+         // Causes functions to print their name to the console the first time they're called.
+         bool trace_mode;
+ 
++        // Emits code for a runtime whose gpr type is 32 bits wide. Instructions that need the upper half of a
++        // 64-bit GPR (ld, sd, dsll, dmult, dmfc1, ...) are rejected instead of being recompiled.
++        bool gpr_32bit = false;
++
+         // Imports sections and function symbols from a provided context into this context's reference sections and reference functions.
+         bool import_reference_context(const Context& reference_context);
+         // Reads a data symbol file and adds its contents into this context's reference data symbols.
+diff --git a/include/recompiler/generator.h b/include/recompiler/generator.h
+index 145bcd0..bcbd008 100644
+--- a/include/recompiler/generator.h
++++ b/include/recompiler/generator.h
+@@ -65,7 +65,7 @@ namespace N64Recomp {
+ 
+     class CGenerator final : Generator {
+     public:
+-        CGenerator(std::ostream& output_file) : output_file(output_file) {};
++        CGenerator(std::ostream& output_file, bool gpr_32bit = false) : output_file(output_file), gpr_32bit(gpr_32bit) {};
+         void process_binary_op(const BinaryOp& op, const InstructionContext& ctx) const final;
+         void process_unary_op(const UnaryOp& op, const InstructionContext& ctx) const final;
+         void process_store_op(const StoreOp& op, const InstructionContext& ctx) const final;
+@@ -103,6 +103,7 @@ namespace N64Recomp {
+         void get_binary_expr_string(BinaryOpType type, const BinaryOperands& operands, const InstructionContext& ctx, const std::string& output, std::string& expr_string) const;
+         void get_notation(BinaryOpType op_type, std::string& func_string, std::string& infix_string) const;
+         std::ostream& output_file;
++        bool gpr_32bit;
+     };
+ }
+ 
+diff --git a/src/cgenerator.cpp b/src/cgenerator.cpp
+index 94f85c5..7d0dd0b 100644
+--- a/src/cgenerator.cpp
++++ b/src/cgenerator.cpp
+@@ -397,9 +397,10 @@ void N64Recomp::CGenerator::emit_function_start(const std::string& function_name
+     fmt::print(output_file,
+         "RECOMP_FUNC void {}(uint8_t* rdram, recomp_context* ctx) {{\n"
+         // these variables shouldn't need to be preserved across function boundaries, so make them local for more efficient output
+-        "    uint64_t hi = 0, lo = 0, result = 0;\n"
++        "    {}\n"
+         "    int c1cs = 0;\n", // cop1 conditional signal
+-        function_name);
++        function_name,
++        gpr_32bit ? "gpr hi = 0, lo = 0; uint64_t result = 0;" : "uint64_t hi = 0, lo = 0, result = 0;");
+ }
+ 
+ void N64Recomp::CGenerator::emit_function_end() const {
+@@ -524,6 +525,12 @@ void N64Recomp::CGenerator::emit_muldiv(InstrId instr_id, int reg1, int reg2) co
+             fmt::print(output_file, "DMULTU(U64({}), U64({}), &lo, &hi);\n", gpr_to_string(reg1), gpr_to_string(reg2));
+             break;
+         case InstrId::cpu_div:
++            if (gpr_32bit) {
++                // 64-bit division is a libgcc call on 32-bit hosts, so the runtime provides a 32-bit DIV32 that handles
++                // s32(0x80000000) / -1 and division by zero itself.
++                fmt::print(output_file, "DIV32(S32({}), S32({}), &lo, &hi);\n", gpr_to_string(reg1), gpr_to_string(reg2));
++                break;
++            }
+             // Cast to 64-bits before division to prevent artihmetic exception for s32(0x80000000) / -1
+             fmt::print(output_file, "lo = S32(S64(S32({0})) / S64(S32({1}))); hi = S32(S64(S32({0})) % S64(S32({1})));\n", gpr_to_string(reg1), gpr_to_string(reg2));
+             break;
+@@ -531,6 +538,10 @@ void N64Recomp::CGenerator::emit_muldiv(InstrId instr_id, int reg1, int reg2) co
+             fmt::print(output_file, "DDIV(S64({}), S64({}), &lo, &hi);\n", gpr_to_string(reg1), gpr_to_string(reg2));
+             break;
+         case InstrId::cpu_divu:
++            if (gpr_32bit) {
++                fmt::print(output_file, "DIVU32(U32({}), U32({}), &lo, &hi);\n", gpr_to_string(reg1), gpr_to_string(reg2));
++                break;
++            }
+             fmt::print(output_file, "lo = S32(U32({0}) / U32({1})); hi = S32(U32({0}) % U32({1}));\n", gpr_to_string(reg1), gpr_to_string(reg2));
+             break;
+         case InstrId::cpu_ddivu:
+diff --git a/src/config.cpp b/src/config.cpp
+index e77099a..5822abd 100644
+--- a/src/config.cpp
++++ b/src/config.cpp
+@@ -420,6 +420,9 @@ N64Recomp::Config::Config(const char* path) {
+             trace_mode = false;
+         }
+ 
++        // Emit code for a 32-bit gpr runtime (optional)
++        gpr_32bit = input_data["gpr_32bit"].value_or(false);
++
+         // Function reference symbols file (optional)
+         std::optional<std::string> func_reference_syms_file_opt = input_data["func_reference_syms_file"].value<std::string>();
+         if (func_reference_syms_file_opt.has_value()) {
+diff --git a/src/config.h b/src/config.h
+index 536c4cc..d4d6eae 100644
+--- a/src/config.h
++++ b/src/config.h
+@@ -43,6 +43,7 @@ namespace N64Recomp {
+         bool use_absolute_symbols;
+         bool unpaired_lo16_warnings;
+         bool trace_mode;
++        bool gpr_32bit;
+         bool allow_exports;
+         bool strict_patch_mode;
+         std::filesystem::path elf_path;
+diff --git a/src/main.cpp b/src/main.cpp
+index 65ed8f8..ab7a02c 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -511,6 +511,7 @@ int main(int argc, char** argv) {
+ 
+     // Propogate the trace mode parameter.
+     context.trace_mode = config.trace_mode;
++    context.gpr_32bit = config.gpr_32bit;
+ 
+     // Apply any single-instruction patches.
+     for (const N64Recomp::InstructionPatch& patch : config.instruction_patches) {
+diff --git a/src/recompilation.cpp b/src/recompilation.cpp
+index c228433..dcb222d 100644
+--- a/src/recompilation.cpp
++++ b/src/recompilation.cpp
+@@ -151,6 +151,25 @@ bool process_instruction(GeneratorType& generator, const N64Recomp::Context& con
+         instr_id = InstrId::cpu_addiu;
+     }
+ 
++    if (context.gpr_32bit) {
++        static const std::unordered_set<InstrId> gpr64_instrs {
++            InstrId::cpu_dadd, InstrId::cpu_daddu, InstrId::cpu_daddi, InstrId::cpu_daddiu,
++            InstrId::cpu_dsub, InstrId::cpu_dsubu,
++            InstrId::cpu_dsll, InstrId::cpu_dsrl, InstrId::cpu_dsra,
++            InstrId::cpu_dsll32, InstrId::cpu_dsrl32, InstrId::cpu_dsra32,
++            InstrId::cpu_dsllv, InstrId::cpu_dsrlv, InstrId::cpu_dsrav,
++            InstrId::cpu_dmult, InstrId::cpu_dmultu, InstrId::cpu_ddiv, InstrId::cpu_ddivu,
++            InstrId::cpu_ld, InstrId::cpu_ldl, InstrId::cpu_ldr,
++            InstrId::cpu_sd, InstrId::cpu_sdl, InstrId::cpu_sdr,
++            InstrId::cpu_dmfc1, InstrId::cpu_dmtc1,
++        };
++        if (gpr64_instrs.contains(instr_id)) {
++            fmt::print(stderr, "Instruction at 0x{:08X} in {} needs 64-bit GPRs, which gpr_32bit mode doesn't support: {}\n",
++                instr_vram, func.name, instr.disassemble(0));
++            return false;
++        }
++    }
++
+     N64Recomp::RelocType reloc_type = N64Recomp::RelocType::R_MIPS_NONE;
+     bool has_reloc = false;
+     uint32_t reloc_section = 0;
+@@ -874,7 +893,7 @@ bool recompile_function_impl(GeneratorType& generator, const N64Recomp::Context&
+ 
+ // Wrap the templated function with CGenerator as the template parameter.
+ bool N64Recomp::recompile_function(const N64Recomp::Context& context, size_t function_index, std::ostream& output_file, std::span<std::vector<uint32_t>> static_funcs_out, bool tag_reference_relocs) {
+-    CGenerator generator{output_file};
++    CGenerator generator{output_file, context.gpr_32bit};
+     return recompile_function_impl(generator, context, function_index, output_file, static_funcs_out, tag_reference_relocs);
+ }
+ 

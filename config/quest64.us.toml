@@ -1,0 +1,34 @@
+# N64Recomp config for the Dreamcast build of Quest 64 (US 1.0).
+# Mirrors Quest64-Recomp's us.rev0.toml, plus gpr_32bit for the SH-4 runtime.
+
+[input]
+entrypoint = 0x80000400
+# Paths are relative to this file.
+rom_file_path = "../quest64.us.z64"
+symbols_file_path = "../Quest64Syms/dump.toml"
+output_func_path = "../build/recomp"
+gpr_32bit = true
+
+[patches]
+stubs = [
+    "func_800471B0", # libleo
+    "func_8004793C", # libleo
+    "initPFSPaks",
+    "func_8003C530",
+]
+
+ignored = [
+    "__osBlockSum",
+    "__osPfsReleasePages",
+    "__osPfsDeclearPage",
+]
+
+[[patches.hook]]
+func = "func_80024690"
+text = "load_overlays(ctx->r4, ctx->r5, ctx->r6);"
+before_vram = 0x80024690
+
+[[patches.hook]]
+func = "dma_write"
+text = "load_overlays(ctx->r4, ctx->r5, ctx->r6);"
+before_vram = 0x80024260

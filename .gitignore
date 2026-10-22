@@ -1,0 +1,9 @@
+/build/
+
+# Game data is never committed.
+*.z64
+*.n64
+*.v64
+*.cdi
+*.iso
+*.gdi
