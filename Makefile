@@ -27,12 +27,11 @@ INCLUDES := -Iruntime/include -I$(RECOMP_DIR)
 COMMON_FLAGS := $(INCLUDES) -fno-strict-aliasing -fwrapv -Wno-unused-label -Wno-unused-variable -Wno-unused-but-set-variable
 RECOMP_OPT   ?= -O2
 CFLAGS_GAME  := $(COMMON_FLAGS) $(RECOMP_OPT) -include $(DECLS_H)
-# Extra runtime defines, e.g. RT_DEFINES=-DQ64DC_AUTOPRESS for headless boot tests (run
-# `make clean` when changing them).
+# Extra runtime defines (run `make clean` when changing them).
 RT_DEFINES   ?=
 CFLAGS_RT    := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES)
 
-.PHONY: all recomp elf cdi size clean distclean tools
+.PHONY: all recomp elf cdi size clean distclean tools FORCE
 
 all: recomp
 	@$(MAKE) --no-print-directory elf
@@ -92,13 +91,22 @@ $(OBJ_DIR)/runtime/runtime_stubs.o: $(STUBS_C) runtime/include/runtime.h
 # the game, so it's for your own use only.
 CDI := $(BUILD)/quest64-dc.cdi
 
+# TEST_SCRIPT=tests/<script>.txt puts a scripted-input test on the disc (see runtime/src/test.c).
+TEST_SCRIPT ?=
+
 cdi: all
 	@$(MAKE) --no-print-directory $(CDI)
 
-$(CDI): $(TARGET) $(ROM)
+# Rebuilt every time, so adding or dropping TEST_SCRIPT takes effect.
+$(CDI): $(TARGET) $(ROM) FORCE
 	@mkdir -p $(BUILD)/disc
-	cp $(ROM) $(BUILD)/disc/quest64.z64
-	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 -n "Quest 64 DC" -a "Quest64-DC-Port" -o $@ --allow-overwrite
+	cmp -s $(ROM) $(BUILD)/disc/quest64.z64 || cp $(ROM) $(BUILD)/disc/quest64.z64
+	rm -f $(BUILD)/disc/q64test.txt
+	$(if $(TEST_SCRIPT),cp $(TEST_SCRIPT) $(BUILD)/disc/q64test.txt)
+	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 $(if $(TEST_SCRIPT),-f $(BUILD)/disc/q64test.txt) \
+		-n "Quest 64 DC" -a "Quest64-DC-Port" -s "Q64-DC" -o $@ --allow-overwrite
+
+FORCE:
 
 size: $(TARGET)
 	sh-elf-size -A $(TARGET) | grep -E '^\.(text|rodata|data|bss)|Total'

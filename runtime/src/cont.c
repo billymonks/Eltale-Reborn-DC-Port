@@ -1,7 +1,9 @@
 // Serial interface: N64 controllers read from Dreamcast controllers, plus the Rumble Pak calls.
 
 #include <kos.h>
+#include <math.h>
 
+#include "test.h"
 #include "ultra.h"
 
 #define MAXCONTROLLERS 4
@@ -40,14 +42,32 @@ typedef struct {
 static PadState pads[MAXCONTROLLERS];
 static uint8_t num_channels = MAXCONTROLLERS;
 
-static int8_t scale_axis(int value) {
-    // Dreamcast sticks span -128..127; an N64 stick reaches about +-80.
-    int v = value * 80 / 127;
-    return (int8_t)(v > 80 ? 80 : v < -80 ? -80 : v);
+// The Dreamcast stick reports -128..127 per axis and rests within a few units of the centre; an
+// N64 stick reaches about 80 at full tilt. Below STICK_DEADZONE (as a distance from the centre)
+// the stick is centred, and from there to STICK_FULL it ramps up to N64_STICK_MAX, keeping its
+// direction. STICK_FULL is under 127 so that worn sticks and the diagonals still reach full speed.
+#define STICK_DEADZONE 14
+#define STICK_FULL     110
+#define N64_STICK_MAX  80
+
+static void scale_stick(int x, int y, int8_t* out_x, int8_t* out_y) {
+    float r = sqrtf((float)(x * x + y * y));
+    if (r <= STICK_DEADZONE) {
+        *out_x = 0;
+        *out_y = 0;
+        return;
+    }
+    float t = (r - STICK_DEADZONE) / (STICK_FULL - STICK_DEADZONE);
+    if (t > 1.0f) {
+        t = 1.0f;
+    }
+    float k = t * N64_STICK_MAX / r;
+    *out_x = (int8_t)lrintf(x * k);
+    *out_y = (int8_t)lrintf(y * k);
 }
 
-// Default mapping, to be revisited once the game is playable: Dreamcast A/B are N64 A/B, the
-// D-pad is the C buttons, X is Z, Y is R, the triggers are Z and R, Start is Start.
+// Dreamcast A/B are N64 A/B, the D-pad is the C buttons (the four spirits in battle), X and the
+// left trigger are Z, Y and the right trigger are R, Start is Start.
 static uint16_t map_buttons(const cont_state_t* st) {
     uint32_t b = st->buttons;
     uint16_t out = 0;
@@ -75,8 +95,7 @@ void cont_poll(void) {
         }
         pads[i].connected = true;
         pads[i].buttons = map_buttons(st);
-        pads[i].stick_x = scale_axis(st->joyx);
-        pads[i].stick_y = scale_axis(-st->joyy);
+        scale_stick(st->joyx, -st->joyy, &pads[i].stick_x, &pads[i].stick_y);
     }
     // The game needs a controller in port 1 to get past its checks; without one (an emulator
     // run with no input), report an idle controller.
@@ -86,16 +105,8 @@ void cont_poll(void) {
         pads[0].stick_x = 0;
         pads[0].stick_y = 0;
     }
-#ifdef Q64DC_AUTOPRESS
-    // Headless test builds: tap Start, then A, every few seconds to get through the menus.
-    static uint32_t polls;
-    uint32_t phase = polls++ % 360;
-    if (phase < 6) {
-        pads[0].buttons |= N64_START;
-    } else if (phase >= 180 && phase < 186) {
-        pads[0].buttons |= N64_A;
-    }
-#endif
+    test_input(&pads[0].buttons, &pads[0].stick_x, &pads[0].stick_y);
+    pak_flush_idle();
 }
 
 static uint8_t write_status(uint32_t status_array) {

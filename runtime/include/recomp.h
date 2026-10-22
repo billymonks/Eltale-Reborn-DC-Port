@@ -298,6 +298,9 @@ void pause_self(uint8_t *rdram);
 
 void load_overlays(uint32_t rom, int32_t ram_addr, uint32_t size);
 
+// Replaces the game's initPFSPaks (pak.c).
+void pak_check(uint8_t* rdram, recomp_context* ctx);
+
 #ifdef __cplusplus
 }
 #endif

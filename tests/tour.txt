@@ -1,0 +1,63 @@
+# Starts a new game and visits a town, a field, a cave, a desert, a castle and an inn, opening the
+# spell and Start menus on the way, taking screenshots.
+# make cdi TEST_SCRIPT=tests/tour.txt, then scripts\flycast.ps1 240.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+shot title_menu
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+shot monastery_hall
+
+warp 0 0 0                 # Melrode village
+wait 1500
+shot melrode
+stick 0 70 2500            # walk up the street
+shot melrode_walk
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+shot holy_plain           # tests/battle.txt fights a random battle here
+
+warp 0x1A 0 0              # Blue Cave
+wait 1500
+shot blue_cave
+warp 0x0D 9 0              # Melrode Monastery dormitory corridor
+wait 1500
+shot monastery_corridor
+warp 0x0E 0 0              # Dondoran Castle entrance hall
+wait 1500
+shot dondoran_castle
+warp 0x09 0 0              # Dindom Dries desert
+wait 1500
+shot dindom_dries
+tap CU                     # the spell menu
+wait 1500
+shot spell_menu
+tap B
+wait 1000
+tap S                      # the Start menu
+wait 2500
+shot start_menu
+tap B
+wait 1500
+talk 10000
+
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A
+wait 1500
+shot inn_1
+tap A
+wait 1500
+shot inn_2
+tap A
+wait 1500
+shot inn_3
+log tour finished          # tests/save.txt carries on to the save screen

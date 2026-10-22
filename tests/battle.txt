@@ -1,0 +1,31 @@
+# Starts a new game, warps to the Holy Plain and forces a random battle.
+# make cdi TEST_SCRIPT=tests/battle.txt, then scripts\flycast.ps1 240.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+to_battle
+battle_walk 30000
+wait 3000
+shot battle_start
+tap A 4 900                # swing the staff
+shot battle_attack
+tap CU                     # pick a spirit
+wait 800
+shot battle_spell
+tap A 2 900
+wait 2500
+shot battle_mid
+stick 0 -75 8000           # run out of the battle circle
+wait16 8008C592 1 0 90000
+wait 2000
+shot after_battle
+log battle finished

@@ -68,6 +68,14 @@ extern volatile uint32_t stat_dma_bytes;
 // Controllers (cont.c).
 void cont_poll(void);
 
+// Controller Pak saves on the VMU (pak.c).
+void pak_init(void);
+// Writes pending changes to the VMU once the game has stopped writing for a moment.
+void pak_flush_idle(void);
+
+// ROM cache statistics (rom.c).
+void rom_print_stats(void);
+
 // ROM access with a block cache (rom.c). rdram_addr may be any alignment.
 void rom_dma_to_rdram(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size);
 

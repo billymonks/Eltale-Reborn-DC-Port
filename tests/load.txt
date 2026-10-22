@@ -1,0 +1,23 @@
+# Loads the save tests/save.txt made (day 7 at the Melrode Inn), from a fresh boot with the same VMU.
+# make cdi TEST_SCRIPT=tests/load.txt, then scripts\flycast.ps1 100 (without -ResetVmu).
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+stick 70 0 300             # NEW -> LOAD (the options are side by side)
+wait 800
+shot load_menu
+tap A
+wait 3000
+shot load_slots
+tap A                      # the first slot
+wait 2000
+shot load_confirm
+tap A
+wait 6000
+shot loaded
+peek32 800859E0            # day 7 (upper half) if the save came back
+peek32 80084EE4            # map (15: Melrode Inn)
+log load finished

@@ -13,7 +13,6 @@ gpr_32bit = true
 stubs = [
     "func_800471B0", # libleo
     "func_8004793C", # libleo
-    "initPFSPaks",
     "func_8003C530",
 ]
 
@@ -22,6 +21,13 @@ ignored = [
     "__osPfsReleasePages",
     "__osPfsDeclearPage",
 ]
+
+# The game's pak check (Quest64-Recomp stubs it, which leaves a stale $v0 as its result). The
+# original can end in __osGetID's raw SI commands, so the runtime answers instead.
+[[patches.hook]]
+func = "initPFSPaks"
+text = "pak_check(rdram, ctx); return;"
+before_vram = 0x80031ACC
 
 [[patches.hook]]
 func = "func_80024690"

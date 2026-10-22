@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "gfx.h"
+#include "test.h"
 #include "ultra.h"
 #include "funcs.h"
 
@@ -70,6 +71,8 @@ int main(int argc, char** argv) {
     MEM_W(0, 0x80000318u) = RDRAM_SIZE;
 
     function_lookup_init();
+    test_init();
+    pak_init();
     gfx_init();
     sched_init();
     events_init();

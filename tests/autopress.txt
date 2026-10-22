@@ -1,0 +1,7 @@
+# Taps Start, then A, every six seconds: enough to get from the intro through the title into a
+# new game and through its first dialogue.
+tap S
+wait 3000
+tap A
+wait 2500
+loop

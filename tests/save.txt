@@ -1,0 +1,35 @@
+# Starts a new game and saves it at the Melrode Inn (stay the night, then save to the first
+# slot). make cdi TEST_SCRIPT=tests/save.txt, scripts\flycast.ps1 150 -ResetVmu; then
+# tests/load.txt loads the save on the next boot.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+poke16 800859E0 7          # day 7, so the load can be told apart from a new game
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A                      # talk
+wait 1500
+tap A                      # next page
+wait 1500
+tap A                      # "Will you stay?" Yes
+wait 3000
+shot save_1                # the save screen, checking the pak
+tap A
+wait 2500
+shot save_2                # NEW DATA in the first slot
+tap A
+wait 2500
+shot save_3                # saved; "Continue save?"
+stick 0 -70 300            # No
+tap A
+wait 3000
+shot save_4
+log save finished

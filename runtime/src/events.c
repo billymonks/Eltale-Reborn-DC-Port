@@ -65,6 +65,7 @@ static void log_progress(void) {
         (unsigned)MEM_HU(0, 0x8007B2E0u), (int)MEM_W(0, 0x8007B2E4u), (int)MEM_W(0, 0x80084EECu),
         (int)MEM_W(0, 0x80084EE4u), (int)MEM_W(0, 0x80084EE8u));
     gfx_print_stats();
+    rom_print_stats();
 }
 
 // The VI retrace follows the Dreamcast's own vertical blank, so the game's frames line up with
