@@ -155,6 +155,25 @@ static inline void set_cop1_cs(uint32_t val) {
 #define U64(val) \
     ((uint64_t)(val))
 
+// neg.s and abs.s work on the sign bit in an integer register. GCC treats the SH-4's fneg/fabs as
+// precision-independent and may run them with FPSCR.PR=1 between double operations; hardware
+// allows that, but emulators before Flycast 2.7 apply them to the even register of the pair.
+static inline float sign_op_s(float val, uint32_t xor_mask, uint32_t and_mask) {
+    union {
+        float f;
+        uint32_t u;
+    } v = { val };
+    __asm__("" : "+r"(v.u));
+    v.u = (v.u & and_mask) ^ xor_mask;
+    return v.f;
+}
+
+#define NEG_S(val) \
+    sign_op_s((val), 0x80000000u, 0xFFFFFFFFu)
+
+#define ABS_S(val) \
+    sign_op_s((val), 0u, 0x7FFFFFFFu)
+
 #define MUL_S(val1, val2) \
     ((val1) * (val2))
 

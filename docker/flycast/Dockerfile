@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libasound2t64 libpulse0 libudev1 libcurl4t64 \
     && rm -rf /var/lib/apt/lists/*
 
+# Older releases name the AppImage flycast-x86_64.AppImage: --build-arg FLYCAST_APPIMAGE=flycast-x86_64.AppImage.
 ARG FLYCAST_VERSION=2.7
+ARG FLYCAST_APPIMAGE=flycast-x86_64-${FLYCAST_VERSION}.AppImage
 RUN curl -fsSL -o /tmp/flycast.AppImage \
-        https://github.com/flyinghead/flycast/releases/download/v${FLYCAST_VERSION}/flycast-x86_64-${FLYCAST_VERSION}.AppImage \
+        https://github.com/flyinghead/flycast/releases/download/v${FLYCAST_VERSION}/${FLYCAST_APPIMAGE} \
     && chmod +x /tmp/flycast.AppImage \
     && cd /opt && /tmp/flycast.AppImage --appimage-extract > /dev/null \
     && mv squashfs-root flycast && rm /tmp/flycast.AppImage

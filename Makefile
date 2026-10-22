@@ -4,6 +4,8 @@
 #   make           build build/quest64-dc.elf (builds N64Recomp and recompiles the ROM first)
 #   make recomp    only regenerate build/recomp from quest64.us.z64
 #   make cdi       also build build/quest64-dc.cdi (ELF + ROM) for emulators and CD-R
+#   make test-cdi TEST_SCRIPT=tests/<script>.txt
+#                  build build/quest64-dc-test.cdi, which also plays a test script
 #   make size      section sizes of the ELF
 #   make clean     remove build/ except the N64Recomp build
 
@@ -31,7 +33,7 @@ CFLAGS_GAME  := $(COMMON_FLAGS) $(RECOMP_OPT) -include $(DECLS_H)
 RT_DEFINES   ?=
 CFLAGS_RT    := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES)
 
-.PHONY: all recomp elf cdi size clean distclean tools FORCE
+.PHONY: all recomp elf cdi test-cdi size clean distclean tools FORCE
 
 all: recomp
 	@$(MAKE) --no-print-directory elf
@@ -89,22 +91,36 @@ $(OBJ_DIR)/runtime/runtime_stubs.o: $(STUBS_C) runtime/include/runtime.h
 
 # A self-booting disc with the ELF and the ROM, for emulators and CD-R/ODE testing. It contains
 # the game, so it's for your own use only.
-CDI := $(BUILD)/quest64-dc.cdi
+CDI      := $(BUILD)/quest64-dc.cdi
+TEST_CDI := $(BUILD)/quest64-dc-test.cdi
 
-# TEST_SCRIPT=tests/<script>.txt puts a scripted-input test on the disc (see runtime/src/test.c).
+# `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds a separate disc, $(TEST_CDI), that also
+# carries a scripted-input test (see runtime/src/test.c). The normal disc never has one.
 TEST_SCRIPT ?=
 
-cdi: all
+cdi:
+	$(if $(TEST_SCRIPT),@echo "TEST_SCRIPT is for make test-cdi; make cdi builds the clean disc." && false)
+	@$(MAKE) --no-print-directory all
 	@$(MAKE) --no-print-directory $(CDI)
 
-# Rebuilt every time, so adding or dropping TEST_SCRIPT takes effect.
-$(CDI): $(TARGET) $(ROM) FORCE
+test-cdi:
+	$(if $(TEST_SCRIPT),,@echo "make test-cdi needs TEST_SCRIPT=tests/<script>.txt" && false)
+	@$(MAKE) --no-print-directory all
+	@$(MAKE) --no-print-directory $(TEST_CDI)
+
+$(CDI): $(TARGET) $(ROM)
 	@mkdir -p $(BUILD)/disc
 	cmp -s $(ROM) $(BUILD)/disc/quest64.z64 || cp $(ROM) $(BUILD)/disc/quest64.z64
-	rm -f $(BUILD)/disc/q64test.txt
-	$(if $(TEST_SCRIPT),cp $(TEST_SCRIPT) $(BUILD)/disc/q64test.txt)
-	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 $(if $(TEST_SCRIPT),-f $(BUILD)/disc/q64test.txt) \
+	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 \
 		-n "Quest 64 DC" -a "Quest64-DC-Port" -s "Q64-DC" -o $@ --allow-overwrite
+
+# Rebuilt every time, so a changed script takes effect. Its own serial keeps its VMU apart in Flycast.
+$(TEST_CDI): $(TARGET) $(ROM) FORCE
+	@mkdir -p $(BUILD)/test-disc
+	cmp -s $(ROM) $(BUILD)/test-disc/quest64.z64 || cp $(ROM) $(BUILD)/test-disc/quest64.z64
+	cp $(TEST_SCRIPT) $(BUILD)/test-disc/q64test.txt
+	mkdcdisc -e $(TARGET) -f $(BUILD)/test-disc/quest64.z64 -f $(BUILD)/test-disc/q64test.txt \
+		-n "Quest 64 DC TEST" -a "Quest64-DC-Port" -s "Q64-DC-T" -o $@ --allow-overwrite
 
 FORCE:
 

@@ -1,6 +1,6 @@
 # Starts a new game and visits a town, a field, a cave, a desert, a castle and an inn, opening the
 # spell and Start menus on the way, taking screenshots.
-# make cdi TEST_SCRIPT=tests/tour.txt, then scripts\flycast.ps1 240.
+# make test-cdi TEST_SCRIPT=tests/tour.txt, then scripts\flycast.ps1 240 -Test.
 
 wait 14000
 tap S                      # skip the intro

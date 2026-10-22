@@ -23,11 +23,11 @@ if [ "${RESET_VMU:-0}" = "1" ]; then
     echo "[run_flycast] VMUs reset"
 fi
 
-cat > "$XDG_CONFIG_HOME/flycast/emu.cfg" <<'EOF'
+cat > "$XDG_CONFIG_HOME/flycast/emu.cfg" <<EOF
 [config]
 Debug.SerialConsoleEnabled = yes
 Dynarec.Enabled = yes
-pvr.rend = 0
+pvr.rend = ${FLYCAST_REND:-0}
 rend.Resolution = 480
 audio.backend = null
 

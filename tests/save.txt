@@ -1,5 +1,5 @@
 # Starts a new game and saves it at the Melrode Inn (stay the night, then save to the first
-# slot). make cdi TEST_SCRIPT=tests/save.txt, scripts\flycast.ps1 150 -ResetVmu; then
+# slot). make test-cdi TEST_SCRIPT=tests/save.txt, scripts\flycast.ps1 150 -Test -ResetVmu; then
 # tests/load.txt loads the save on the next boot.
 
 wait 14000

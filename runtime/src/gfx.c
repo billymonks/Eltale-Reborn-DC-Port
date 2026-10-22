@@ -14,6 +14,7 @@
 
 #include "gfx.h"
 #include "gfx_internal.h"
+#include "test.h"
 
 // Geometry mode.
 #define G_ZBUFFER            0x00000001
@@ -1247,6 +1248,32 @@ void gfx_init(void) {
     printf("[q64dc] gfx: PowerVR ready, %u KB of VRAM free\n", (unsigned)(pvr_mem_available() / 1024));
 }
 
+// A red bar along the top of the screen on test discs.
+static void draw_test_banner(void) {
+    pvr_poly_cxt_t cxt;
+    pvr_poly_hdr_t hdr;
+    pvr_poly_cxt_col(&cxt, PVR_LIST_TR_POLY);
+    cxt.gen.culling = PVR_CULLING_NONE;
+    cxt.depth.comparison = PVR_DEPTHCMP_ALWAYS;
+    cxt.depth.write = PVR_DEPTHWRITE_DISABLE;
+    pvr_poly_compile(&hdr, &cxt);
+    uint32_t* h = (uint32_t*)pvr_dr_target(dr);
+    memcpy(h, &hdr, sizeof(hdr));
+    pvr_dr_commit(h);
+    const float xs[4] = { 0.0f, 640.0f, 0.0f, 640.0f }, ys[4] = { 0.0f, 0.0f, 6.0f, 6.0f };
+    for (int i = 0; i < 4; i++) {
+        pvr_vertex_t* d = pvr_dr_target(dr);
+        d->flags = i == 3 ? PVR_CMD_VERTEX_EOL : PVR_CMD_VERTEX;
+        d->x = xs[i];
+        d->y = ys[i];
+        d->z = 1.0f;
+        d->u = d->v = 0.0f;
+        d->argb = 0xFFFF0000;
+        d->oargb = 0;
+        pvr_dr_commit(d);
+    }
+}
+
 static uint32_t frames;
 static uint32_t period_frames;
 static uint64_t period_wait_us, period_build_us;
@@ -1274,6 +1301,9 @@ void gfx_run_task(uint32_t task) {
     tex_frame_begin();
 
     run_dl(dl);
+    if (test_disc()) {
+        draw_test_banner();
+    }
 
     pvr_list_finish();
     pvr_scene_finish();

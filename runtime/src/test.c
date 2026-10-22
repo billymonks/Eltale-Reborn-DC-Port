@@ -143,8 +143,15 @@ bool test_init(void) {
     }
     fclose(f);
     active = line_count > 0;
-    printf("[q64dc] test: running /cd/q64test.txt (%d commands)\n", line_count);
+    printf("[q64dc] ************************************************************\n"
+           "[q64dc] TEST DISC: playing /cd/q64test.txt (%d commands) as controller 1\n"
+           "[q64dc] ************************************************************\n",
+           line_count);
     return active;
+}
+
+bool test_disc(void) {
+    return line_count > 0;
 }
 
 static void next(void) {

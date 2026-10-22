@@ -1,5 +1,5 @@
 # Starts a new game, warps to the Holy Plain and forces a random battle.
-# make cdi TEST_SCRIPT=tests/battle.txt, then scripts\flycast.ps1 240.
+# make test-cdi TEST_SCRIPT=tests/battle.txt, then scripts\flycast.ps1 240 -Test.
 
 wait 14000
 tap S                      # skip the intro

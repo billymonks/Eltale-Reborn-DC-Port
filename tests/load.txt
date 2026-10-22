@@ -1,5 +1,5 @@
 # Loads the save tests/save.txt made (day 7 at the Melrode Inn), from a fresh boot with the same VMU.
-# make cdi TEST_SCRIPT=tests/load.txt, then scripts\flycast.ps1 100 (without -ResetVmu).
+# make test-cdi TEST_SCRIPT=tests/load.txt, then scripts\flycast.ps1 100 -Test (without -ResetVmu).
 
 wait 14000
 tap S                      # skip the intro

@@ -35,9 +35,25 @@ index 145bcd0..bcbd008 100644
  }
  
 diff --git a/src/cgenerator.cpp b/src/cgenerator.cpp
-index 94f85c5..7d0dd0b 100644
+index 94f85c5..748ac65 100644
 --- a/src/cgenerator.cpp
 +++ b/src/cgenerator.cpp
+@@ -242,13 +242,13 @@ void N64Recomp::CGenerator::get_operand_string(Operand operand, UnaryOpType oper
+             operand_string = "(int32_t)" + operand_string; 
+             break;
+         case UnaryOpType::NegateFloat:
+-            operand_string = "-" + operand_string;
++            operand_string = "NEG_S(" + operand_string + ")";
+             break;
+         case UnaryOpType::NegateDouble:
+             operand_string = "-" + operand_string;
+             break;
+         case UnaryOpType::AbsFloat:
+-            operand_string = "fabsf(" + operand_string + ")";
++            operand_string = "ABS_S(" + operand_string + ")";
+             break;
+         case UnaryOpType::AbsDouble:
+             operand_string = "fabs(" + operand_string + ")";
 @@ -397,9 +397,10 @@ void N64Recomp::CGenerator::emit_function_start(const std::string& function_name
      fmt::print(output_file,
          "RECOMP_FUNC void {}(uint8_t* rdram, recomp_context* ctx) {{\n"
