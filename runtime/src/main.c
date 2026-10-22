@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "runtime.h"
+#include "ultra.h"
 #include "funcs.h"
 
 KOS_INIT_FLAGS(INIT_DEFAULT);
@@ -40,11 +40,6 @@ void recomp_syscall_handler(uint8_t* rdram, recomp_context* ctx, int32_t instruc
     runtime_fatal("[q64dc] syscall at 0x%08X", (uint32_t)instruction_vram);
 }
 
-void pause_self(uint8_t* rdram) {
-    (void)rdram;
-    runtime_unimplemented("pause_self");
-}
-
 gpr cop0_status_read(recomp_context* ctx) {
     return ctx->status_reg;
 }
@@ -63,19 +58,22 @@ int main(int argc, char** argv) {
         runtime_fatal("[q64dc] couldn't find the Quest 64 ROM");
     }
 
-    rdram = memalign(32, RDRAM_SIZE);
+    rdram = memalign(32, RDRAM_SIZE + RUNTIME_RAM_SIZE);
     if (rdram == NULL) {
-        runtime_fatal("[q64dc] couldn't allocate %d bytes of RDRAM", RDRAM_SIZE);
+        runtime_fatal("[q64dc] couldn't allocate %d bytes of RDRAM", RDRAM_SIZE + RUNTIME_RAM_SIZE);
     }
-    memset(rdram, 0, RDRAM_SIZE);
+    memset(rdram, 0, RDRAM_SIZE + RUNTIME_RAM_SIZE);
 
     // The N64 boot code copies the first megabyte after the header to the entrypoint.
     rom_read_to_rdram(0x1000, 0x80000400, 0x100000);
-    // osMemSize, read by osInitialize.
     MEM_W(0, 0x80000318u) = RDRAM_SIZE;
 
     function_lookup_init();
+    sched_init();
+    events_init();
 
+    // The boot code runs on this thread until it starts the first game thread, which never
+    // returns control here.
     static recomp_context ctx;
     memset(&ctx, 0, sizeof(ctx));
     ctx.f_odd = &ctx.f0.u32h;

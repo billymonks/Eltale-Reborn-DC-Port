@@ -3,6 +3,7 @@
 #
 #   make           build build/quest64-dc.elf (builds N64Recomp and recompiles the ROM first)
 #   make recomp    only regenerate build/recomp from quest64.us.z64
+#   make cdi       also build build/quest64-dc.cdi (ELF + ROM) for emulators and CD-R
 #   make size      section sizes of the ELF
 #   make clean     remove build/ except the N64Recomp build
 
@@ -25,9 +26,12 @@ INCLUDES := -Iruntime/include -I$(RECOMP_DIR)
 COMMON_FLAGS := $(INCLUDES) -fno-strict-aliasing -fwrapv -Wno-unused-label -Wno-unused-variable -Wno-unused-but-set-variable
 RECOMP_OPT   ?= -O2
 CFLAGS_GAME  := $(COMMON_FLAGS) $(RECOMP_OPT) -include $(DECLS_H)
-CFLAGS_RT    := $(COMMON_FLAGS) -O2 -Wall
+# Extra runtime defines, e.g. RT_DEFINES=-DQ64DC_AUTOPRESS for headless boot tests (run
+# `make clean` when changing them).
+RT_DEFINES   ?=
+CFLAGS_RT    := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES)
 
-.PHONY: all recomp elf size clean distclean tools
+.PHONY: all recomp elf cdi size clean distclean tools
 
 all: recomp
 	@$(MAKE) --no-print-directory elf
@@ -71,17 +75,29 @@ $(OBJ_DIR)/recomp/lookup.o: $(RECOMP_DIR)/lookup.cpp runtime/include/recomp.h
 	@mkdir -p $(dir $@)
 	kos-cc -x c $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h runtime/src/ultra.h
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h runtime/src/ultra.h
 	@mkdir -p $(dir $@)
 	kos-c++ $(CFLAGS_RT) -c $< -o $@
 
 $(OBJ_DIR)/runtime/runtime_stubs.o: $(STUBS_C) runtime/include/runtime.h
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -c $< -o $@
+
+# A self-booting disc with the ELF and the ROM, for emulators and CD-R/ODE testing. It contains
+# the game, so it's for your own use only.
+CDI := $(BUILD)/quest64-dc.cdi
+
+cdi: all
+	@$(MAKE) --no-print-directory $(CDI)
+
+$(CDI): $(TARGET) $(ROM)
+	@mkdir -p $(BUILD)/disc
+	cp $(ROM) $(BUILD)/disc/quest64.z64
+	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 -n "Quest 64 DC" -a "Quest64-DC-Port" -o $@ --allow-overwrite
 
 size: $(TARGET)
 	sh-elf-size -A $(TARGET) | grep -E '^\.(text|rodata|data|bss)|Total'
