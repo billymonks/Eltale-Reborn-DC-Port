@@ -1,5 +1,5 @@
-// Hardware events: the 60 Hz VI retrace, osSetTimer timers, RSP task completion, and the VI and
-// AI functions that only need to keep their state for now.
+// Hardware events: the 60 Hz VI retrace, osSetTimer timers, RSP task completion, and the VI
+// functions that only need to keep their state for now.
 
 #include <kos.h>
 #include <dc/vblank.h>
@@ -65,6 +65,7 @@ static void log_progress(void) {
         (unsigned)MEM_HU(0, 0x8007B2E0u), (int)MEM_W(0, 0x8007B2E4u), (int)MEM_W(0, 0x80084EECu),
         (int)MEM_W(0, 0x80084EE4u), (int)MEM_W(0, 0x80084EE8u));
     gfx_print_stats();
+    audio_print_stats();
     rom_print_stats();
 }
 
@@ -226,8 +227,7 @@ void osSetTimer_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = 0;
 }
 
-// RSP tasks finish as soon as they start: graphics and audio aren't processed yet, but the game
-// has to see its SP (and for graphics, DP) completion messages to keep going.
+// RSP tasks run to completion when they start.
 void osSpTaskLoad_recomp(uint8_t* rdram, recomp_context* ctx) {
     (void)ctx;
 }
@@ -244,6 +244,7 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
     } else {
         if (type == M_AUDTASK) {
             stat_audio_tasks++;
+            audio_run_task(task);
         }
         events_post(OS_EVENT_SP);
     }
@@ -284,19 +285,4 @@ void osViSwapBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
 
 void osViGetCurrentFramebuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = vi_current_fb;
-}
-
-static uint32_t ai_frequency = 32000;
-
-void osAiSetFrequency_recomp(uint8_t* rdram, recomp_context* ctx) {
-    ai_frequency = ctx->r4;
-    ctx->r2 = ai_frequency;
-}
-
-void osAiGetLength_recomp(uint8_t* rdram, recomp_context* ctx) {
-    ctx->r2 = 0;
-}
-
-void osAiSetNextBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
-    ctx->r2 = 0;
 }

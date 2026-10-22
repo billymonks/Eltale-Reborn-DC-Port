@@ -6,7 +6,7 @@
 # Screenshots go to build/screens/: shot_<seconds>.png every interval, and <name>.png whenever the
 # console prints "SHOT <name>" (the test scripts' `shot` command). Flycast's settings and VMU
 # images are kept in build/flycast-home, so saves survive between runs; RESET_VMU=1 starts with
-# blank VMUs.
+# blank VMUs. AUDIO_DUMP=<path under the repo> records the audio output as raw PCM.
 set -euo pipefail
 
 DISC="${1:-build/quest64-dc.cdi}"
@@ -16,7 +16,17 @@ SHOT_INTERVAL="${3:-0}"
 export HOME="$PWD/build/flycast-home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
-export SDL_AUDIODRIVER=dummy
+AUDIO_BACKEND=null
+if [ -n "${AUDIO_DUMP:-}" ]; then
+    # SDL's disk driver writes Flycast's output (44.1 kHz stereo s16) to a raw file in real time.
+    AUDIO_BACKEND=sdl2
+    export SDL_AUDIODRIVER=disk
+    export SDL_DISKAUDIOFILE="$PWD/$AUDIO_DUMP"
+    mkdir -p "$(dirname "$SDL_DISKAUDIOFILE")"
+    echo "[run_flycast] recording audio to $AUDIO_DUMP"
+else
+    export SDL_AUDIODRIVER=dummy
+fi
 mkdir -p "$XDG_CONFIG_HOME/flycast" "$XDG_DATA_HOME/flycast" build/screens
 if [ "${RESET_VMU:-0}" = "1" ]; then
     find "$HOME" -name '*vmu_save_*.bin' -delete
@@ -29,7 +39,7 @@ Debug.SerialConsoleEnabled = yes
 Dynarec.Enabled = yes
 pvr.rend = ${FLYCAST_REND:-0}
 rend.Resolution = 480
-audio.backend = null
+audio.backend = ${AUDIO_BACKEND}
 
 [window]
 fullscreen = yes

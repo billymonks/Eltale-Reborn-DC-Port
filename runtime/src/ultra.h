@@ -65,6 +65,11 @@ extern volatile uint32_t stat_audio_tasks;
 extern volatile uint32_t stat_dma_count;
 extern volatile uint32_t stat_dma_bytes;
 
+// Audio tasks and the audio interface (audio.c).
+void audio_init(void);
+void audio_run_task(uint32_t task);
+void audio_print_stats(void);
+
 // Controllers (cont.c).
 void cont_poll(void);
 

@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
     test_init();
     pak_init();
     gfx_init();
+    audio_init();
     sched_init();
     events_init();
 
