@@ -33,6 +33,7 @@
 #define Z_UPD          0x0020
 #define ZMODE_MASK     0x0C00
 #define ZMODE_XLU      0x0800
+#define ZMODE_DEC      0x0C00
 #define CVG_X_ALPHA    0x1000
 #define ALPHA_CVG_SEL  0x2000
 #define FORCE_BL       0x4000
@@ -89,6 +90,7 @@ typedef struct {
     float shift_s, shift_t, uls, ult;
     float inv_pw, inv_ph;
     bool blend, fog, depth_cmp, depth_write;
+    bool decal;
     bool filter;
 } Material;
 
@@ -415,6 +417,7 @@ static void update_material(bool rect, int rect_tile) {
     bool zb = !rect && (g.geom & G_ZBUFFER);
     m->depth_cmp = zb && (g.ol & Z_CMP);
     m->depth_write = zb && (g.ol & Z_UPD);
+    m->decal = m->depth_cmp && (g.ol & ZMODE_MASK) == ZMODE_DEC;
 
     HeaderKey* k = &g.mat_key;
     memset(k, 0, sizeof(*k));
@@ -520,7 +523,37 @@ static void finish_colors(const float mul[4], const float add[4], float fog, Cli
     out->ofs[3] = fog;
 }
 
-static inline void emit_vertex(const ClipVert* c, bool eol, bool screen) {
+// How far to move a decal toward the camera, in PowerVR depth (1/w, larger is nearer), for a
+// triangle given in screen space. The RDP passes a decal within the depth slope of a pixel of the
+// surface under it; the PowerVR only has the compare, so the decal is moved forward by that much
+// (two Dreamcast pixels per N64 pixel), plus a fraction of its depth for rounding. Slivers have
+// steep slopes, so the bias is capped.
+#define DECAL_SLOPE_PIXELS 2.0f
+#define DECAL_DEPTH_FRAC   (1.0f / 4096.0f)
+#define DECAL_MAX_FRAC     (1.0f / 128.0f)
+
+static float decal_bias(const float x[3], const float y[3], const float z[3]) {
+    float x1 = x[1] - x[0], y1 = y[1] - y[0], z1 = z[1] - z[0];
+    float x2 = x[2] - x[0], y2 = y[2] - y[0], z2 = z[2] - z[0];
+    float area = x1 * y2 - x2 * y1;
+    float zmax = fmaxf(z[0], fmaxf(z[1], z[2]));
+    float bias = zmax * DECAL_DEPTH_FRAC;
+    if (fabsf(area) > 1e-6f) {
+        float dzdx = (z1 * y2 - z2 * y1) / area;
+        float dzdy = (x1 * z2 - x2 * z1) / area;
+        bias += (fabsf(dzdx) + fabsf(dzdy)) * DECAL_SLOPE_PIXELS;
+    }
+    return fminf(bias, zmax * DECAL_MAX_FRAC);
+}
+
+static inline void project_clip(const ClipVert* c, float* x, float* y, float* z) {
+    float inv = 1.0f / c->w;
+    *x = c->x * inv * g.vp_sx + g.vp_tx;
+    *y = -c->y * inv * g.vp_sy + g.vp_ty;
+    *z = g.ortho ? 1.0f - c->z * inv * 0.01f : inv;
+}
+
+static inline void emit_vertex(const ClipVert* c, bool eol, bool screen, float zbias) {
     pvr_vertex_t* d = pvr_dr_target(dr);
     const Material* m = &g.mat;
     float x, y, z;
@@ -529,10 +562,8 @@ static inline void emit_vertex(const ClipVert* c, bool eol, bool screen) {
         y = c->y;
         z = c->z;
     } else {
-        float inv = 1.0f / c->w;
-        x = c->x * inv * g.vp_sx + g.vp_tx;
-        y = -c->y * inv * g.vp_sy + g.vp_ty;
-        z = g.ortho ? 1.0f - c->z * inv * 0.01f : inv;
+        project_clip(c, &x, &y, &z);
+        z += zbias;
     }
     d->flags = eol ? PVR_CMD_VERTEX_EOL : PVR_CMD_VERTEX;
     d->x = x;
@@ -562,7 +593,7 @@ static void submit_material_header(bool offset) {
     submit_header(&k);
 }
 
-static void submit_polygon(const ClipVert* v, int n, bool screen) {
+static void submit_polygon(const ClipVert* v, int n, bool screen, float zbias) {
     if (vbuf_used + (uint32_t)n * 32 + 32 > VERTEX_BUF_LIMIT) {
         return;
     }
@@ -574,14 +605,14 @@ static void submit_polygon(const ClipVert* v, int n, bool screen) {
 
     // Fan to strip: 0 1 2 for a triangle, 0 1 3 2 for a quad.
     if (n == 3) {
-        emit_vertex(&v[0], false, screen);
-        emit_vertex(&v[1], false, screen);
-        emit_vertex(&v[2], true, screen);
+        emit_vertex(&v[0], false, screen, zbias);
+        emit_vertex(&v[1], false, screen, zbias);
+        emit_vertex(&v[2], true, screen, zbias);
     } else {
-        emit_vertex(&v[0], false, screen);
-        emit_vertex(&v[1], false, screen);
-        emit_vertex(&v[3], false, screen);
-        emit_vertex(&v[2], true, screen);
+        emit_vertex(&v[0], false, screen, zbias);
+        emit_vertex(&v[1], false, screen, zbias);
+        emit_vertex(&v[3], false, screen, zbias);
+        emit_vertex(&v[2], true, screen, zbias);
     }
     vbuf_used += (uint32_t)n * 32;
 }
@@ -641,12 +672,12 @@ static void ensure_output(Vertex* v) {
     v->out_gen = g.out_gen;
 }
 
-static inline void emit_cached(const Vertex* v, uint32_t argb, uint32_t oargb, bool eol) {
+static inline void emit_cached(const Vertex* v, uint32_t argb, uint32_t oargb, bool eol, float zbias) {
     pvr_vertex_t* d = pvr_dr_target(dr);
     d->flags = eol ? PVR_CMD_VERTEX_EOL : PVR_CMD_VERTEX;
     d->x = v->sx;
     d->y = v->sy;
-    d->z = v->sz;
+    d->z = v->sz + zbias;
     d->u = v->u;
     d->v = v->v;
     d->argb = argb;
@@ -664,11 +695,22 @@ static void draw_triangle(int i0, int i1, int i2) {
     }
     ensure_material(false, 0);
 
-    // Back/front face culling in screen space (y down), when no vertex is behind the camera.
+    // Back/front face culling, with the winding on screen (y down). A triangle that crosses the
+    // near plane has no screen winding yet, so it's culled on the sign of det(x, y, w) of its
+    // clip-space corners instead, which says which side of the triangle's plane the eye is on and
+    // has the sign of the screen winding when all w are positive.
     uint32_t cull = g.geom & (G_CULL_FRONT | G_CULL_BACK);
     bool near = (v[0]->clip | v[1]->clip | v[2]->clip) & CLIP_NEAR;
-    if (cull && !near) {
-        float cross = (v[1]->sx - v[0]->sx) * (v[2]->sy - v[0]->sy) - (v[1]->sy - v[0]->sy) * (v[2]->sx - v[0]->sx);
+    if (cull) {
+        float cross;
+        if (!near) {
+            cross = (v[1]->sx - v[0]->sx) * (v[2]->sy - v[0]->sy) - (v[1]->sy - v[0]->sy) * (v[2]->sx - v[0]->sx);
+        } else {
+            float det = v[0]->x * (v[1]->y * v[2]->w - v[2]->y * v[1]->w) -
+                        v[0]->y * (v[1]->x * v[2]->w - v[2]->x * v[1]->w) +
+                        v[0]->w * (v[1]->x * v[2]->y - v[2]->x * v[1]->y);
+            cross = -det * g.vp_sx * g.vp_sy;
+        }
         if ((cull & G_CULL_BACK) && cross >= 0.0f) {
             return;
         }
@@ -688,14 +730,21 @@ static void draw_triangle(int i0, int i1, int i2) {
         ensure_output(v[2]);
         bool offset = flat ? v[0]->has_ofs : (v[0]->has_ofs || v[1]->has_ofs || v[2]->has_ofs);
         submit_material_header(offset);
+        float zbias = 0.0f;
+        if (g.mat.decal) {
+            const float xs[3] = { v[0]->sx, v[1]->sx, v[2]->sx };
+            const float ys[3] = { v[0]->sy, v[1]->sy, v[2]->sy };
+            const float zs[3] = { v[0]->sz, v[1]->sz, v[2]->sz };
+            zbias = decal_bias(xs, ys, zs);
+        }
         if (flat) {
-            emit_cached(v[0], v[0]->argb, v[0]->oargb, false);
-            emit_cached(v[1], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[1]->oargb & 0xFF000000), false);
-            emit_cached(v[2], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[2]->oargb & 0xFF000000), true);
+            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
+            emit_cached(v[1], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[1]->oargb & 0xFF000000), false, zbias);
+            emit_cached(v[2], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[2]->oargb & 0xFF000000), true, zbias);
         } else {
-            emit_cached(v[0], v[0]->argb, v[0]->oargb, false);
-            emit_cached(v[1], v[1]->argb, v[1]->oargb, false);
-            emit_cached(v[2], v[2]->argb, v[2]->oargb, true);
+            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
+            emit_cached(v[1], v[1]->argb, v[1]->oargb, false, zbias);
+            emit_cached(v[2], v[2]->argb, v[2]->oargb, true, zbias);
         }
         vbuf_used += 3 * 32;
         return;
@@ -716,7 +765,15 @@ static void draw_triangle(int i0, int i1, int i2) {
     ClipVert clipped[4];
     int n = clip_near(cv, clipped);
     if (n >= 3) {
-        submit_polygon(clipped, n, false);
+        float zbias = 0.0f;
+        if (g.mat.decal) {
+            float xs[3], ys[3], zs[3];
+            for (int i = 0; i < 3; i++) {
+                project_clip(&clipped[i], &xs[i], &ys[i], &zs[i]);
+            }
+            zbias = decal_bias(xs, ys, zs);
+        }
+        submit_polygon(clipped, n, false, zbias);
     }
 }
 
@@ -787,7 +844,7 @@ static void draw_rect(float x0, float y0, float x1, float y1, int tile, float s,
     }
     (void)w;
     (void)h;
-    submit_polygon(v, 4, true);
+    submit_polygon(v, 4, true, 0.0f);
 }
 
 // --- Display list ---

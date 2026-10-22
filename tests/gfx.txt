@@ -1,0 +1,136 @@
+# Renderer check: walks around rooms with close walls and buildings, taking bursts of screenshots
+# to catch depth fighting and culling errors, then fights a battle.
+# make test-cdi TEST_SCRIPT=tests/gfx.txt, then scripts\flycast.ps1 200 -Test.
+
+wait 12000
+shot g_intro
+wait 2000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+shot g_title
+tap A                      # NEW
+wait 6000
+shot g_text                # the Grand Abbott's farewell
+talk 150000
+shot g_mon_a
+stick 70 0 0
+wait 400
+shot g_mon_b
+wait 400
+shot g_mon_c
+wait 400
+shot g_mon_d
+stick 0 -70 0
+wait 400
+shot g_mon_e
+wait 400
+shot g_mon_f
+wait 400
+shot g_mon_g
+stick -70 0 0
+wait 400
+shot g_mon_h
+wait 400
+shot g_mon_i
+wait 400
+shot g_mon_j
+stick 0 0 0
+
+warp 0 0 0                 # Melrode village
+wait 1500
+shot g_mel_a
+stick 0 70 0
+wait 400
+shot g_mel_b
+wait 400
+shot g_mel_c
+wait 400
+shot g_mel_d
+wait 400
+shot g_mel_e
+stick 70 0 0
+wait 400
+shot g_mel_f
+wait 400
+shot g_mel_g
+wait 400
+shot g_mel_h
+wait 400
+shot g_mel_i
+stick 0 -70 0
+wait 400
+shot g_mel_j
+wait 400
+shot g_mel_k
+wait 400
+shot g_mel_l
+stick -70 0 0
+wait 400
+shot g_mel_m
+wait 400
+shot g_mel_n
+wait 400
+shot g_mel_o
+stick 0 0 0
+
+warp 0x1A 0 0              # Blue Cave
+wait 1500
+shot g_cave_a
+stick 0 70 0
+wait 400
+shot g_cave_b
+wait 400
+shot g_cave_c
+wait 400
+shot g_cave_d
+stick 70 0 0
+wait 400
+shot g_cave_e
+wait 400
+shot g_cave_f
+wait 400
+shot g_cave_g
+stick 0 0 0
+
+warp 0x0D 9 0              # Melrode Monastery dormitory corridor
+wait 1500
+shot g_cor_a
+stick 0 70 0
+wait 400
+shot g_cor_b
+wait 400
+shot g_cor_c
+wait 400
+shot g_cor_d
+stick 70 0 0
+wait 400
+shot g_cor_e
+wait 400
+shot g_cor_f
+stick 0 0 0
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+to_battle
+battle_walk 30000
+wait 2000
+shot g_bat_a
+wait 400
+shot g_bat_b
+tap A 4 900                # swing the staff
+shot g_bat_c
+wait 300
+shot g_bat_d
+tap CU                     # pick a spirit
+wait 800
+shot g_bat_e
+tap A 2 900
+wait 600
+shot g_bat_f
+wait 600
+shot g_bat_g
+wait 600
+shot g_bat_h
+log gfx finished
