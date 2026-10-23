@@ -157,6 +157,9 @@ static struct {
     Material mat;
     bool mat_for_rect;
     int mat_rect_tile;
+    // A texture rectangle stepping one texel per N64 pixel from a whole texel: the RDP's bilinear
+    // filter returns single texels there, so the PowerVR samples the nearest texel at 640x480.
+    bool rect_texel_exact, mat_rect_texel_exact;
     int phase, mat_phase;
     uint32_t pvr_fog_color;  // the PowerVR's vertex fog color this frame, if pvr_fog_set
     bool pvr_fog_set;
@@ -466,7 +469,7 @@ static void update_material(bool rect, int rect_tile) {
         m->inv_pw = 1.0f / (float)m->tex.pw;
         m->inv_ph = 1.0f / (float)m->tex.ph;
     }
-    m->filter = cycle != CYCLE_COPY && ((g.oh >> 12) & 3) != 0;
+    m->filter = cycle != CYCLE_COPY && ((g.oh >> 12) & 3) != 0 && !(rect && g.rect_texel_exact);
     bool fog;
     blend_mode(cycle, &m->blend, &m->cutout, &fog);
     bool zb = !rect && (g.geom & G_ZBUFFER);
@@ -534,10 +537,13 @@ static void update_material(bool rect, int rect_tile) {
     g.mat_dirty = false;
     g.mat_for_rect = rect;
     g.mat_rect_tile = rect_tile;
+    g.mat_rect_texel_exact = g.rect_texel_exact;
 }
 
 static void ensure_material(bool rect, int rect_tile) {
-    if (g.mat_dirty || g.mat_for_rect != rect || (rect && g.mat_rect_tile != rect_tile) || g.mat_phase != g.phase) {
+    if (g.mat_dirty || g.mat_for_rect != rect ||
+        (rect && (g.mat_rect_tile != rect_tile || g.mat_rect_texel_exact != g.rect_texel_exact)) ||
+        g.mat_phase != g.phase) {
         update_material(rect, rect_tile);
     }
 }
@@ -963,6 +969,11 @@ static void draw_rect(float x0, float y0, float x1, float y1, int tile, float s,
         t += (cx0 - x0) * dtdy;
     }
 
+    // Text, the HUD and menus are drawn this way. Filtering them at 640x480 would mix in the
+    // colors of transparent texels (pink in the game's fonts), which the N64 never shows.
+    const GfxTile* tt = &gfx_tiles[tile & 7];
+    g.rect_texel_exact = textured && fabsf(dsdx) == 1.0f && fabsf(dtdy) == 1.0f && s == floorf(s) && t == floorf(t) &&
+                         tt->shifts == 0 && tt->shiftt == 0;
     ensure_material(true, textured ? tile : -1);
 
     float mul[4], add[4];

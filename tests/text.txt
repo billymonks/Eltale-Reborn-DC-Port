@@ -1,0 +1,61 @@
+# Text and menus: the Grand Abbott's dialogue, the Melrode innkeeper, the Start menu's pages, then
+# a battle with its spell menu.
+# make test-cdi TEST_SCRIPT=tests/text.txt, then scripts\flycast.ps1 200 -Test.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 6000
+shot t_abbott_1
+tap A
+wait 2500
+shot t_abbott_2
+talk 150000
+shot t_hud
+
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A
+wait 2500
+shot t_inn_1
+tap A
+wait 2500
+shot t_inn_2
+talk 20000
+wait 1000
+hold S 300                 # the Start menu
+wait 3000
+shot t_start
+stick 70 0 200             # the menu's next pages
+wait 1500
+shot t_start_2
+stick 70 0 200
+wait 1500
+shot t_start_3
+stick 70 0 200
+wait 1500
+shot t_start_4
+tap B 3 800
+wait 1500
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+to_battle
+battle_walk 30000 1234
+wait 3000
+shot t_battle
+tap A 4 900                # swing the staff
+tap CU                     # pick a spirit
+wait 300
+shot t_spell
+wait 500
+shot t_spell_b
+tap A 2 900
+wait 1000
+shot t_spell_a
+log text finished
