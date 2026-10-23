@@ -26,6 +26,8 @@
 //   watch <addr>                      print every change of a halfword, checked at each controller poll (hex, up to 4)
 //   burn <ms>                         busy-wait that long in every controller poll, to slow the game down (0: off)
 //   profile_start, profile_dump       sample the program counter in between (profile.c)
+//   pace_start, pace_dump <label>     record each vblank's flips, swaps and task hand-overs in between (events.c)
+//   pacing 0|1                        hand frames to the PowerVR as soon as they are built / on the frame cadence
 //   romtrace [0|1]                    print every ROM cache miss (rom.c)
 //   mem                               print the heap's size and use, and the largest block malloc can still give
 //   loop                              start over
@@ -478,6 +480,21 @@ static bool step(uint64_t now) {
     }
     if (strcmp(cmd, "profile_dump") == 0) {
         profile_dump();
+        return true;
+    }
+    if (strcmp(cmd, "pace_start") == 0) {
+        pace_start();
+        return true;
+    }
+    if (strcmp(cmd, "pace_dump") == 0) {
+        while (*args == ' ') {
+            args++;
+        }
+        pace_dump(args);
+        return true;
+    }
+    if (strcmp(cmd, "pacing") == 0) {
+        events_set_paced(atoi(args) != 0);
         return true;
     }
     if (strcmp(cmd, "loop") == 0) {

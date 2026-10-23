@@ -1,0 +1,36 @@
+# Frame pacing of in-engine camera moves: the opening's flyover, a walk round Melrode with the camera
+# turning behind Brian, and a battle's camera swing. pace_dump prints how many vblanks each frame
+# stayed on screen (2 at an even 30 fps) and where in the frame the PowerVR got it.
+# make test-cdi TEST_SCRIPT=tests/pace.txt, then scripts\flycast.ps1 250 -Test -ResetVmu.
+# "pacing 0" first shows the frames without the cadence (events.c).
+
+wait 9000
+pace_start
+wait 20000                 # the opening
+pace_dump opening
+wait 16000
+tap S                      # skip the rest of the opening
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+warp 0 0 0                 # Melrode village
+wait 4000
+pace_start
+stick -70 0 3000           # turn and walk, the camera swinging round behind Brian
+stick 0 -70 3000
+stick 70 0 3000
+stick 0 0 0
+pace_dump melrode walk
+warp 2 0 0                 # Holy Plain
+wait 4000
+to_battle
+battle_walk 30000 1234
+wait 1000
+pace_start
+wait 3000                  # the battle camera's swing in
+tap A 6 900                # swing the staff
+pace_dump battle
+log pace finished

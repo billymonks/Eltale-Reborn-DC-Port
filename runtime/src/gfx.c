@@ -1552,6 +1552,16 @@ void gfx_run_task(uint32_t task) {
 
     pvr_list_finish();
     stat_list_bytes[LIST_OP] = vbuf_used - list_used[LIST_PT] - list_used[LIST_TR];
+    stat_tris = stat_frame_tris;
+    frames++;
+    period_frames++;
+    period_wait_us += t1 - t0;
+    period_build_us += timer_us_gettime64() - t1;
+}
+
+// The PowerVR starts rendering once its last list is in, and shows the frame at the first vblank
+// after that render finishes.
+void gfx_submit(void) {
     for (int i = LIST_PT; i < LIST_COUNT; i++) {
         stat_list_bytes[i] = list_used[i];
         if (list_used[i] != 0) {
@@ -1567,11 +1577,7 @@ void gfx_run_task(uint32_t task) {
     }
     PVR_SET(PVR_PT_ALPHA_REF, PT_ALPHA_REF);
     pvr_scene_finish();
-    stat_tris = stat_frame_tris;
-    frames++;
-    period_frames++;
-    period_wait_us += t1 - t0;
-    period_build_us += timer_us_gettime64() - t1;
+    pace_note_finish();
 }
 
 void gfx_print_stats(void) {

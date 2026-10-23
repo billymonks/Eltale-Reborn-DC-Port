@@ -5,9 +5,10 @@
 #include <stdint.h>
 
 void gfx_init(void);
-// Runs a graphics task's display list and submits the frame. Returns once the PowerVR has the
-// whole scene, so the game can be told the task is done.
+// Runs a graphics task's display list. Returns once the game's memory is no longer needed, so the
+// game can be told the task is done; the frame isn't rendered until gfx_submit.
 void gfx_run_task(uint32_t task);
+void gfx_submit(void);
 void gfx_print_stats(void);
 
 #endif

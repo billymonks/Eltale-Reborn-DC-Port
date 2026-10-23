@@ -56,6 +56,14 @@ void sched_print_stats(void);
 
 // Events: VI, timers, RSP tasks (events.c).
 void events_init(void);
+// Frame pacing records for test discs: start, the PowerVR got a frame, print what happened.
+void pace_start(void);
+void pace_note_finish(void);
+void pace_dump(const char* label);
+// True while recording; the serial logging that would slow the frames down is held back.
+bool pace_running(void);
+// Off: frames go to the PowerVR as soon as they are built, as before the frame cadence (tests).
+void events_set_paced(bool on);
 // Sends the message registered with osSetEventMesg; false if nothing is registered.
 bool events_post(int event);
 // True while a graphics task is queued or running.

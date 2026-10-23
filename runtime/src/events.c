@@ -101,6 +101,203 @@ static void* log_thread(void* param) {
     return NULL;
 }
 
+// Frame pacing, for test discs (pace_start / pace_dump): what happened in each vblank interval.
+// KallistiOS's PVR vblank handler, added before ours, flips to a finished render at the vblank,
+// so a flip shows up as a new frame_count in the same vblank.
+#define PACE_FLIP   1   // a new frame went on screen at this vblank
+#define PACE_SWAP   2   // the game called osViSwapBuffer in the interval before it
+#define PACE_FINISH 4   // a frame was handed to the PowerVR in that interval
+#define PACE_TASK   8   // the game sent a graphics task in that interval
+#define PACE_MAX    3600
+static volatile bool pace_on;
+static volatile uint32_t pace_n;
+static uint8_t pace_rec[PACE_MAX];
+static uint16_t pace_phase[PACE_MAX];   // us after the vblank that the frame was handed over
+static volatile uint32_t pace_frames;
+static uint64_t last_vblank_us;
+static uint32_t pace_queued, pace_released, pace_period_changes;
+static uint32_t present_period = 1;   // see present_update_period; the boot logos run at 60 fps
+
+void pace_start(void) {
+    pvr_stats_t st;
+    pace_on = false;
+    memset(pace_rec, 0, sizeof(pace_rec));
+    pace_n = 0;
+    pace_queued = pace_released = pace_period_changes = 0;
+    pvr_get_stats(&st);
+    pace_frames = st.frame_count;
+    pace_on = true;
+}
+
+bool pace_running(void) {
+    return pace_on;
+}
+
+void pace_note_finish(void) {
+    if (pace_on && pace_n < PACE_MAX) {
+        pace_rec[pace_n] |= PACE_FINISH;
+        uint64_t d = timer_us_gettime64() - last_vblank_us;
+        pace_phase[pace_n] = d < 0xFFFF ? (uint16_t)d : 0xFFFF;
+    }
+}
+
+static void pace_note(uint8_t what) {
+    if (pace_on && pace_n < PACE_MAX) {
+        pace_rec[pace_n] |= what;
+    }
+}
+
+static void pace_histogram(const char* what, uint8_t flag, uint32_t n) {
+    uint32_t hist[6] = {0}, last = UINT32_MAX, count = 0;
+    for (uint32_t i = 0; i < n; i++) {
+        if (!(pace_rec[i] & flag)) {
+            continue;
+        }
+        if (last != UINT32_MAX) {
+            uint32_t d = i - last;
+            hist[d < 5 ? d : 5]++;
+            count++;
+        }
+        last = i;
+    }
+    printf("[q64dc] pace %s: %u intervals, by vblanks 1:%u 2:%u 3:%u 4:%u 5+:%u\n", what, (unsigned)count,
+           (unsigned)hist[1], (unsigned)hist[2], (unsigned)hist[3], (unsigned)hist[4], (unsigned)hist[5]);
+}
+
+// The vblanks each frame stayed on screen, one digit a frame, and the same for the game's swaps.
+static void pace_timeline(const char* what, uint8_t flag, uint32_t n) {
+    static char line[PACE_MAX / 2 + 2];
+    uint32_t last = UINT32_MAX, len = 0;
+    for (uint32_t i = 0; i < n && len < sizeof(line) - 1; i++) {
+        if (pace_rec[i] & flag) {
+            if (last != UINT32_MAX) {
+                uint32_t d = i - last;
+                line[len++] = d < 10 ? (char)('0' + d) : '+';
+            }
+            last = i;
+        }
+    }
+    line[len] = 0;
+    printf("[q64dc] pace %s timeline: %s\n", what, line);
+}
+
+void pace_dump(const char* label) {
+    uint32_t n = pace_n;
+    pace_on = false;
+    printf("[q64dc] pace %s: %u vblanks\n", label, (unsigned)n);
+    pace_histogram("flips", PACE_FLIP, n);
+    pace_histogram("swaps", PACE_SWAP, n);
+    pace_histogram("hand-overs", PACE_FINISH, n);
+    pace_histogram("graphics tasks", PACE_TASK, n);
+    pace_timeline("flips", PACE_FLIP, n);
+    pace_timeline("hand-overs", PACE_FINISH, n);
+    // How long after its hand-over each frame went on screen, and how far into the vblank
+    // interval the hand-over came.
+    uint32_t delay_hist[4] = {0}, phase_hist[4] = {0};
+    for (uint32_t i = 0; i < n; i++) {
+        if (!(pace_rec[i] & PACE_FINISH)) {
+            continue;
+        }
+        uint32_t q = pace_phase[i] / 4171;
+        phase_hist[q < 3 ? q : 3]++;
+        for (uint32_t j = i; j < n; j++) {
+            if (pace_rec[j] & PACE_FLIP) {
+                uint32_t d = j - i;
+                delay_hist[d < 3 ? d : 3]++;
+                break;
+            }
+        }
+    }
+    printf("[q64dc] pace on screen at the 1st/2nd/3rd/4th+ vblank after the hand-over: %u/%u/%u/%u; "
+           "hand-over in quarter 1/2/3/4 of its vblank interval: %u/%u/%u/%u\n",
+           (unsigned)delay_hist[0], (unsigned)delay_hist[1], (unsigned)delay_hist[2], (unsigned)delay_hist[3],
+           (unsigned)phase_hist[0], (unsigned)phase_hist[1], (unsigned)phase_hist[2], (unsigned)phase_hist[3]);
+    printf("[q64dc] pace next task already waiting at %u of %u hand-overs; frame period %u, changed %u times\n",
+           (unsigned)pace_queued, (unsigned)pace_released, (unsigned)present_period, (unsigned)pace_period_changes);
+}
+
+// Frame cadence. A frame handed to the PowerVR at any moment would show at the first vblank after
+// its render, so frames built at an even rate could still stay on screen for 1, 2 or 3 vblanks
+// depending on where their builds ended. Each frame is instead handed over just after a vblank,
+// and at least the game's frame period after the one before; the render fits in that vblank
+// interval, so every frame shows exactly one vblank after its hand-over.
+#define PRESENT_KOS_PRIO (PRIO_DEFAULT - 4)
+static volatile uint32_t vbl_seq;
+static volatile bool present_waiting;
+static bool present_paced = true;
+static uint32_t present_release_last;
+static uint32_t task_vbl_last;
+// The last 8 frames, one bit each: the game's graphics task came exactly 2 vblanks after the one
+// before (longer gaps are loads and other stalls, at either rate); and the last 16, the frame was
+// held back for the period with the next task already waiting.
+static uint8_t present_two_gaps;
+static uint16_t present_queued;
+
+void events_set_paced(bool on) {
+    present_paced = on;
+}
+
+static uint32_t bits8(uint8_t v) {
+    return (uint32_t)__builtin_popcount(v);
+}
+
+static void present_note_task(void) {
+    uint32_t gap = vbl_seq - task_vbl_last;
+    task_vbl_last = vbl_seq;
+    present_two_gaps = (uint8_t)(present_two_gaps << 1 | (gap == 2));
+}
+
+// The game's frame period, 1 vblank (60 fps) or 2 (30 fps). Holding frames back to a period of 2
+// also holds the game's next task back, as its scheduler sends it once the last one is done and
+// that one is built after this frame's hand-over, so at 2 the sign of a 60 fps game is its next
+// task already waiting at each hand-over that was held back (a game slower than 30 fps has its
+// next task waiting too, but nothing to hold). At 1 nothing waits long and the task gaps show the
+// rate.
+static void present_update_period(void) {
+    if (present_period == 2 && present_queued == 0xFFFF) {
+        present_period = 1;
+        present_two_gaps = 0;
+        pace_period_changes++;
+    } else if (present_period == 1 && bits8(present_two_gaps) >= 5) {
+        present_period = 2;
+        present_queued = 0;
+        pace_period_changes++;
+    }
+}
+
+static void present_wait(void) {
+    // The first vblank this frame could be handed over at.
+    uint32_t ready = vbl_seq + 1;
+    present_update_period();
+    uint32_t period = present_period;
+    uint32_t target = ready;
+    if ((int32_t)(present_release_last + period - target) > 0) {
+        target = present_release_last + period;
+    }
+    present_release_last = target;
+    if (!present_paced) {
+        gfx_submit();
+        return;
+    }
+
+    kthread_t* self = thd_get_current();
+    prio_t prio = thd_get_prio(self);
+    thd_set_prio(self, PRESENT_KOS_PRIO);
+    int old = irq_disable();
+    present_waiting = true;
+    while ((int32_t)(vbl_seq - target) < 0) {
+        genwait_wait((void*)&vbl_seq, "present", 100, NULL);
+    }
+    present_waiting = false;
+    irq_restore(old);
+    bool queued = rsp_busy();
+    present_queued = (uint16_t)(present_queued << 1 | (queued && target != ready));
+    pace_queued += queued;
+    pace_released++;
+    gfx_submit();
+    thd_set_prio(self, prio);
+}
+
 // The VI retrace follows the Dreamcast's own vertical blank, so the game's frames line up with
 // the PowerVR's buffer flips.
 static semaphore_t vblank_sem;
@@ -108,7 +305,22 @@ static semaphore_t vblank_sem;
 static void on_vblank(uint32_t code, void* data) {
     (void)code;
     (void)data;
+    last_vblank_us = timer_us_gettime64();
+    if (pace_on && pace_n < PACE_MAX) {
+        pvr_stats_t st;
+        pvr_get_stats(&st);
+        if (st.frame_count != pace_frames) {
+            pace_frames = st.frame_count;
+            pace_rec[pace_n] |= PACE_FLIP;
+        }
+        pace_n++;
+    }
+    vbl_seq++;
     sem_signal(&vblank_sem);
+    if (present_waiting) {
+        genwait_wake_all((void*)&vbl_seq);
+        thd_schedule(1, 0);
+    }
 }
 
 static void* events_thread(void* param) {
@@ -168,7 +380,7 @@ static void* events_thread(void* param) {
                 }
             }
 
-            if (stat_vi_count % 60 == 0 && test_disc() && !profile_running()) {
+            if (stat_vi_count % 60 == 0 && test_disc() && !profile_running() && !pace_on) {
                 sem_signal(&log_sem);
             }
         }
@@ -289,6 +501,7 @@ static void* rsp_thread(void* param) {
         rsp_tail++;
         events_post(OS_EVENT_SP);
         events_post(OS_EVENT_DP);
+        present_wait();
     }
     return NULL;
 }
@@ -322,6 +535,8 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
         if (rsp_head - rsp_tail >= RSP_QUEUE) {
             runtime_fatal("[q64dc] too many graphics tasks in flight");
         }
+        present_note_task();
+        pace_note(PACE_TASK);
         rsp_queue[rsp_head % RSP_QUEUE] = task;
         rsp_head++;
         sem_signal(&rsp_sem);
@@ -375,6 +590,7 @@ void osViSwapBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
     uint32_t vis = stat_vi_count - swap_last_vi;
     swap_last_vi = stat_vi_count;
     swap_hist[vis < 4 ? vis : 4]++;
+    pace_note(PACE_SWAP);
 }
 
 void osViGetCurrentFramebuffer_recomp(uint8_t* rdram, recomp_context* ctx) {

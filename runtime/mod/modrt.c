@@ -386,7 +386,7 @@ MODRT_IMPORT(recomp_printf) {
     static uint64_t window_start;
     static uint32_t in_window, dropped;
 
-    if (!MOD_PRINTF && !test_disc()) {
+    if ((!MOD_PRINTF && !test_disc()) || pace_running()) {
         ctx->r2 = 0;
         return;
     }
