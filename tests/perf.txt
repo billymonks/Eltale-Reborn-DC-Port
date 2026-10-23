@@ -1,0 +1,55 @@
+# The scenes of the performance table, each with a 10 s profile window: the opening, the title,
+# the monastery, Melrode, the Blue Cave and a battle on the Holy Plain.
+# make test-cdi TEST_SCRIPT=tests/perf.txt, then scripts\flycast.ps1 240 -Test > build/perf.log;
+# in the container, scripts/perf_fps.py build/perf.log for the fps and scripts/profile.py build/perf.log
+# for where the time goes.
+
+wait 8000
+log PERF opening
+profile_start
+wait 10000
+profile_dump
+wait 27000                 # the rest of the logos and the opening
+tap S
+wait 5000
+log PERF title
+profile_start
+wait 10000
+profile_dump
+tap S                      # PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+log PERF monastery
+profile_start
+wait 10000
+profile_dump
+
+warp 0 0 0                 # Melrode village
+wait 5000                  # past the map load
+log PERF melrode
+profile_start
+stick 0 70 5000            # walk up the street and back
+stick 0 -70 5000
+stick 0 0 0
+profile_dump
+
+warp 0x1A 0 0              # Blue Cave
+wait 5000                  # past the map load
+log PERF cave
+profile_start
+wait 10000
+profile_dump
+
+warp 2 0 0                 # Holy Plain
+wait 5000                  # past the map load
+to_battle
+battle_walk 30000
+wait 2000
+log PERF battle
+profile_start
+wait 8000
+tap A 2 900                # swing the staff
+profile_dump
+log PERF end

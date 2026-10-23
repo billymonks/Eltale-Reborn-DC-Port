@@ -19,6 +19,10 @@
 //   peek32 <addr>                     print a word
 //   shot <name>                       print a SHOT line; run_flycast.sh saves build/screens/<name>.png
 //   log <text>
+//   pos                               print Brian's position and step, the retrace and frame counts and the time
+//   watch <addr>                      print every change of a halfword, checked at each controller poll (hex, up to 4)
+//   burn <ms>                         busy-wait that long in every controller poll, to slow the game down (0: off)
+//   profile_start, profile_dump       sample the program counter in between (profile.c)
 //   loop                              start over
 
 #include <kos.h>
@@ -29,6 +33,7 @@
 
 #include "ultra.h"
 #include "test.h"
+#include "profile.h"
 
 // Game globals (the Eltale Reborn mod's include/q64/game.h).
 #define GAME_STATE      0x8007B2E4u
@@ -65,6 +70,12 @@ static int line_count;
 static int pc;
 static bool active;
 
+static unsigned burn_ms;
+
+#define MAX_WATCHES 4
+static uint32_t watch_addr[MAX_WATCHES];
+static uint16_t watch_value[MAX_WATCHES];
+static int watch_count;
 static uint64_t step_start;
 static bool step_started;
 static uint16_t held_buttons;
@@ -213,8 +224,10 @@ static bool step(uint64_t now) {
         } else if (now - free_since >= 500) {
             return true;
         }
+        // Not while Brian is free: A then starts his 15-frame staff action (player state 3), and
+        // at 30 fps the taps would keep him in it.
         if (cmd[0] == 't') {
-            held_buttons = (elapsed % 700) < 100 ? 0x8000 : 0;
+            held_buttons = !brian_free() && (elapsed % 700) < 100 ? 0x8000 : 0;
         }
         if (elapsed >= timeout) {
             printf("[q64dc] test: %s timed out (state 0x%X mode %u player %u)\n", cmd, (unsigned)MEM_W(0, GAME_STATE),
@@ -387,6 +400,36 @@ static bool step(uint64_t now) {
         }
         return true;
     }
+    if (strcmp(cmd, "pos") == 0) {
+        printf("[q64dc] test: pos %.2f %.2f %.2f step %.3f VI %u swaps %u t %u ms\n",
+               mem_f32(PLAYER_POS), mem_f32(PLAYER_POS + 4), mem_f32(PLAYER_POS + 8),
+               mem_f32(ENCOUNTER_STEP), (unsigned)stat_vi_count, (unsigned)stat_swap_count,
+               (unsigned)now);
+        return true;
+    }
+    if (strcmp(cmd, "watch") == 0) {
+        if (watch_count < MAX_WATCHES) {
+            uint32_t addr = 0;
+            sscanf(args, "%lx", (unsigned long*)&addr);
+            watch_addr[watch_count] = addr;
+            watch_value[watch_count] = MEM_HU(0, addr);
+            watch_count++;
+        }
+        return true;
+    }
+    if (strcmp(cmd, "burn") == 0) {
+        burn_ms = 0;
+        sscanf(args, "%u", &burn_ms);
+        return true;
+    }
+    if (strcmp(cmd, "profile_start") == 0) {
+        profile_start();
+        return true;
+    }
+    if (strcmp(cmd, "profile_dump") == 0) {
+        profile_dump();
+        return true;
+    }
     if (strcmp(cmd, "loop") == 0) {
         pc = -1;
         return true;
@@ -398,6 +441,19 @@ static bool step(uint64_t now) {
 void test_input(uint16_t* buttons, int8_t* stick_x, int8_t* stick_y) {
     if (!active) {
         return;
+    }
+    for (int i = 0; i < watch_count; i++) {
+        uint16_t v = MEM_HU(0, watch_addr[i]);
+        if (v != watch_value[i]) {
+            printf("[q64dc] test: watch %08X: %u -> %u (frame %u, buttons %04X)\n", (unsigned)watch_addr[i],
+                   (unsigned)watch_value[i], (unsigned)v, (unsigned)stat_swap_count, (unsigned)held_buttons);
+            watch_value[i] = v;
+        }
+    }
+    if (burn_ms) {
+        uint64_t until = timer_ms_gettime64() + burn_ms;
+        while (timer_ms_gettime64() < until) {
+        }
     }
     uint64_t now = timer_ms_gettime64();
     // A few commands can finish in one poll; the rest wait for later polls.

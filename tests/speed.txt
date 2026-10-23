@@ -1,0 +1,39 @@
+# Measures how far Brian walks on the Holy Plain in a fixed time, at the normal frame rate and
+# then slowed down with `burn`, to tell whether the game moves him per frame or per unit of time.
+# make test-cdi TEST_SCRIPT=tests/speed.txt, then scripts\flycast.ps1 80 -Test.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+
+warp 2 0 0                 # Holy Plain
+wait_free 10000
+wait 1000
+log normal speed
+stick 0 -80 0              # walk away from the gate
+wait 1500                  # turn and get up to speed
+pos
+wait 1000
+pos
+wait 1000
+pos
+stick 0 0 0
+wait 1000
+
+log slowed down
+burn 50
+stick 0 80 0               # and back towards it
+wait 1500
+pos
+wait 1000
+pos
+wait 1000
+pos
+stick 0 0 0
+burn 0
+log speed finished
