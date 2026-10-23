@@ -51,11 +51,15 @@ void sched_check_yield(void);
 // Locks out the scheduler while runtime threads touch shared state.
 void sched_lock(void);
 void sched_unlock(void);
+// Prints and resets the time no game thread could run.
+void sched_print_stats(void);
 
 // Events: VI, timers, RSP tasks (events.c).
 void events_init(void);
 // Sends the message registered with osSetEventMesg; false if nothing is registered.
 bool events_post(int event);
+// True while a graphics task is queued or running.
+bool rsp_busy(void);
 uint64_t events_now_us(void);
 
 extern volatile uint32_t stat_vi_count;

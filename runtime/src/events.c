@@ -6,6 +6,8 @@
 #include <stdio.h>
 
 #include "gfx.h"
+#include "profile.h"
+#include "test.h"
 #include "ultra.h"
 
 // NTSC retrace interval: 1 / 59.94 Hz.
@@ -37,6 +39,12 @@ static uint64_t boot_us;
 static uint32_t vi_current_fb;
 static uint32_t vi_next_fb;
 
+static void rsp_init(void);
+
+// Retraces between frames: 0, 1, 2, 3, 4 or more.
+static uint32_t swap_hist[5];
+static uint32_t swap_last_vi;
+
 volatile uint32_t stat_vi_count;
 volatile uint32_t stat_swap_count;
 volatile uint32_t stat_gfx_tasks;
@@ -57,7 +65,9 @@ bool events_post(int event) {
     return true;
 }
 
+// Test discs only: every second the progress, renderer and audio lines, every 10 seconds the rest.
 static void log_progress(void) {
+    static uint32_t seconds;
     // Game globals from the Eltale Reborn mod's include/q64/game.h.
     printf("[q64dc] t=%us VI %u swaps %u gfx %u audio %u dma %u (%u KB) | mode %u state %d map %d next %d/%d\n",
         (unsigned)(events_now_us() / 1000000), (unsigned)stat_vi_count, (unsigned)stat_swap_count,
@@ -66,7 +76,29 @@ static void log_progress(void) {
         (int)MEM_W(0, 0x80084EE4u), (int)MEM_W(0, 0x80084EE8u));
     gfx_print_stats();
     audio_print_stats();
-    rom_print_stats();
+    if (++seconds % 10 == 0) {
+        rom_print_stats();
+        sched_print_stats();
+        printf("[q64dc] frames by retraces: 1:%u 2:%u 3:%u 4+:%u\n", (unsigned)swap_hist[1],
+               (unsigned)swap_hist[2], (unsigned)swap_hist[3], (unsigned)swap_hist[4]);
+        memset(swap_hist, 0, sizeof(swap_hist));
+    }
+}
+
+// The serial port takes about 90 us a character and printf waits for it, so the statistics are
+// printed by a thread of their own, level with the game threads, rather than by the VI thread
+// that everything waits on.
+#define LOG_KOS_PRIO PRIO_DEFAULT
+
+static semaphore_t log_sem;
+
+static void* log_thread(void* param) {
+    (void)param;
+    for (;;) {
+        sem_wait(&log_sem);
+        log_progress();
+    }
+    return NULL;
 }
 
 // The VI retrace follows the Dreamcast's own vertical blank, so the game's frames line up with
@@ -136,8 +168,8 @@ static void* events_thread(void* param) {
                 }
             }
 
-            if (stat_vi_count % 60 == 0) {
-                log_progress();
+            if (stat_vi_count % 60 == 0 && test_disc() && !profile_running()) {
+                sem_signal(&log_sem);
             }
         }
     }
@@ -148,6 +180,7 @@ void events_init(void) {
     boot_us = timer_us_gettime64();
     sem_init(&vblank_sem, 0);
     vblank_handler_add(on_vblank, NULL);
+    rsp_init();
 
     kthread_attr_t attr = {0};
     attr.stack_size = 16 * 1024;
@@ -156,6 +189,13 @@ void events_init(void) {
     attr.create_detached = true;
     if (thd_create_ex(&attr, events_thread, NULL) == NULL) {
         runtime_fatal("[q64dc] couldn't create the events thread");
+    }
+
+    sem_init(&log_sem, 0);
+    attr.prio = LOG_KOS_PRIO;
+    attr.label = "q64dc log";
+    if (thd_create_ex(&attr, log_thread, NULL) == NULL) {
+        runtime_fatal("[q64dc] couldn't create the log thread");
     }
 }
 
@@ -227,7 +267,48 @@ void osSetTimer_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = 0;
 }
 
-// RSP tasks run to completion when they start.
+// Graphics tasks run on their own thread, below the game threads, as the RSP and RDP run beside
+// the N64's CPU: the game sends a frame's task and then resets its retrace count, and a task that
+// ran inside osSendMesg would finish before that reset and leave the game waiting two more
+// retraces. Below the game threads, the task fills the time they spend waiting. The scheduler
+// yields a running graphics task for audio and waits for the SP event; osSpTaskYielded saying
+// no makes it pass that event on once its audio task is done.
+#define RSP_QUEUE 4
+#define RSP_KOS_PRIO (PRIO_DEFAULT + 1)
+
+static semaphore_t rsp_sem;
+static uint32_t rsp_queue[RSP_QUEUE];
+static volatile uint32_t rsp_head, rsp_tail;
+
+static void* rsp_thread(void* param) {
+    (void)param;
+    for (;;) {
+        sem_wait(&rsp_sem);
+        uint32_t task = rsp_queue[rsp_tail % RSP_QUEUE];
+        gfx_run_task(task);
+        rsp_tail++;
+        events_post(OS_EVENT_SP);
+        events_post(OS_EVENT_DP);
+    }
+    return NULL;
+}
+
+bool rsp_busy(void) {
+    return rsp_head != rsp_tail;
+}
+
+static void rsp_init(void) {
+    sem_init(&rsp_sem, 0);
+    kthread_attr_t attr = {0};
+    attr.stack_size = 32 * 1024;
+    attr.prio = RSP_KOS_PRIO;
+    attr.label = "n64 rsp";
+    attr.create_detached = true;
+    if (thd_create_ex(&attr, rsp_thread, NULL) == NULL) {
+        runtime_fatal("[q64dc] couldn't create the RSP thread");
+    }
+}
+
 void osSpTaskLoad_recomp(uint8_t* rdram, recomp_context* ctx) {
     (void)ctx;
 }
@@ -238,9 +319,12 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
 
     if (type == M_GFXTASK) {
         stat_gfx_tasks++;
-        gfx_run_task(task);
-        events_post(OS_EVENT_SP);
-        events_post(OS_EVENT_DP);
+        if (rsp_head - rsp_tail >= RSP_QUEUE) {
+            runtime_fatal("[q64dc] too many graphics tasks in flight");
+        }
+        rsp_queue[rsp_head % RSP_QUEUE] = task;
+        rsp_head++;
+        sem_signal(&rsp_sem);
     } else {
         if (type == M_AUDTASK) {
             stat_audio_tasks++;
@@ -278,9 +362,16 @@ void osViSetSpecialFeatures_recomp(uint8_t* rdram, recomp_context* ctx) {
     (void)ctx;
 }
 
+// The swap shows at once: the game's scheduler (nnScWaitTaskReady) holds the next frame's task
+// until its framebuffer isn't the one on screen, and the PowerVR keeps its own buffers, so
+// waiting for a retrace here would only leave the CPU idle.
 void osViSwapBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
     vi_next_fb = ctx->r4;
+    vi_current_fb = ctx->r4;
     stat_swap_count++;
+    uint32_t vis = stat_vi_count - swap_last_vi;
+    swap_last_vi = stat_vi_count;
+    swap_hist[vis < 4 ? vis : 4]++;
 }
 
 void osViGetCurrentFramebuffer_recomp(uint8_t* rdram, recomp_context* ctx) {

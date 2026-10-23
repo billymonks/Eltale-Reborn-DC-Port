@@ -183,13 +183,15 @@ void audio_print_stats(void) {
     static uint32_t last_streamed;
     uint32_t streamed = stat_streamed_frames;
     uint32_t n = stat_tasks ? stat_tasks : 1;
+    char ops[384];
+    ops[0] = 0;
+#ifdef AUDIO_PROFILE
     uint32_t counts[16], us[16];
     audio_hle_take_counts(counts, us);
     static const char* const names[16] = {"noop", "adpcm", "clear", "envmix", "load", "resample",
                                           "save", "segment", "setbuf", "setvol", "move", "book",
                                           "mix", "interleave", "polef", "setloop"};
-    char ops[384];
-    int len = 0;
+    int len = snprintf(ops, sizeof(ops), " |");
     for (int i = 0; i < 16 && len < (int)sizeof(ops) - 32; i++) {
         if (counts[i] == 0) {
             continue;
@@ -199,8 +201,9 @@ void audio_print_stats(void) {
             len += snprintf(ops + len, sizeof(ops) - len, " (%u us)", (unsigned)us[i]);
         }
     }
+#endif
     printf("[q64dc] audio: %u tasks, %u us each (max %u), %u us/s; frames in %u out %u, ring %d; "
-           "underrun %u, dropped %u |%s\n",
+           "underrun %u, dropped %u%s\n",
            (unsigned)stat_tasks, (unsigned)(stat_task_us / n), (unsigned)stat_task_max_us,
            (unsigned)stat_task_us, (unsigned)stat_submitted_frames, (unsigned)(streamed - last_streamed),
            (int)(ring_write - ring_read), (unsigned)stat_underrun_frames,

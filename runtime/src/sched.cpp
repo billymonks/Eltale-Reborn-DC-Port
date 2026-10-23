@@ -64,6 +64,10 @@ uint32_t ready_seq_counter;
 bool boot_handed_off;
 volatile bool yield_requested;
 
+// Time with no game thread running, and the part of it with a graphics task to run meanwhile.
+uint64_t idle_since, idle_us, idle_rsp_us;
+bool idle_rsp;
+
 int32_t priority(const GameThread* t) {
     return MEM_W(OSTHREAD_PRIORITY, t->vram);
 }
@@ -102,7 +106,16 @@ void remove_from(std::vector<GameThread*>& list, GameThread* t) {
 
 void dispatch_next_locked() {
     GameThread* next = best_ready();
+    if (running == nullptr && next != nullptr && idle_since != 0) {
+        uint64_t us = timer_us_gettime64() - idle_since;
+        idle_us += us;
+        idle_rsp_us += idle_rsp ? us : 0;
+    }
     running = next;
+    if (next == nullptr) {
+        idle_since = timer_us_gettime64();
+        idle_rsp = rsp_busy();
+    }
     if (next != nullptr) {
         remove_from(ready, next);
         set_state(next, OS_STATE_RUNNING);
@@ -261,6 +274,15 @@ int32_t send_locked(GameThread* me, uint32_t mq, uint32_t msg, int32_t flag, boo
 }
 
 void sched_init(void) {
+}
+
+void sched_print_stats(void) {
+    mutex_lock(&lock);
+    uint64_t all = idle_us, rsp = idle_rsp_us;
+    idle_us = idle_rsp_us = 0;
+    mutex_unlock(&lock);
+    printf("[q64dc] sched: no game thread running for %u ms, %u ms of it with a graphics task to run\n",
+           (unsigned)(all / 1000), (unsigned)(rsp / 1000));
 }
 
 void sched_lock(void) {
