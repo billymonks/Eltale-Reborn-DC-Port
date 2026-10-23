@@ -8,5 +8,6 @@
 *.iso
 *.gdi
 /assets/cover.png
+/assets/cover-*.png
 *.pvr
 *.PVR

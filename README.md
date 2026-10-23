@@ -163,8 +163,8 @@ Plain `make` and `make cdi` always build the unmodded game; its generated code a
 | `MOD=` | Disc | Title | Serial (test disc) | VMU file |
 | --- | --- | --- | --- | --- |
 | (none) | `build/quest64-dc.cdi` | QUEST 64 | Q64-DC (Q64-DC-T) | `QUEST64.PAK` |
-| `eltale` | `build/quest64-eltale.cdi` | ELTALE REBORN | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
-| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | ELTALE REBORN | Q64-ELTGP (Q64-TELTGP) | `Q64ELTGP.PAK` |
+| `eltale` | `build/quest64-eltale.cdi` | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
+| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | Eltale Reborn | Q64-ELTGP (Q64-TELTGP) | `Q64ELTGP.PAK` |
 
 The cover is `assets/cover-<first mod>.png` (e.g. `assets/cover-eltale.png`), else `assets/cover.png`, else none.
 

@@ -65,7 +65,7 @@ MOD_CONFIG   ?=
 # Short codes for the disc serial and VMU file: ELT, GP, ELTGP, ...
 mod_code = $(if $(filter eltale,$(1)),ELT,$(if $(filter gameplay,$(1)),GP,$(shell echo $(1) | cut -c1-3 | tr a-z A-Z)))
 MOD_CODE     := $(subst $(space),,$(foreach m,$(MODS),$(call mod_code,$(m))))
-MOD_TITLE    ?= $(if $(filter eltale,$(MODS)),ELTALE REBORN,QUEST 64 $(MOD_CODE))
+MOD_TITLE    ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,QUEST 64 $(MOD_CODE))
 MOD_DESC     ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,Quest 64 $(MOD_CODE))
 
 CDI          := $(BUILD)/quest64-$(MOD_NAME).cdi
