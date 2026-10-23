@@ -80,8 +80,8 @@ static uint16_t map_buttons(const cont_state_t* st) {
     if (b & CONT_DPAD_DOWN) out |= N64_C_DOWN;
     if (b & CONT_DPAD_LEFT) out |= N64_C_LEFT;
     if (b & CONT_DPAD_RIGHT) out |= N64_C_RIGHT;
-    if (st->ltrig >= TRIGGER_THRESHOLD) out |= N64_Z;
-    if (st->rtrig >= TRIGGER_THRESHOLD) out |= N64_R;
+    if (st->ltrig >= TRIGGER_THRESHOLD) out |= N64_L;
+    if (st->rtrig >= TRIGGER_THRESHOLD) out |= N64_Z;
     return out;
 }
 

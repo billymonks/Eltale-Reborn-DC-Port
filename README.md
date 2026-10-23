@@ -91,8 +91,9 @@ fps in Flycast 2.7 with audio on. Each column adds a change to the previous one:
 | A | A | Talk, confirm, attack |
 | B | B | Cancel, close menus |
 | D-pad | C buttons | Spirits; C-up opens the spell menu |
-| X, left trigger | Z | |
-| Y, right trigger | R | |
+| Left trigger | L | |
+| X, right trigger | Z | |
+| Y | R | |
 | Start | Start | Start menu (status, items) |
 
 The stick is scaled to the N64's range: a radial deadzone of 14 (out of the Dreamcast's ±128), full deflection at 110, mapped to the N64 stick's ±80, with the direction kept. Menus such as the title screen's NEW / LOAD / DELETE move with the stick, not the D-pad.
