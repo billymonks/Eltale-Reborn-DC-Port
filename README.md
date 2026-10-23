@@ -1,12 +1,12 @@
 # Quest 64 for Dreamcast
 
-A Sega Dreamcast port of Quest 64 (USA), built from [N64Recomp](https://github.com/N64Recomp/N64Recomp)'s static recompilation of the game, the same base as [Quest 64: Recompiled](https://github.com/Rainchus/Quest64-Recomp). The long-term goal is to run the Eltale Reborn: Holy Magic Century mod on the Dreamcast.
+A Sega Dreamcast port of Quest 64 (USA), built from [N64Recomp](https://github.com/N64Recomp/N64Recomp)'s static recompilation of the game, the same base as [Quest 64: Recompiled](https://github.com/Rainchus/Quest64-Recomp). It can also run the Eltale Reborn: Holy Magic Century mod, compiled in ahead of time as a separate disc (see [Mods](#mods)).
 
 **This repository contains no game data.** You need your own Quest 64 (USA) ROM to build it, and builds must not be shared.
 
 ## Status
 
-The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery, the Blue Cave and battles run at the game's full 30 fps (60 for the opening), the Melrode scene at 29.7, its only lost frames being a house door's map load, and the Holy Plain outside Melrode at 29.3 (see [Performance](#performance)).
+The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery, the Blue Cave and battles run at the game's full 30 fps (60 for the opening), the Melrode scene at 29.7, its only lost frames being a house door's map load, and the Holy Plain outside Melrode at 29.3 (see [Performance](#performance)). Eltale Reborn runs on its own disc: its logo, prologue, scripted scenes, dialogue with choices, signs, scene NPCs, script-started battles and save data work, at the same frame rates as the unmodded game.
 
 | # | Milestone | State |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ The game is playable on the Dreamcast with its music and sound effects. In Flyca
 | 3 | F3DEX renderer on the PowerVR; title screen | done |
 | 4 | Rooms load from disc, Dreamcast controller, VMU saves | done |
 | 5 | Audio: audio microcode commands in C, streamed to the AICA | done |
-| 6 | Eltale Reborn compiled in ahead of time | |
+| 6 | Eltale Reborn compiled in ahead of time | done (`MOD=eltale`, optionally `MOD=eltale,gameplay`) |
 | 7 | Performance: 30 fps everywhere with audio on | in progress: 30 fps in the measured scenes, except during map loads and on the Holy Plain (29.3) |
 
 ## How it works
@@ -37,7 +37,7 @@ N64Recomp turns every MIPS function of the ROM into a C function that operates o
   - Fog follows the N64's: a factor per vertex from its depth and the game's fog range, applied where the blender mixes in the fog color. Textured primitives use the PowerVR's vertex fog, with the factor in the offset color's alpha and the fog color in its fog color register, which works in all three lists at no cost per pixel. The PowerVR has one fog color, so the first one a frame uses takes it; other fog colors, and untextured primitives (which have no offset color), mix the fog color into their vertex colors on the CPU instead.
   - Fill and texture rectangles (fades, text boxes, the HUD) become screen-space quads. Texture rectangles drawn at one texel per N64 pixel from a whole texel (text, menus, most of the HUD) are point-sampled even when the game asks for bilinear filtering: the RDP's filter returns single texels there, while the PowerVR's at 640x480 would mix in the hidden colors of transparent texels, which in the game's fonts are pink.
 - **Audio.** The desktop recomp runs a recompiled copy of the RSP audio microcode, which is far too heavy for the SH-4. Here the command lists are interpreted in C and the mixed output is streamed to the AICA; see [Audio](#audio).
-- **The mod** (milestone 6). The Dreamcast can't recompile `.nrm` files at runtime. Instead, the mod's MIPS ELF will be recompiled ahead of time (N64Recomp's offline mod tooling) and its hooks wired in when the game is generated. It only needs `recomp_printf` and `recomp_get_config` from the recomp runtime.
+- **Mods.** The Dreamcast can't recompile `.nrm` files at runtime, so a modded build recompiles the mod's code ahead of time, places it at a fixed address in RDRAM and wires its patches and hooks into the game's recompiler config; see [Mods](#mods).
 
 ## Audio
 
@@ -113,7 +113,7 @@ The stick is scaled to the N64's range: a radial deadzone of 14 (out of the Drea
 
 ## Saves
 
-The game sees a Controller Pak; its files are kept on the first VMU found (normally the one in controller A's first slot), as a single file `QUEST64.PAK` (3 blocks for one save) with a Quest 64 icon and the description "Quest 64 saves". Every Controller Pak file is stored whole, so all 0x200 bytes of the game's save, including bytes 0x160-0x1FF that Eltale Reborn uses, round-trip. The VMU is read at boot and whenever a different VMU is plugged in, and written only after the game writes, 300 ms after its last write (about 0.7 s in Flycast). Don't remove the VMU while it's being written.
+The game sees a Controller Pak; its files are kept on the first VMU found (normally the one in controller A's first slot), as a single file `QUEST64.PAK` (3 blocks for one save) with a Quest 64 icon and the description "Quest 64 saves". Every Controller Pak file is stored whole, so all 0x200 bytes of the game's save, including bytes 0x160-0x1FF that Eltale Reborn uses, round-trip. The VMU is read at boot and whenever a different VMU is plugged in, and written only after the game writes, 300 ms after its last write (about 0.7 s in Flycast). Don't remove the VMU while it's being written. Modded discs keep their own file, `Q64<code>.PAK` (`Q64ELT.PAK` for Eltale Reborn, described "Eltale Reborn saves"), so modded and unmodded saves never mix.
 
 Without a VMU the game reports no Controller Pak, as on an N64 without one, and plays on without saving. If the VMU can't hold the save, creating a save file fails with the game's "full" error.
 
@@ -128,7 +128,7 @@ copy <your ROM> quest64.us.z64                 # big-endian .z64, US 1.0
 scripts\dc.ps1 make -j16                       # Windows (scripts/dc.sh on Linux/macOS)
 ```
 
-`make` builds the patched N64Recomp, recompiles the ROM into `build/recomp/`, generates stubs for any runtime function that isn't implemented (`build/runtime_stubs.c`; there are none now), and links `build/quest64-dc.elf`. `make cdi` also builds `build/quest64-dc.cdi`, a self-booting disc with the ELF and the ROM; it never contains a test script. `make size` prints the section sizes. `scripts\dc.ps1 bash` opens a shell in the toolchain.
+`make` builds the patched N64Recomp, recompiles the ROM into `build/recomp/`, generates stubs for any runtime function that isn't implemented (`build/runtime_stubs.c`; there are none now), and links `build/quest64-dc.elf`. `make cdi` also builds `build/quest64-dc.cdi`, a self-booting disc with the ELF and the ROM; it never contains a test script. `make size` prints the section sizes. `scripts\dc.ps1 bash` opens a shell in the toolchain. Modded discs are built with `scripts\mod.ps1` (see [Mods](#mods)).
 
 The runtime looks for the ROM at `/cd/quest64.z64` (the disc), `/pc/quest64.us.z64` (dcload's host filesystem) and `/sd/quest64.z64`.
 
@@ -141,7 +141,7 @@ The runtime looks for the ROM at `/cd/quest64.z64` (the disc), `/pc/quest64.us.z
 Test discs print their progress once a second to the debug console (dcload, or the serial port): video retraces, buffer swaps, graphics and audio tasks, ROM DMA, and the game's mode, state and map, then the renderer's and the audio's statistics. Every 10 seconds they add the ROM cache, the time no game thread could run, and how many frames took one, two, three or more retraces. Release discs don't print them, as the serial port is slow enough to cost frames.
 
 - **Emulator, headless.** `docker build -t q64dc-flycast docker/flycast` once, then `scripts\dc.ps1 make cdi` and `scripts\flycast.ps1 [seconds] [screenshot interval]` (`scripts/flycast.sh` on Linux/macOS). It runs Flycast under Xvfb and prints the serial console; with an interval, it also saves a screenshot every that many seconds to `build/screens/shot_<seconds>.png`. Flycast's VMU images live in `build/flycast-home/`, so saves survive between runs; `-ResetVmu` (`RESET_VMU=1`) starts with blank ones. `-Renderer n` (`FLYCAST_REND=n`) picks Flycast's renderer (`pvr.rend`). The image uses Flycast 2.7; `docker build --build-arg FLYCAST_VERSION=2.6 --build-arg FLYCAST_APPIMAGE=flycast-x86_64.AppImage -t q64dc-flycast26 docker/flycast` builds a 2.6 one.
-- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling, tracing the ROM cache's disc reads, free memory). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
+- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling, tracing the ROM cache's disc reads, free memory). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`), and a modded one with `-Disc build/quest64-eltale-test.cdi` (`DISC=...`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
   - `tour.txt`: a new game, then Melrode, the Holy Plain, the Blue Cave, the monastery, Dondoran Castle, Dindom Dries and the Melrode Inn, with the spell and Start menus.
   - `battle.txt`: a random battle on the Holy Plain.
   - `gfx.txt`: bursts of screenshots while walking in the monastery, Melrode, the Blue Cave and a monastery corridor, then a battle, for depth and culling errors.
@@ -156,6 +156,68 @@ Test discs print their progress once a second to the debug console (dcload, or t
 - **Dreamcast with dcload-ip or dcload-serial.** From the repo directory, `dc-tool-ip -t <dreamcast ip> -c . -x build/quest64-dc.elf` (or `dc-tool-ser -c . -x ...`). The `-c .` makes the repo the `/pc/` filesystem, so the ROM is read from `quest64.us.z64` over the link. That's slow, especially over serial, so the disc is better for longer runs.
 - **Dreamcast from disc.** Burn `build/quest64-dc.cdi` to an 80-minute CD-R (it fits; see [Disc size](#performance)), or put it on an optical drive emulator.
 
+## Mods
+
+Plain `make` and `make cdi` always build the unmodded game; its generated code and runtime are the same with or without the mod support. A modded build is a separate target, selected with `MOD`, with its own build directory (`build/mod-<mods>/`), ELF and disc, disc title, serial and VMU file:
+
+| `MOD=` | Disc | Title | Serial (test disc) | VMU file |
+| --- | --- | --- | --- | --- |
+| (none) | `build/quest64-dc.cdi` | QUEST 64 | Q64-DC (Q64-DC-T) | `QUEST64.PAK` |
+| `eltale` | `build/quest64-eltale.cdi` | ELTALE REBORN | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
+| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | ELTALE REBORN | Q64-ELTGP (Q64-TELTGP) | `Q64ELTGP.PAK` |
+
+The cover is `assets/cover-<first mod>.png` (e.g. `assets/cover-eltale.png`), else `assets/cover.png`, else none.
+
+**Building.** The mods are built by their own build script on the host, where their toolchain is, and consumed from their repository; nothing of a mod is copied into this one. For Eltale Reborn (the `Quest-64-Good-Edition` repo, checked out next to this one by default):
+
+```
+scripts\mod.ps1                                       # MOD=eltale, make -j16 cdi
+scripts\mod.ps1 -Mod eltale,gameplay make -j24 cdi    # with the optional gameplay mod
+scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCRIPT=tests/mod_story.txt
+```
+
+`scripts\mod.ps1` takes the mod repo from `-ModDir`, else `MOD_DIR`, else `..\Quest-64-Good-Edition`. It runs `scripts/stage_mods.py`, which runs the mod's `python build.py story` (and `gameplay`; this needs the mod's Python requirements and zig, as for the desktop build) and copies `mod_syms.bin` and `mod_binary.bin` out of the `.nrm`, plus `mod.toml` and the link map, to `build/mods/<mod>/`, rewriting only what changed. Then it runs `make MOD=<mods>` in the toolchain container. With the mod already built, `-NoBuild` skips its build, and `scripts\dc.ps1 make MOD=eltale cdi` builds from what's staged. After a change to the mod, the same command rebuilds the disc; nothing is listed by hand.
+
+**How it's wired in.**
+- `tools/modrecomp` (built from N64Recomp's library) reads the staged mods and places each one at a fixed address from 0x80410000, after the game's 4 MB and the runtime's 64 KB. Sections are 16-byte aligned with their bss after them, and there are 0x400 bytes between mods. It applies the data relocations at build time, recompiles the code to C whose section addresses are constants, and checks every import against the runtime's.
+- It also turns the mods' `RECOMP_PATCH`, `RECOMP_HOOK` and `RECOMP_HOOK_RETURN` functions into hooks in a copy of the game's recompiler config (`scripts/gen_mod_config.py`). A patch replaces the game function's body. A hook runs at its first instruction, a return hook at each of its returns (`tools/patches/n64recomp-return-hooks.patch` adds return hooks to N64Recomp). Two mods patching the same function, or a mod patching one the port stubs or replaces, fails the build.
+- The game is then regenerated into `build/mod-<mods>/recomp/`. At boot, `mods_init` copies the mods' image into place. Calls through pointers into mod code go through a sorted function table, and the rest of the 2 MB mod area (`MOD_RAM_SIZE`) is the `recomp_alloc` heap.
+- **Imports.**
+  - Implemented (`runtime/mod/modrt.c`): `recomp_printf`, `recomp_alloc`/`recomp_free`, `recomp_get_config_u32`/`_double`/`_string`, `recomp_free_config_string`, `recomp_get_mod_version`, `recomp_is_dependency_met`, and the `recomphook_get_return_*` helpers.
+  - Cross-mod imports and exports also work.
+  - `recomp_printf` goes to the serial console on test discs only, at most 30 messages a second; build with `RT_DEFINES=-DMOD_PRINTF=1` to keep it on a release disc.
+  - Config options take their defaults from `mod.toml`. Override them at build time with `MOD_CONFIG=eltale.time_log=On,gameplay.<option>=<value>`, where enums take a name or an index.
+
+**Memory.** Eltale Reborn 0.9.42 takes 947 KB (0x80410000-0x804FCB00: 775 KB of code and data, 171 KB of bss). The gameplay mod takes 11 KB after it. The modded ELF is 1.3 MB larger than the unmodded one, from the recompiled mod code and the mod's image. With the 2 MB mod area, the largest block still free in Melrode drops from 5.2 MB to 2.2 MB. Eltale Reborn allocates nothing, so a smaller `MOD_RAM_SIZE` (e.g. `0x110000`) gives back most of its 1.1 MB heap.
+
+**What a mod can use on the Dreamcast.**
+- Game code it patches or hooks, its own code and data, the imports above, and display lists and textures in its own memory all work.
+- RT64's extended GBI commands are ignored; the extended-RDRAM switch isn't needed, since mod memory is inside the renderer's address range.
+- High-framerate interpolation tags aren't needed at 30 fps.
+- Not supported yet, and the build stops with a message:
+  - mod events and callbacks (`RECOMP_DECLARE_EVENT`, `RECOMP_CALLBACK`);
+  - native libraries;
+  - fixed-address sections;
+  - imports the runtime lacks, such as `recomp_change_save_file` and the path functions.
+- There is no in-game config menu; `MOD_CONFIG` stands in for it.
+- The renderer has no framebuffer effects yet (reading back or drawing to the color or depth buffer), and no textures over 256 px a side.
+- The SH-4 is several times slower than a PC: code that runs every frame should stay small, as the game itself already uses most of the frame in busy scenes.
+- Eltale Reborn's assumptions about Quest64-Recomp hold:
+  - Of the base patches it must not patch, only the Controller Pak scan (`func_80031574`) and the limb drawing (`func_8001DC78`, interpolation tags) are active there; the others are commented out. The port runs the game's own versions with its own Controller Pak.
+  - Its 160-byte save block at 0x160-0x1FF round-trips (see [Saves](#saves)).
+
+**Tests.** `tests/mod_*.txt` run on modded test discs (`make MOD=eltale test-cdi TEST_SCRIPT=...`, `scripts\flycast.ps1 <s> -Test -Disc build/quest64-eltale-test.cdi`). In them, `{symbol}` or `{symbol+offset}` stands for a mod symbol's Dreamcast address, looked up in the staged link map (`scripts/test_syms.py`). This keeps the scripts working when the mod's layout changes; for example, `{gModSave+8}` is Eltale Reborn's flag array.
+- `mod_story.txt` (with `-ResetVmu`), then `mod_load.txt`:
+  - a new game through the mod's logo and prologue;
+  - the inn sign;
+  - the village farewell and Mira on the Melrode road;
+  - Odran's offer on the Holy Plain;
+  - a save at the inn, then a fresh boot that loads it and checks the mod's flags.
+- `mod_battle.txt`: the battle Lavaar's ring in Glencoe Forest starts.
+- `mod_perf.txt`: `perf.txt`'s scenes, with the Melrode walk turned away from the inn door, which the mod's town would take Brian through.
+  - With the mod, the opening runs at 59.1 fps, the title at 59.9, and the monastery, the Blue Cave and the battle at 29.8-30, as without it.
+  - Melrode on that walk runs at 28.2 fps with the mod against 27.0 without it.
+
 ## Layout
 
 | Path | Purpose |
@@ -168,6 +230,11 @@ Test discs print their progress once a second to the debug console (dcload, or t
 | `tools/audio_test/` | Bit-for-bit comparison of `audio_hle.c` with Quest64-Recomp's recompiled audio microcode |
 | `scripts/gen_stubs.py` | Stubs every runtime function the game calls that isn't implemented |
 | `scripts/make_gdtex.py` | Converts `assets/cover.png` to the disc's `0GDTEX.PVR` cover |
+| `scripts/mod.ps1`, `scripts/stage_mods.py` | Modded builds: build the mods with their own script, stage them, run `make MOD=...` |
+| `tools/modrecomp/` | Recompiles staged mods ahead of time at fixed addresses; lists their patches and hooks |
+| `scripts/gen_mod_config.py` | The game's recompiler config with the mods' patches and hooks added |
+| `runtime/mod/` | Mod runtime: loading, hook calls, the imports mods use, `recomp_alloc`'s heap |
+| `scripts/test_syms.py` | Fills in mod symbols in test scripts for modded test discs |
 | `runtime/src/test.c` | Scripted input for test discs |
 | `runtime/src/profile.c` | Program counter sampler for test discs |
 | `scripts/profile.py`, `scripts/perf_fps.py` | Profile by function and object file; fps per scene of `tests/perf.txt` |
