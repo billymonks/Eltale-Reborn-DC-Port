@@ -6,7 +6,7 @@ A Sega Dreamcast port of Quest 64 (USA), built from [N64Recomp](https://github.c
 
 ## Status
 
-The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery and the Blue Cave run at the game's full 30 fps (60 for the opening), Melrode at 28.7 and battles at 29.4 (see [Performance](#performance)).
+The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery, the Blue Cave and battles run at the game's full 30 fps (60 for the opening), and the Melrode scene at 29.7, its only lost frames being a house door's map load (see [Performance](#performance)).
 
 | # | Milestone | State |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ The game is playable on the Dreamcast with its music and sound effects. In Flyca
 | 4 | Rooms load from disc, Dreamcast controller, VMU saves | done |
 | 5 | Audio: audio microcode commands in C, streamed to the AICA | done |
 | 6 | Eltale Reborn compiled in ahead of time | |
-| 7 | Performance: 30 fps everywhere with audio on | in progress: 30 fps except Melrode and battles |
+| 7 | Performance: 30 fps everywhere with audio on | in progress: 30 fps in the measured scenes, except during map loads |
 
 ## How it works
 
@@ -26,7 +26,8 @@ N64Recomp turns every MIPS function of the ROM into a C function that operates o
 - **Memory.** The game runs in the N64's base 4 MB. RDRAM is a 4 MB block in main RAM, stored as 32-bit words in host order like the desktop runtime does (SH-4 runs little-endian, as x86 does). The 16 MB ROM doesn't fit in the Dreamcast's 16 MB of RAM, so it stays on the disc and is read on demand by the PI DMA functions.
 - **Threads.** Each N64 thread is a KallistiOS thread, but only one runs game code at a time, as on the N64's single CPU: a thread gives up the CPU when it blocks on a message queue, and the highest-priority ready thread runs next (`runtime/src/sched.cpp`). An events thread raises the VI retrace on the Dreamcast's vblank and fires `osSetTimer` timers (`events.c`). `osSpTaskStartGo` queues graphics tasks for an "n64 rsp" thread below the game threads, which runs them through the renderer while the game goes on, as the RSP runs beside the N64's CPU; audio tasks run through the audio interpreter at once. Each sends the SP and DP done messages when finished.
 - **Controllers.** Dreamcast controllers are read through Maple (`cont.c`); see [Controls](#controls).
-- **ROM reads.** PI DMA reads the ROM from the disc through a 1.5 MB LRU cache of 32 KB blocks (`rom.c`), read with KallistiOS's `fs_read` into 32-byte-aligned buffers so each block is one multi-sector GD-ROM transfer. A room change misses 10-40 blocks at about 30 ms each in Flycast; play in a room reads only from the cache.
+- **ROM reads.** PI DMA reads the ROM from the disc through a cache of 32 KB blocks (`rom.c`), read with KallistiOS's `fs_read` into 32-byte-aligned buffers so each read is one multi-sector GD-ROM transfer. The 1.1 MB of audio banks, samples and sequences is read at boot and kept, since the audio thread starts its sample DMAs every frame and doesn't wait for them; everything else goes through a 3 MB LRU, and a miss reads up to four blocks in one disc command, as the game reads its files front to back. As on the N64, `osPiStartDma` only starts a transfer: a cached one is copied at once, and the rest wait for a reader thread below the game threads, which sends the DMA's message when the data is in RDRAM, so the other game threads go on meanwhile. Transfers to the same message queue or the same memory stay in order, and an audio task waits for pending reads of the audio data. A map load takes 1-20 disc reads of 60-150 ms each in Flycast; play in a room reads only from the cache. With audio pinned, the game's heap and the cache leave about 5.6 MB of RAM free.
+- **Game-code hot spots.** The floor probe's point-in-shape test (`func_8000F238` and its edge test, `func_8000F5A4`), which every actor runs against every nearby shape each frame, is replaced by native C with the same steps in the same order (`collision.c`, through a hook in `config/quest64.us.toml`); building it with `-DFLOOR_VERIFY` and the hooks described in the file runs both and compares every result.
 - **Saves.** The game's Controller Pak is emulated on the first VMU (`pak.c`); see [Saves](#saves).
 - **Graphics.** The game uses the F3DEX 1.23 microcode. `gfx.c` interprets its display lists on the CPU and draws them with KallistiOS's PowerVR API directly (no GL), in the spirit of jnmartin84's Fast3D backends for [sm64-dc](https://github.com/jnmartin84/sm64-dc) and [sf64-dc](https://github.com/jnmartin84/sf64-dc). The graphics task is reported done once its frame is submitted.
   - Vertices are transformed with the SH-4's `ftrv` (KallistiOS `mat_trans_nodiv`), lit with the game's directional lights, clipped against the near plane and culled in screen space. Triangles that cross the near plane are culled on the sign of their clip-space determinant before clipping, so walls the camera backs into stay hidden. Each vertex's projected position, UVs and colors are cached until the material changes.
@@ -65,14 +66,14 @@ Quest 64 uses libultra's standard audio microcode, `aspMain` (the "ABI 1" comman
 
 fps in Flycast 2.7 with audio on. Each column adds a change to the previous one:
 
-| Scene | Milestone 5 | RSP thread | Log thread | `restrict` | fsqrt, log paused | Builtins, audio loops | Texture cache, combiner | Image loads, vertex path |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Opening | 53.1 | 50.9 | 55.3 | 56.7 | 58.6 | 58.7 | 58.8 | 58.9 |
-| Title | 54.7 | 53.0 | 58.3 | 58.3 | 59.9 | 59.9 | 59.9 | 59.9 |
-| Monastery hall | 18.1 | 26.0 | 28.3 | 28.4 | 30.0 | 30.0 | 30.0 | 30.0 |
-| Melrode | 15.4 | 21.7 | 25.1 | 25.8 | 26.4 | 27.0 | 28.5 | 28.7 |
-| Blue Cave | 18.9 | 26.3 | 28.8 | 28.8 | 30.0 | 30.0 | 30.0 | 30.0 |
-| Battle (Holy Plain) | 15.2 | 16.8 | 22.2 | 23.4 | 26.3 | 26.7 | 29.2 | 29.4 |
+| Scene | Milestone 5 | RSP thread | Log thread | `restrict` | fsqrt, log paused | Builtins, audio loops | Texture cache, combiner | Image loads, vertex path | ROM reader | Native floor test |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Opening | 53.1 | 50.9 | 55.3 | 56.7 | 58.6 | 58.7 | 58.8 | 58.9 | 59.0 | 59.0 |
+| Title | 54.7 | 53.0 | 58.3 | 58.3 | 59.9 | 59.9 | 59.9 | 59.9 | 59.9 | 59.9 |
+| Monastery hall | 18.1 | 26.0 | 28.3 | 28.4 | 30.0 | 30.0 | 30.0 | 30.0 | 30.0 | 30.0 |
+| Melrode | 15.4 | 21.7 | 25.1 | 25.8 | 26.4 | 27.0 | 28.5 | 28.7 | 29.7 | 29.7 |
+| Blue Cave | 18.9 | 26.3 | 28.8 | 28.8 | 30.0 | 30.0 | 30.0 | 30.0 | 30.0 | 30.0 |
+| Battle (Holy Plain) | 15.2 | 16.8 | 22.2 | 23.4 | 26.3 | 26.7 | 29.2 | 29.4 | 29.7 | 30.0 |
 
 - **RSP thread.** Graphics tasks used to run inside the game's scheduler thread, before the main thread reset its retrace count, so every frame then waited two more retraces and the CPU idled for a quarter of the time. They now run on a thread of their own below the game threads.
 - **Log thread.** The once-a-second statistics went to the serial port (about 90 us a character, waited for) from the VI thread. They're printed by their own thread now, and only on test discs.
@@ -82,8 +83,14 @@ fps in Flycast 2.7 with audio on. Each column adds a change to the previous one:
 - **Tried and dropped.** `-Os` for the generated code is 2.5% smaller and slightly slower in Flycast, which doesn't model the SH-4's caches, so it is worth retrying on hardware.
 - **Texture cache, combiner.** Texture loads used to be copied into TMEM and every texture use re-hashed TMEM. Now a load is keyed by a per-frame checksum of its RDRAM source and copied only when a texture has to be decoded, and a texture is found by the loads behind it (see [How it works](#how-it-works)). The combiner is reduced once per combiner and constant colors instead of per vertex. The battle in `tests/perf.txt` now fixes the game's random seed (`battle_walk 30000 1234`), so every run fights the same formation; the previous column measures 26.6 with it.
 - **Image loads, vertex path.** Loads whose rows aren't a whole number of 8-byte words (the HUD, text boxes and other 2D images) are keyed too, and the vertex loop lost a few multiplies and branches.
+- **ROM reader.** The audio data pinned at boot, PI DMA on a reader thread, a 3 MB LRU instead of 1.5 MB and four-block reads (see [How it works](#how-it-works)). The Melrode window read 17 blocks in 17 disc reads (413 ms) and the battle window 3 (63 ms); now Melrode reads 4 blocks in one read and the battle none. The pinned audio data takes 0.6 s to read at boot. The Melrode walk in `tests/perf.txt` goes through a house door (map 0x0F) about 3 s in, and that map load is its remaining loss: 297 frames of 300, against 300 in the same street without the door. `profile_dump` also prints the ROM blocks read in its window, and `perf_fps.py` shows them; `RT_DEFINES="-DROM_SYNC -DROM_NO_PIN -DLRU_BLOCKS=48 -DREAD_RUN=1"` builds the previous behavior for comparison.
+- **Native floor test.** The floor probe's point-in-shape test took 16% of a battle's CPU time as recompiled code and takes 5% in C (see [How it works](#how-it-works)), with bit-identical results over 131,072 calls in `tests/perf.txt`.
 
-**Where the time goes.** The renderer's CPU time per frame went from 18.7 ms to 13.2 ms in the battle and from 16.5 ms to 10.5 ms in Melrode. A battle is now the renderer 39% (`gfx_run_task` 16%, textures 12%, the combiner 2%), the game's own code 28%, audio 20%, and idles 8%. Both scenes now lose frames to the game side rather than to the renderer: walking the same Melrode street a second time, with its ROM blocks cached, runs at 30.0 fps, while the first walk misses the ROM cache 18 times (430 ms of disc reads) and averages 28.7. In the battle, the frames that take four retraces have graphics tasks of normal length that start late, because the game thread finished its frame late. Getting these scenes to 30 fps needs the ROM reads off the game thread (prefetching or asynchronous reads) and headroom on the game side, which mixing voices on the AICA would give.
+**Where the time goes.** A battle is now the renderer 40% (`gfx_run_task` 16%, textures 11%, the combiner 2%), audio 21%, the game's own code 18% (13% recompiled, 5% the floor test) and idles 17%, about 5.6 ms a frame, where it idled 8% before the floor test. The audio mixer is the largest remaining cost that isn't the renderer: moving the voices to the AICA's 64 channels would free most of its 7 ms a frame, but takes days (the game's ADPCM samples would have to be decoded into AICA memory, and its envelopes, pitch changes and reverb remapped), and the measured scenes no longer need it. Flycast doesn't model the SH-4's caches, so hardware may be slower.
+
+**Reading from a real disc.** Flycast's GD-ROM reads cost about 20-30 ms for one 32 KB block and 60-80 ms for four, roughly 2 MB/s. A real drive reading a CD-R seeks more slowly (on the order of 100 ms or more per read that isn't next to the last one), so what counts on hardware is the number of separate reads, not the bytes: the reader thread keeps them off the game threads, runs of four blocks quarter their number on map loads, and with the audio data pinned, play within a room doesn't touch the disc at all, so slow seeks show up as longer map loads rather than lost frames. The pinned audio data is one contiguous 1.1 MB read at boot (about 0.6 s in Flycast, perhaps a second on hardware).
+
+**Disc size.** `build/quest64-dc.cdi` is 740 MB but fits a 700 MB (80-minute) CD-R. mkdcdisc pads the data track to the full CD size and writes the files at its end, the outer edge of the disc, where the Dreamcast's drive reads fastest: the track is 316,212 sectors (647.6 MB of 2048-byte data) with the ELF and the ROM in its last 8,700, and the whole disc, with the audio session and the gaps between sessions, is about 328,000 sectors (73 minutes; an 80-minute CD-R holds 360,000). The CDI is bigger than the disc's data because it stores each data sector raw, 2,336 bytes. mkdcdisc's `-N` makes a 22 MB CDI with the files at the slow inner edge instead, which costs read speed on a real drive and gains nothing on an optical drive emulator, so the default stays padded.
 
 ## Controls
 
@@ -126,7 +133,7 @@ The runtime looks for the ROM at `/cd/quest64.z64` (the disc), `/pc/quest64.us.z
 Test discs print their progress once a second to the debug console (dcload, or the serial port): video retraces, buffer swaps, graphics and audio tasks, ROM DMA, and the game's mode, state and map, then the renderer's and the audio's statistics. Every 10 seconds they add the ROM cache, the time no game thread could run, and how many frames took one, two, three or more retraces. Release discs don't print them, as the serial port is slow enough to cost frames.
 
 - **Emulator, headless.** `docker build -t q64dc-flycast docker/flycast` once, then `scripts\dc.ps1 make cdi` and `scripts\flycast.ps1 [seconds] [screenshot interval]` (`scripts/flycast.sh` on Linux/macOS). It runs Flycast under Xvfb and prints the serial console; with an interval, it also saves a screenshot every that many seconds to `build/screens/shot_<seconds>.png`. Flycast's VMU images live in `build/flycast-home/`, so saves survive between runs; `-ResetVmu` (`RESET_VMU=1`) starts with blank ones. `-Renderer n` (`FLYCAST_REND=n`) picks Flycast's renderer (`pvr.rend`). The image uses Flycast 2.7; `docker build --build-arg FLYCAST_VERSION=2.6 --build-arg FLYCAST_APPIMAGE=flycast-x86_64.AppImage -t q64dc-flycast26 docker/flycast` builds a 2.6 one.
-- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
+- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling, tracing the ROM cache's disc reads, free memory). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
   - `tour.txt`: a new game, then Melrode, the Holy Plain, the Blue Cave, the monastery, Dondoran Castle, Dindom Dries and the Melrode Inn, with the spell and Start menus.
   - `battle.txt`: a random battle on the Holy Plain.
   - `gfx.txt`: bursts of screenshots while walking in the monastery, Melrode, the Blue Cave and a monastery corridor, then a battle, for depth and culling errors.
@@ -137,7 +144,7 @@ Test discs print their progress once a second to the debug console (dcload, or t
   - `speed.txt`: walks the Holy Plain at the normal frame rate and slowed down, printing Brian's position.
 - **Emulator, with a window.** Open `build/quest64-dc.cdi` in Flycast (tested with 2.6 and 2.7, OpenGL and Vulkan, HLE and real BIOS). To see the log, set `Debug.SerialConsoleEnabled = yes` in Flycast's `emu.cfg` and start Flycast from a terminal.
 - **Dreamcast with dcload-ip or dcload-serial.** From the repo directory, `dc-tool-ip -t <dreamcast ip> -c . -x build/quest64-dc.elf` (or `dc-tool-ser -c . -x ...`). The `-c .` makes the repo the `/pc/` filesystem, so the ROM is read from `quest64.us.z64` over the link. That's slow, especially over serial, so the disc is better for longer runs.
-- **Dreamcast from disc.** Burn `build/quest64-dc.cdi` to a CD-R, or put it on an optical drive emulator.
+- **Dreamcast from disc.** Burn `build/quest64-dc.cdi` to an 80-minute CD-R (it fits; see [Disc size](#performance)), or put it on an optical drive emulator.
 
 ## Layout
 
