@@ -7,7 +7,10 @@ declaring most of them in funcs.h. This writes:
 - a C file with a stub for every one the runtime doesn't define yet. Each stub reports its name
   and stops, so a run shows the next piece of libultra the runtime needs.
 
-usage: gen_stubs.py <recomp output dir> <runtime src dir> <stubs .c> <decls .h>
+usage: gen_stubs.py <recomp output dir> <runtime src dir> <stubs .c> <decls .h> [<more source dirs>...]
+
+Functions defined in the extra source dirs (the modded build's runtime/mod and recompiled mods)
+count as implemented.
 """
 
 import re
@@ -28,6 +31,7 @@ def write_if_changed(path, text):
 
 def main():
     recomp_dir, runtime_dir, stubs_path, decls_path = map(Path, sys.argv[1:5])
+    source_dirs = [runtime_dir] + [Path(d) for d in sys.argv[5:]]
 
     declared = set(DECL.findall((recomp_dir / "funcs.h").read_text()))
 
@@ -39,8 +43,9 @@ def main():
         called.update(CALL.findall(text))
     called -= NOT_FUNCS
     defined = set(generated)
-    for src in list(runtime_dir.rglob("*.c")) + list(runtime_dir.rglob("*.cpp")):
-        defined.update(DEF.findall(src.read_text()))
+    for source_dir in source_dirs:
+        for src in list(source_dir.rglob("*.c")) + list(source_dir.rglob("*.cpp")):
+            defined.update(DEF.findall(src.read_text()))
 
     undeclared = sorted(called - declared - generated)
     missing = sorted((declared | called) - defined)
