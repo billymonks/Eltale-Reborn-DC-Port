@@ -193,8 +193,10 @@ static void cmd_adpcm(uint32_t w0, uint32_t w1) {
         int32_t l1 = last[14], l2 = last[15];
         for (int half = 0; half < 16; half += 8) {
             const int32_t* r = res + half;
+#pragma GCC unroll 8
             for (int i = 0; i < 8; i++) {
                 int32_t acc = (r[i] << 11) + book1[i] * l1 + book2[i] * l2;
+#pragma GCC unroll 8
                 for (int j = 0; j < i; j++) {
                     acc += book2[i - 1 - j] * r[j];
                 }
@@ -220,6 +222,14 @@ static void cmd_clearbuff(uint32_t w0, uint32_t w1) {
     }
 }
 
+// The Q15 rounding constant, in a register: as a known constant, GCC reloads it from the literal
+// pool at every use in the sample loops.
+static inline int32_t q15_round(void) {
+    int32_t r = 0x4000;
+    __asm__("" : "+r"(r));
+    return r;
+}
+
 // The RSP's VMULF: a rounded Q15 product.
 static inline int16_t mulf(int32_t a, int32_t b) {
     return clamp16((a * b + 0x4000) >> 15);
@@ -227,9 +237,44 @@ static inline int16_t mulf(int32_t a, int32_t b) {
 
 // dst * 0x7FFF + src * gain in Q15, rounded once: the microcode's VMULF/VMACF mix. The sum
 // stays inside 32 bits for any 16-bit inputs.
-static inline int16_t mix_q15(int32_t dst, int32_t src, int32_t gain) {
+static inline int16_t mix_q15_r(int32_t dst, int32_t src, int32_t gain, int32_t round) {
     // dst * 0x7FFF is dst * 0x8000 - dst, and the multiple of 0x8000 passes through the shift.
-    return clamp16(dst + ((src * gain - dst + 0x4000) >> 15));
+    return clamp16(dst + ((src * gain - dst + round) >> 15));
+}
+
+static inline int16_t mix_q15(int32_t dst, int32_t src, int32_t gain) {
+    return mix_q15_r(dst, src, gain, 0x4000);
+}
+
+// mix_q15 over n samples, four at a time. One bus per pass keeps everything in the SH-4's
+// registers.
+static inline void mix_run(int16_t* d, const int16_t* s, int32_t gain, uint32_t n) {
+    int32_t round = q15_round();
+    uint32_t i = 0;
+    for (; i + 4 <= n; i += 4) {
+        int32_t s0 = s[i], s1 = s[i + 1], s2 = s[i + 2], s3 = s[i + 3];
+        int32_t d0 = d[i], d1 = d[i + 1], d2 = d[i + 2], d3 = d[i + 3];
+        d[i] = mix_q15_r(d0, s0, gain, round);
+        d[i + 1] = mix_q15_r(d1, s1, gain, round);
+        d[i + 2] = mix_q15_r(d2, s2, gain, round);
+        d[i + 3] = mix_q15_r(d3, s3, gain, round);
+    }
+    for (; i < n; i++) {
+        d[i] = mix_q15_r(d[i], s[i], gain, round);
+    }
+}
+
+// The same with a gain per lane of an 8-sample vector.
+static inline void mix_vector(int16_t* d, const int16_t* s, const int16_t* gain) {
+    int32_t round = q15_round();
+    for (int k = 0; k < 8; k += 4) {
+        int32_t s0 = s[k], s1 = s[k + 1], s2 = s[k + 2], s3 = s[k + 3];
+        int32_t d0 = d[k], d1 = d[k + 1], d2 = d[k + 2], d3 = d[k + 3];
+        d[k] = mix_q15_r(d0, s0, gain[k], round);
+        d[k + 1] = mix_q15_r(d1, s1, gain[k + 1], round);
+        d[k + 2] = mix_q15_r(d2, s2, gain[k + 2], round);
+        d[k + 3] = mix_q15_r(d3, s3, gain[k + 3], round);
+    }
 }
 
 // One envelope: a 16.16 volume per lane of the RSP's 8-sample vectors, multiplied by a 16.16
@@ -323,25 +368,16 @@ static inline void env_mix(const Envelope* env, int16_t dry, int16_t wet, bool a
         gl[k] = mulf(env[0].hi[k], dry);
         gr[k] = mulf(env[1].hi[k], dry);
     }
+    mix_vector(dl, in, gl);
+    mix_vector(dr, in, gr);
     if (aux) {
         int16_t hl[8], hr[8];
         for (int k = 0; k < 8; k++) {
             hl[k] = mulf(env[0].hi[k], wet);
             hr[k] = mulf(env[1].hi[k], wet);
         }
-        for (int k = 0; k < 8; k++) {
-            int32_t s = in[k];
-            dl[k] = mix_q15(dl[k], s, gl[k]);
-            dr[k] = mix_q15(dr[k], s, gr[k]);
-            wl[k] = mix_q15(wl[k], s, hl[k]);
-            wr[k] = mix_q15(wr[k], s, hr[k]);
-        }
-    } else {
-        for (int k = 0; k < 8; k++) {
-            int32_t s = in[k];
-            dl[k] = mix_q15(dl[k], s, gl[k]);
-            dr[k] = mix_q15(dr[k], s, gr[k]);
-        }
+        mix_vector(wl, in, hl);
+        mix_vector(wr, in, hr);
     }
 }
 
@@ -422,22 +458,11 @@ static void cmd_envmixer(uint32_t w0, uint32_t w1) {
     // Settled envelopes have every lane at the target, so the gains stay put.
     if (blocks > 0) {
         int32_t n = blocks * 8;
-        int32_t gl = mulf(env[0].target, dry), gr = mulf(env[1].target, dry);
+        mix_run(dl, in, mulf(env[0].target, dry), n);
+        mix_run(dr, in, mulf(env[1].target, dry), n);
         if (aux) {
-            int32_t hl = mulf(env[0].target, wet), hr = mulf(env[1].target, wet);
-            for (int32_t i = 0; i < n; i++) {
-                int32_t s = in[i];
-                dl[i] = mix_q15(dl[i], s, gl);
-                dr[i] = mix_q15(dr[i], s, gr);
-                wl[i] = mix_q15(wl[i], s, hl);
-                wr[i] = mix_q15(wr[i], s, hr);
-            }
-        } else {
-            for (int32_t i = 0; i < n; i++) {
-                int32_t s = in[i];
-                dl[i] = mix_q15(dl[i], s, gl);
-                dr[i] = mix_q15(dr[i], s, gr);
-            }
+            mix_run(wl, in, mulf(env[0].target, wet), n);
+            mix_run(wr, in, mulf(env[1].target, wet), n);
         }
     }
 
@@ -482,10 +507,11 @@ static void cmd_resample(uint32_t w0, uint32_t w1) {
             phase &= 0xFFFF;
         }
     } else {
+        int32_t round = q15_round();
         for (uint32_t i = 0; i < n; i++) {
             const int16_t* c = resample_lut + (phase >> 10) * 4;
-            int32_t a = ((s[0] * c[0] + 0x4000) >> 15) + ((s[1] * c[1] + 0x4000) >> 15);
-            int32_t b = ((s[2] * c[2] + 0x4000) >> 15) + ((s[3] * c[3] + 0x4000) >> 15);
+            int32_t a = ((s[0] * c[0] + round) >> 15) + ((s[1] * c[1] + round) >> 15);
+            int32_t b = ((s[2] * c[2] + round) >> 15) + ((s[3] * c[3] + round) >> 15);
             out[i] = clamp16(clamp16(a) + clamp16(b));
             phase += pitch;
             s += phase >> 16;
@@ -561,11 +587,7 @@ static void cmd_mixer(uint32_t w0, uint32_t w1) {
     uint32_t from = w1 >> 16;
     uint32_t to = w1 & 0xFFFF;
     uint32_t n = dmem_len(to, dmem_len(from, buf_count, 32), 32) / 2;
-    const int16_t* s = dmem_at(from);
-    int16_t* d = dmem_at(to);
-    for (uint32_t i = 0; i < n; i++) {
-        d[i] = mix_q15(d[i], s[i], gain);
-    }
+    mix_run(dmem_at(to), dmem_at(from), gain, n);
 }
 
 static void cmd_interleave(uint32_t w0, uint32_t w1) {
