@@ -10,7 +10,8 @@
 //   talk <timeout ms>                 tap A until Brian is free to move (no text, menu, warp or load)
 //   wait_free <timeout ms>            wait until Brian is free to move
 //   wait16 <addr> <mask> <value> <timeout ms>    wait until (halfword & mask) == value
-//   battle_walk <timeout ms>          sway in place, with every encounter roll forced, until a battle starts
+//   battle_walk <timeout ms> [seed]   sway in place, with every encounter roll forced, until a battle starts;
+//                                     a seed (hex) pins the game's random numbers, so the formation is the same
 //   to_zone <index>                   put Brian inside one of the room's random-battle zones
 //   to_battle                         put Brian in a zone, 70 units from one of the room's battle points
 //   warp <map> <room> <spawn>         start a warp, then wait until the new room is loaded and free
@@ -59,6 +60,7 @@
 #define ENCOUNTER_STEP  0x8007BA5Cu  // f32: distance Brian moved this frame; no roll while 0
 #define ENCOUNTER_DIST  0x8008C574u  // f32: a roll every 50 units walked
 #define ENCOUNTER_DANGER 0x8008C578u // u16: the roll starts a battle if rand(2000) < danger
+#define RAND_SEED       0x8004D748u  // u32: get_rand's LCG state
 
 #define GAME_STATE_BUSY 0xC7  // text, menus, choice, warp, loading
 #define GAME_MODE_FIELD 1     // the gameplay loop (2: menu screen, 3: title, 4: intro)
@@ -237,8 +239,8 @@ static bool step(uint64_t now) {
         return false;
     }
     if (strcmp(cmd, "battle_walk") == 0) {
-        unsigned timeout = 60000;
-        sscanf(args, "%u", &timeout);
+        unsigned timeout = 60000, seed = 0;
+        bool seeded = sscanf(args, "%u %x", &timeout, &seed) == 2;
         if (MEM_HU(0, BATTLE_STATE) & 1) {
             printf("[q64dc] test: battle started after %u ms\n", (unsigned)elapsed);
             return true;
@@ -260,6 +262,9 @@ static bool step(uint64_t now) {
         }
         set_f32(ENCOUNTER_DIST, 50.0f);
         MEM_HU(0, ENCOUNTER_DANGER) = 2000;
+        if (seeded) {
+            MEM_W(0, RAND_SEED) = (int32_t)seed;
+        }
         held_x = (elapsed / 300) % 2 ? 40 : -40;
         return false;
     }

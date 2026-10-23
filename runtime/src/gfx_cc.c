@@ -134,3 +134,112 @@ void cc_eval(const GfxCombiner* cc, const GfxCCConst* k, const float shade[4], f
         add[ch] = comb[ch].o;
     }
 }
+
+// The same evaluation with the shade left as variables: each channel's mul and add become
+// polynomials c0 + c1 x + c2 a + c3 x a in its shade x and the shade alpha a (x is a for the
+// alpha channel), evaluated per vertex by cc_run. Higher powers aren't representable, and
+// those combiners keep using cc_eval.
+
+typedef struct {
+    float c[4];
+} Poly;
+
+typedef struct {
+    Poly m, o;
+} PLin;
+
+static Poly poly_k(float k) {
+    return (Poly){ { k, 0.0f, 0.0f, 0.0f } };
+}
+
+static Poly poly_add(Poly p, Poly q) {
+    for (int i = 0; i < 4; i++) {
+        p.c[i] += q.c[i];
+    }
+    return p;
+}
+
+static Poly poly_sub(Poly p, Poly q) {
+    for (int i = 0; i < 4; i++) {
+        p.c[i] -= q.c[i];
+    }
+    return p;
+}
+
+// Monomial i is x^(i & 1) a^(i >> 1); a product that needs x^2 or a^2 fails.
+static Poly poly_mul(Poly p, Poly q, bool* ok) {
+    Poly r = poly_k(0.0f);
+    for (int i = 0; i < 4; i++) {
+        if (p.c[i] == 0.0f) {
+            continue;
+        }
+        for (int j = 0; j < 4; j++) {
+            if (q.c[j] == 0.0f) {
+                continue;
+            }
+            if (i & j) {
+                *ok = false;
+                return r;
+            }
+            r.c[i | j] += p.c[i] * q.c[j];
+        }
+    }
+    return r;
+}
+
+static PLin pinput(uint8_t in, int ch, const PLin* comb, const GfxCCConst* k) {
+    static const Poly shade_x = { { 0.0f, 1.0f, 0.0f, 0.0f } };
+    static const Poly shade_a = { { 0.0f, 0.0f, 1.0f, 0.0f } };
+    Poly zero = poly_k(0.0f);
+    switch (in) {
+        case CC_1: return (PLin){ zero, poly_k(1.0f) };
+        case CC_HALF: return (PLin){ zero, poly_k(0.5f) };
+        case CC_COMBINED: return comb[ch];
+        case CC_COMBINED_A: return comb[3];
+        case CC_TEXEL:
+        case CC_TEXEL_A: return (PLin){ poly_k(1.0f), zero };
+        case CC_PRIM: return (PLin){ zero, poly_k(k->prim[ch]) };
+        case CC_PRIM_A: return (PLin){ zero, poly_k(k->prim[3]) };
+        case CC_SHADE: return (PLin){ zero, ch == 3 ? shade_a : shade_x };
+        case CC_SHADE_A: return (PLin){ zero, shade_a };
+        case CC_ENV: return (PLin){ zero, poly_k(k->env[ch]) };
+        case CC_ENV_A: return (PLin){ zero, poly_k(k->env[3]) };
+        case CC_LOD: return (PLin){ zero, poly_k(1.0f) };
+        case CC_PRIM_LOD: return (PLin){ zero, poly_k(k->prim_lod) };
+        default: return (PLin){ zero, zero };
+    }
+}
+
+void cc_prepare(const GfxCombiner* cc, const GfxCCConst* k, GfxCCProg* prog) {
+    PLin comb[4];
+    for (int ch = 0; ch < 4; ch++) {
+        comb[ch].m = comb[ch].o = poly_k(0.0f);
+    }
+    bool ok = true;
+    int first = cc->two_cycle ? 0 : 1;
+    for (int c = first; c < 2; c++) {
+        PLin res[4];
+        for (int ch = 0; ch < 4; ch++) {
+            const uint8_t* in = cc->in[c][ch == 3];
+            PLin a = pinput(in[0], ch, comb, k);
+            PLin b = pinput(in[1], ch, comb, k);
+            PLin m = pinput(in[2], ch, comb, k);
+            PLin d = pinput(in[3], ch, comb, k);
+            Poly sm = poly_sub(a.m, b.m);
+            Poly so = poly_sub(a.o, b.o);
+            res[ch].m = poly_add(poly_add(poly_mul(sm, m.m, &ok), poly_mul(sm, m.o, &ok)),
+                                 poly_add(poly_mul(so, m.m, &ok), d.m));
+            res[ch].o = poly_add(poly_mul(so, m.o, &ok), d.o);
+        }
+        for (int ch = 0; ch < 4; ch++) {
+            comb[ch] = res[ch];
+        }
+    }
+    prog->ok = ok;
+    for (int ch = 0; ch < 4; ch++) {
+        for (int i = 0; i < 4; i++) {
+            prog->m[ch][i] = comb[ch].m.c[i];
+            prog->o[ch][i] = comb[ch].o.c[i];
+        }
+    }
+}

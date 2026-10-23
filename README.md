@@ -6,7 +6,7 @@ A Sega Dreamcast port of Quest 64 (USA), built from [N64Recomp](https://github.c
 
 ## Status
 
-The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery and the Blue Cave run at the game's full 30 fps (60 for the opening), Melrode at 27 and battles at 26.7 (see [Performance](#performance)).
+The game is playable on the Dreamcast with its music and sound effects. In Flycast, towns, fields, caves, castles and interiors load in under a second, random battles play out, the spell and Start menus work, and saves go to the VMU and load back after a reboot. Milestone 7 (performance) is under way: with audio on, the opening, the title, the monastery and the Blue Cave run at the game's full 30 fps (60 for the opening), Melrode at 28.7 and battles at 29.4 (see [Performance](#performance)).
 
 | # | Milestone | State |
 | --- | --- | --- |
@@ -31,8 +31,8 @@ N64Recomp turns every MIPS function of the ROM into a C function that operates o
 - **Graphics.** The game uses the F3DEX 1.23 microcode. `gfx.c` interprets its display lists on the CPU and draws them with KallistiOS's PowerVR API directly (no GL), in the spirit of jnmartin84's Fast3D backends for [sm64-dc](https://github.com/jnmartin84/sm64-dc) and [sf64-dc](https://github.com/jnmartin84/sf64-dc). The graphics task is reported done once its frame is submitted.
   - Vertices are transformed with the SH-4's `ftrv` (KallistiOS `mat_trans_nodiv`), lit with the game's directional lights, clipped against the near plane and culled in screen space. Triangles that cross the near plane are culled on the sign of their clip-space determinant before clipping, so walls the camera backs into stay hidden. Each vertex's projected position, UVs and colors are cached until the material changes.
   - Everything goes into the translucent list with presorting off, so polygons draw in submission order like the RDP, with depth compare and write set per material. Depth is 1/w. Decals (`ZMODE_DEC`: carpets, windows, shadows) are moved toward the camera by the depth slope of two pixels plus 1/4096 of their depth, which stands in for the RDP's decal tolerance. The N64's 320x240 is scaled to 640x480.
-  - Texture loads go into an emulated 4 KB TMEM (`gfx_tex.c`). Tiles are decoded from it (CI4/CI8 with RGBA16 or IA16 palettes, I4/I8, IA4/IA8/IA16, RGBA16/RGBA32) into twiddled ARGB1555/4444 or RGB565 textures, cached by a hash of their TMEM contents and parameters and evicted when unused.
-  - The color combiner (`gfx_cc.c`) is reduced per vertex to texture × color + offset, which the PowerVR does natively. The blender maps to alpha blending, and fog to the PowerVR's per-vertex fog.
+  - Texture loads go into an emulated 4 KB TMEM (`gfx_tex.c`). Tiles are decoded from it (CI4/CI8 with RGBA16 or IA16 palettes, I4/I8, IA4/IA8/IA16, RGBA16/RGBA32) into twiddled ARGB1555/4444 or RGB565 textures, cached in VRAM and evicted when unused. A cached texture is found by its tile parameters and the loads its bytes came from: each load is keyed by its parameters and a checksum of the RDRAM it reads, taken once per frame per source, so textures the CPU rewrites (text, animated textures) update on the next frame while unchanged ones skip the copy and the hash. Loads are copied into TMEM only when a texture has to be decoded, and tiles that read bytes no load describes fall back to hashing TMEM.
+  - The color combiner (`gfx_cc.c`) is reduced per vertex to texture × color + offset, which the PowerVR does natively. For each combiner and set of constant colors it is first turned into small polynomials in the vertex color, so a vertex costs a few multiply-adds. The blender maps to alpha blending, and fog to the PowerVR's per-vertex fog.
   - Fill and texture rectangles (fades, text boxes, the HUD) become screen-space quads.
 - **Audio.** The desktop recomp runs a recompiled copy of the RSP audio microcode, which is far too heavy for the SH-4. Here the command lists are interpreted in C and the mixed output is streamed to the AICA; see [Audio](#audio).
 - **The mod** (milestone 6). The Dreamcast can't recompile `.nrm` files at runtime. Instead, the mod's MIPS ELF will be recompiled ahead of time (N64Recomp's offline mod tooling) and its hooks wired in when the game is generated. It only needs `recomp_printf` and `recomp_get_config` from the recomp runtime.
@@ -65,14 +65,14 @@ Quest 64 uses libultra's standard audio microcode, `aspMain` (the "ABI 1" comman
 
 fps in Flycast 2.7 with audio on. Each column adds a change to the previous one:
 
-| Scene | Milestone 5 | RSP thread | Log thread | `restrict` | fsqrt, log paused | Builtins, audio loops |
-| --- | --- | --- | --- | --- | --- | --- |
-| Opening | 53.1 | 50.9 | 55.3 | 56.7 | 58.6 | 58.7 |
-| Title | 54.7 | 53.0 | 58.3 | 58.3 | 59.9 | 59.9 |
-| Monastery hall | 18.1 | 26.0 | 28.3 | 28.4 | 30.0 | 30.0 |
-| Melrode | 15.4 | 21.7 | 25.1 | 25.8 | 26.4 | 27.0 |
-| Blue Cave | 18.9 | 26.3 | 28.8 | 28.8 | 30.0 | 30.0 |
-| Battle (Holy Plain) | 15.2 | 16.8 | 22.2 | 23.4 | 26.3 | 26.7 |
+| Scene | Milestone 5 | RSP thread | Log thread | `restrict` | fsqrt, log paused | Builtins, audio loops | Texture cache, combiner | Image loads, vertex path |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Opening | 53.1 | 50.9 | 55.3 | 56.7 | 58.6 | 58.7 | 58.8 | 58.9 |
+| Title | 54.7 | 53.0 | 58.3 | 58.3 | 59.9 | 59.9 | 59.9 | 59.9 |
+| Monastery hall | 18.1 | 26.0 | 28.3 | 28.4 | 30.0 | 30.0 | 30.0 | 30.0 |
+| Melrode | 15.4 | 21.7 | 25.1 | 25.8 | 26.4 | 27.0 | 28.5 | 28.7 |
+| Blue Cave | 18.9 | 26.3 | 28.8 | 28.8 | 30.0 | 30.0 | 30.0 | 30.0 |
+| Battle (Holy Plain) | 15.2 | 16.8 | 22.2 | 23.4 | 26.3 | 26.7 | 29.2 | 29.4 |
 
 - **RSP thread.** Graphics tasks used to run inside the game's scheduler thread, before the main thread reset its retrace count, so every frame then waited two more retraces and the CPU idled for a quarter of the time. They now run on a thread of their own below the game threads.
 - **Log thread.** The once-a-second statistics went to the serial port (about 90 us a character, waited for) from the VI thread. They're printed by their own thread now, and only on test discs.
@@ -80,8 +80,10 @@ fps in Flycast 2.7 with audio on. Each column adds a change to the previous one:
 - **fsqrt, builtins.** KOS compiles with `-fno-builtin`, which turned every `sqrtf` into a software square root; `-fbuiltin -fno-math-errno` makes it the FPU's `fsqrt`, as exact as the N64's `sqrt.s`. The "log paused" column also starts the Melrode, cave and battle windows 5 s after their warp instead of 1.5 s, past the map load.
 - **Audio loops.** One bus per pass, four samples at a time, with the rounding constant in a register; still bit-identical to the microcode.
 - **Tried and dropped.** `-Os` for the generated code is 2.5% smaller and slightly slower in Flycast, which doesn't model the SH-4's caches, so it is worth retrying on hardware.
+- **Texture cache, combiner.** Texture loads used to be copied into TMEM and every texture use re-hashed TMEM. Now a load is keyed by a per-frame checksum of its RDRAM source and copied only when a texture has to be decoded, and a texture is found by the loads behind it (see [How it works](#how-it-works)). The combiner is reduced once per combiner and constant colors instead of per vertex. The battle in `tests/perf.txt` now fixes the game's random seed (`battle_walk 30000 1234`), so every run fights the same formation; the previous column measures 26.6 with it.
+- **Image loads, vertex path.** Loads whose rows aren't a whole number of 8-byte words (the HUD, text boxes and other 2D images) are keyed too, and the vertex loop lost a few multiplies and branches.
 
-**Where the time goes** in a battle, which never idles: the renderer 48% (`gfx_run_task` 15%, texture loads into TMEM and texture lookups 20%, the color combiner 5%), the game's own code 25%, audio 20%, KOS and libc 3%. Melrode idles 26% of the time but still averages 27 fps. Its frames take either two or three retraces, and a frame that needs slightly more than two waits for the third. 30 fps in Melrode and in battles needs about 13% less work per frame, most of which can only come from the renderer (texture loads re-copy and re-hash TMEM for every texture use, even for textures already cached) or from mixing voices on the AICA.
+**Where the time goes.** The renderer's CPU time per frame went from 18.7 ms to 13.2 ms in the battle and from 16.5 ms to 10.5 ms in Melrode. A battle is now the renderer 39% (`gfx_run_task` 16%, textures 12%, the combiner 2%), the game's own code 28%, audio 20%, and idles 8%. Both scenes now lose frames to the game side rather than to the renderer: walking the same Melrode street a second time, with its ROM blocks cached, runs at 30.0 fps, while the first walk misses the ROM cache 18 times (430 ms of disc reads) and averages 28.7. In the battle, the frames that take four retraces have graphics tasks of normal length that start late, because the game thread finished its frame late. Getting these scenes to 30 fps needs the ROM reads off the game thread (prefetching or asynchronous reads) and headroom on the game side, which mixing voices on the AICA would give.
 
 ## Controls
 

@@ -68,8 +68,11 @@ typedef struct {
 bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out);
 void tex_init(void);
 void tex_frame_begin(void);
+void tex_frame_end(void);
 extern uint32_t stat_tex_uploads;
 extern uint32_t stat_tex_entries;
+extern uint32_t stat_tmem_copies;    // loads copied into TMEM
+extern uint32_t stat_tex_fallbacks;  // lookups that hashed TMEM
 
 // Color combiner (gfx_cc.c): evaluates (A - B) * C + D for both cycles as tex * mul + add,
 // treating the texel as a variable and everything else as known per vertex.
@@ -92,5 +95,25 @@ typedef struct {
 
 void cc_compile(GfxCombiner* cc, uint32_t w0, uint32_t w1, bool two_cycle);
 void cc_eval(const GfxCombiner* cc, const GfxCCConst* k, const float shade[4], float mul[4], float add[4]);
+
+// cc_eval with the constants folded in, for one combiner and one set of constants: per channel,
+// mul and add as c0 + c1 x + c2 a + c3 x a in the channel's shade x and the shade alpha a.
+// Only valid when ok; otherwise use cc_eval.
+typedef struct {
+    float m[4][4], o[4][4];  // [channel][coefficient]
+    bool ok;
+} GfxCCProg;
+
+void cc_prepare(const GfxCombiner* cc, const GfxCCConst* k, GfxCCProg* prog);
+
+static inline void cc_run(const GfxCCProg* p, const float shade[4], float mul[4], float add[4]) {
+    float a = shade[3];
+    for (int ch = 0; ch < 4; ch++) {
+        float x = shade[ch];
+        float xa = x * a;
+        mul[ch] = p->m[ch][0] + p->m[ch][1] * x + p->m[ch][2] * a + p->m[ch][3] * xa;
+        add[ch] = p->o[ch][0] + p->o[ch][1] * x + p->o[ch][2] * a + p->o[ch][3] * xa;
+    }
+}
 
 #endif

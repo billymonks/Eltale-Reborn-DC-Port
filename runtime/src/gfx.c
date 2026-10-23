@@ -126,6 +126,9 @@ static struct {
     GfxCombiner cc;
     GfxCCConst k;
     uint32_t cc_epoch;
+    uint32_t prim_raw, env_raw, prim_lod_raw;  // g.k as set
+    const GfxCCProg* cc_prog;
+    uint32_t cc_prog_epoch;  // cc_epoch that cc_prog was found for
     uint32_t fog_color, fill_color;
 
     uint32_t cimg, zimg;
@@ -188,11 +191,13 @@ static void unpack_rgba(uint32_t c, float out[4]) {
 
 // --- Matrices and lights ---
 
+// Integer halves of 16 elements, then fraction halves; a word holds two elements' halves.
 static void read_matrix(uint32_t addr, matrix_t out) {
-    for (int i = 0; i < 16; i++) {
-        int32_t hi = (int16_t)rd16(addr + i * 2);
-        uint32_t lo = rd16(addr + 0x20 + i * 2);
-        out[i / 4][i % 4] = (float)(int32_t)(((uint32_t)hi << 16) | lo) * (1.0f / 65536.0f);
+    float* o = &out[0][0];
+    for (int i = 0; i < 8; i++) {
+        uint32_t hi = rd32(addr + i * 4), lo = rd32(addr + 0x20 + i * 4);
+        o[i * 2] = (float)(int32_t)((hi & 0xFFFF0000u) | (lo >> 16)) * (1.0f / 65536.0f);
+        o[i * 2 + 1] = (float)(int32_t)((hi << 16) | (lo & 0xFFFFu)) * (1.0f / 65536.0f);
     }
 }
 
@@ -235,6 +240,10 @@ static void update_mvp(void) {
 static void update_lights(void) {
     for (int i = 0; i < g.num_lights; i++) {
         model_space_dir(g.light_dir[i], g.light_coeff[i]);
+        // Normals are s8 with 127 for 1.
+        for (int j = 0; j < 3; j++) {
+            g.light_coeff[i][j] *= 1.0f / 127.0f;
+        }
     }
     model_space_dir(g.lookat_dir[0], g.lookat_coeff[0]);
     model_space_dir(g.lookat_dir[1], g.lookat_coeff[1]);
@@ -277,13 +286,8 @@ static void load_vertices(uint32_t addr, uint32_t first, uint32_t count) {
         v->z = z;
         v->w = w;
 
-        uint8_t clip = 0;
-        if (x < -w) clip |= 0x01;
-        if (x > w) clip |= 0x02;
-        if (y < -w) clip |= 0x04;
-        if (y > w) clip |= 0x08;
-        if (z < -w || w <= 0.0f) clip |= CLIP_NEAR;
-        v->clip = clip;
+        v->clip = (x < -w) | ((x > w) << 1) | ((y < -w) << 2) | ((y > w) << 3) |
+                  (((z < -w) | (w <= 0.0f)) * CLIP_NEAR);
 
         float s = (float)(int16_t)(w2 >> 16) * g.tex_ss * (1.0f / 32.0f);
         float t = (float)(int16_t)w2 * g.tex_st * (1.0f / 32.0f);
@@ -294,8 +298,7 @@ static void load_vertices(uint32_t addr, uint32_t first, uint32_t count) {
             float gg = g.light_col[g.num_lights][1];
             float b = g.light_col[g.num_lights][2];
             for (int l = 0; l < g.num_lights; l++) {
-                float d = (n[0] * g.light_coeff[l][0] + n[1] * g.light_coeff[l][1] + n[2] * g.light_coeff[l][2]) *
-                          (1.0f / 127.0f);
+                float d = n[0] * g.light_coeff[l][0] + n[1] * g.light_coeff[l][1] + n[2] * g.light_coeff[l][2];
                 if (d > 0.0f) {
                     r += d * g.light_col[l][0];
                     gg += d * g.light_col[l][1];
@@ -647,9 +650,47 @@ static int clip_near(const ClipVert* in, ClipVert* out) {
     return n;
 }
 
+// Prepared combiners for recent combiners and constants: the game switches prim and env colors
+// back and forth many times a frame.
+#define CC_PROGS 32
+
+typedef struct {
+    uint32_t w0, w1, prim, env, lod;
+    bool two_cycle, valid;
+    GfxCCProg prog;
+} CCProgEntry;
+
+static CCProgEntry cc_progs[CC_PROGS];
+
+static const GfxCCProg* find_cc_prog(void) {
+    uint32_t h = g.cc.w0 * 0x9E3779B1u ^ g.cc.w1 * 0x85EBCA77u ^ g.prim_raw * 0xC2B2AE3Du ^ g.env_raw * 0x27D4EB2Fu ^
+                 g.prim_lod_raw ^ g.cc.two_cycle;
+    CCProgEntry* e = &cc_progs[(h ^ (h >> 15)) % CC_PROGS];
+    if (!e->valid || e->w0 != g.cc.w0 || e->w1 != g.cc.w1 || e->two_cycle != g.cc.two_cycle || e->prim != g.prim_raw ||
+        e->env != g.env_raw || e->lod != g.prim_lod_raw) {
+        e->w0 = g.cc.w0;
+        e->w1 = g.cc.w1;
+        e->prim = g.prim_raw;
+        e->env = g.env_raw;
+        e->lod = g.prim_lod_raw;
+        e->two_cycle = g.cc.two_cycle;
+        e->valid = true;
+        cc_prepare(&g.cc, &g.k, &e->prog);
+    }
+    return &e->prog;
+}
+
 static void ensure_combined(Vertex* v) {
     if (v->cc_epoch != g.cc_epoch) {
-        cc_eval(&g.cc, &g.k, v->shade, v->mul, v->add);
+        if (g.cc_prog_epoch != g.cc_epoch) {
+            g.cc_prog = find_cc_prog();
+            g.cc_prog_epoch = g.cc_epoch;
+        }
+        if (g.cc_prog->ok) {
+            cc_run(g.cc_prog, v->shade, v->mul, v->add);
+        } else {
+            cc_eval(&g.cc, &g.k, v->shade, v->mul, v->add);
+        }
         v->cc_epoch = g.cc_epoch;
     }
 }
@@ -1231,11 +1272,14 @@ static void run_dl(uint32_t start) {
             case 0xFA:  // G_SETPRIMCOLOR
                 unpack_rgba(w1, g.k.prim);
                 g.k.prim_lod = u8f(w0);
+                g.prim_raw = w1;
+                g.prim_lod_raw = w0 & 0xFF;
                 cc_changed();
                 break;
 
             case 0xFB:  // G_SETENVCOLOR
                 unpack_rgba(w1, g.k.env);
+                g.env_raw = w1;
                 cc_changed();
                 break;
 
@@ -1358,6 +1402,7 @@ void gfx_run_task(uint32_t task) {
     tex_frame_begin();
 
     run_dl(dl);
+    tex_frame_end();
     if (test_disc()) {
         draw_test_banner();
     }
@@ -1376,16 +1421,18 @@ void gfx_print_stats(void) {
     pvr_get_stats(&st);
     uint32_t n = period_frames ? period_frames : 1;
     printf("[q64dc] gfx: %u frames, %u tris last frame, %u headers/s, %u material updates/s, %u texture lookups/s, "
-           "textures %u cached / %u uploaded, PVR %u fps, per frame: build %u us, wait %u us, render %u us; "
-           "VRAM free %u KB\n",
+           "%u TMEM copies/s, %u TMEM hashes/s, textures %u cached / %u uploaded, PVR %u fps, per frame: build %u us, "
+           "wait %u us, render %u us; VRAM free %u KB\n",
            (unsigned)frames, (unsigned)stat_tris, (unsigned)stat_headers, (unsigned)stat_mat_updates,
-           (unsigned)stat_tex_lookups, (unsigned)stat_tex_entries,
-           (unsigned)stat_tex_uploads, (unsigned)st.frame_rate, (unsigned)(period_build_us / n),
-           (unsigned)(period_wait_us / n), (unsigned)(st.rnd_last_time / 1000), (unsigned)(pvr_mem_available() / 1024));
+           (unsigned)stat_tex_lookups, (unsigned)stat_tmem_copies, (unsigned)stat_tex_fallbacks,
+           (unsigned)stat_tex_entries, (unsigned)stat_tex_uploads, (unsigned)st.frame_rate,
+           (unsigned)(period_build_us / n), (unsigned)(period_wait_us / n), (unsigned)(st.rnd_last_time / 1000),
+           (unsigned)(pvr_mem_available() / 1024));
     stat_headers = 0;
     stat_mat_updates = 0;
     stat_tex_lookups = 0;
-    period_frames = 0;
+    stat_tmem_copies = 0;
+    stat_tex_fallbacks = 0;    period_frames = 0;
     period_wait_us = 0;
     period_build_us = 0;
 }

@@ -45,11 +45,13 @@ profile_dump
 warp 2 0 0                 # Holy Plain
 wait 5000                  # past the map load
 to_battle
-battle_walk 30000
+battle_walk 30000 1234     # a fixed seed, so every run fights the same formation
 wait 2000
+shot perf_battle_a         # to check that runs being compared fight the same enemies
 log PERF battle
 profile_start
 wait 8000
 tap A 2 900                # swing the staff
 profile_dump
+shot perf_battle_b
 log PERF end
