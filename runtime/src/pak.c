@@ -34,7 +34,13 @@
 #define PFS_QUEUE   0x04
 #define PFS_CHANNEL 0x08
 
+// Modded builds save to their own file (Makefile).
+#ifndef VMU_FILE_NAME
 #define VMU_FILE_NAME  "QUEST64.PAK"
+#endif
+#ifndef VMU_DESC
+#define VMU_DESC       "Quest 64"
+#endif
 #define VMU_BLOCK_SIZE 512
 #define IMAGE_MAGIC    "Q64PAK01"
 // Writes wait until the game has left the pak alone this long, so one save is one VMU write.
@@ -252,8 +258,8 @@ static uint8_t* build_package(int* out_size) {
     static uint8_t icon[512];
     vmu_pkg_t pkg;
     memset(&pkg, 0, sizeof(pkg));
-    strcpy(pkg.desc_short, "Quest 64");
-    strcpy(pkg.desc_long, "Quest 64 saves");
+    strcpy(pkg.desc_short, VMU_DESC);
+    strcpy(pkg.desc_long, VMU_DESC " saves");
     strcpy(pkg.app_id, "Quest64-DC-Port");
     pkg.icon_cnt = 1;
     pkg.icon_anim_speed = 0;

@@ -90,5 +90,12 @@ extern "C" recomp_func_t* get_function(int32_t vram) {
             return it->func;
         }
     }
+#if MOD_RAM_SIZE
+    if (addr - MOD_RAM_BASE < MOD_RAM_SIZE) {
+        if (recomp_func_t* func = mods_get_function(addr)) {
+            return func;
+        }
+    }
+#endif
     runtime_fatal("[q64dc] no function at 0x%08X", addr);
 }

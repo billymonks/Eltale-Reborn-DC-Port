@@ -60,15 +60,18 @@ int main(int argc, char** argv) {
         runtime_fatal("[q64dc] couldn't find the Quest 64 ROM");
     }
 
-    rdram = memalign(32, RDRAM_SIZE + RUNTIME_RAM_SIZE);
+    rdram = memalign(32, RDRAM_SIZE + RUNTIME_RAM_SIZE + MOD_RAM_SIZE);
     if (rdram == NULL) {
-        runtime_fatal("[q64dc] couldn't allocate %d bytes of RDRAM", RDRAM_SIZE + RUNTIME_RAM_SIZE);
+        runtime_fatal("[q64dc] couldn't allocate %d bytes of RDRAM", RDRAM_SIZE + RUNTIME_RAM_SIZE + MOD_RAM_SIZE);
     }
-    memset(rdram, 0, RDRAM_SIZE + RUNTIME_RAM_SIZE);
+    memset(rdram, 0, RDRAM_SIZE + RUNTIME_RAM_SIZE + MOD_RAM_SIZE);
 
     // The N64 boot code copies the first megabyte after the header to the entrypoint.
     rom_read_to_rdram(0x1000, 0x80000400, 0x100000);
     MEM_W(0, 0x80000318u) = RDRAM_SIZE;
+#if MOD_RAM_SIZE
+    mods_init();
+#endif
 
     function_lookup_init();
     test_init();

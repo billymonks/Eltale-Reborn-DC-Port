@@ -37,7 +37,7 @@ static inline uint32_t tmem16(uint32_t a) {
 
 static inline bool rdram_range_ok(uint32_t addr, uint32_t len) {
     uint32_t off = addr - 0x80000000u;
-    return off < RDRAM_SIZE && len <= RDRAM_SIZE - off;
+    return off < RDRAM_MAPPED_SIZE && len <= RDRAM_MAPPED_SIZE - off;
 }
 
 static inline uint8_t rd8(uint32_t addr) {

@@ -218,7 +218,7 @@ static inline uint32_t seg_addr(uint32_t a) {
 
 static inline bool addr_ok(uint32_t vaddr, uint32_t len) {
     uint32_t off = vaddr - 0x80000000u;
-    return off < RDRAM_SIZE && len <= RDRAM_SIZE - off;
+    return off < RDRAM_MAPPED_SIZE && len <= RDRAM_MAPPED_SIZE - off;
 }
 
 static inline uint32_t rd32(uint32_t vaddr) {
