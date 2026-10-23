@@ -29,6 +29,12 @@ func = "initPFSPaks"
 text = "pak_check(rdram, ctx); return;"
 before_vram = 0x80031ACC
 
+# The floor probe's point-in-shape test, the game's costliest function in battle, in native code.
+[[patches.hook]]
+func = "func_8000F238"
+text = "floor_shape_test(rdram, ctx); return;"
+before_vram = 0x8000F238
+
 [[patches.hook]]
 func = "func_80024690"
 text = "load_overlays(ctx->r4, ctx->r5, ctx->r6);"

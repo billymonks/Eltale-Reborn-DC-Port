@@ -331,6 +331,9 @@ void load_overlays(uint32_t rom, int32_t ram_addr, uint32_t size);
 // Replaces the game's initPFSPaks (pak.c).
 void pak_check(uint8_t* rdram, recomp_context* ctx);
 
+// Replaces the game's floor test of a point against a shape, func_8000F238 (collision.c).
+void floor_shape_test(uint8_t* rdram, recomp_context* ctx);
+
 #ifdef __cplusplus
 }
 #endif
