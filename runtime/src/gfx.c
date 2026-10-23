@@ -1,13 +1,17 @@
 // F3DEX 1.23 and RDP command interpreter, drawing with the PowerVR.
 //
 // The RSP part (matrices, vertices, lighting, fog, clipping) runs on the SH-4, using its
-// matrix unit for the vertex transform. Every primitive goes to the translucent list with
-// presorting disabled, so the PowerVR draws in submission order like the RDP, with depth
-// tests and writes chosen per primitive from the RDP's render mode.
+// matrix unit for the vertex transform. Opaque surfaces go to the opaque list, alpha-tested
+// cutouts to the punch-through list and blended surfaces to the translucent list, which has
+// presorting disabled so it draws in submission order like the RDP; anything the RDP draws
+// after a primitive that has to stay in order (the HUD, text boxes, fades) also goes to the
+// translucent list. Depth tests and writes come from the RDP's render mode, and N64 fog uses
+// the PowerVR's vertex fog where it can.
 
 #include <kos.h>
 #include <dc/matrix.h>
 #include <dc/pvr.h>
+#include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -74,12 +78,22 @@ typedef struct {
     float col[4], ofs[4];
 } ClipVert;
 
+// The PowerVR's lists, in the order it draws them.
+enum { LIST_OP, LIST_PT, LIST_TR, LIST_COUNT };
+static const pvr_list_t pvr_lists[LIST_COUNT] = { PVR_LIST_OP_POLY, PVR_LIST_PT_POLY, PVR_LIST_TR_POLY };
+
+// Where a frame is, for keeping the RDP's drawing order across the lists: the background comes
+// before anything with a depth test, the overlay after the first thing without one.
+enum { PHASE_BACKGROUND, PHASE_SCENE, PHASE_OVERLAY };
+
+enum { FOG_NONE, FOG_PVR, FOG_CPU };
+
 typedef struct {
     pvr_ptr_t tex;
     uint32_t tex_fmt;
     uint16_t pw, ph;
     uint8_t filter, clamp, flip, txralpha_dis;
-    uint8_t blend, fog, offset, depth_cmp, depth_write;
+    uint8_t list, blend, fog, offset, depth_cmp, depth_write;
 } HeaderKey;
 
 // How the current material maps onto the PowerVR, worked out when the RDP state changes.
@@ -89,7 +103,9 @@ typedef struct {
     GfxTexture tex;
     float shift_s, shift_t, uls, ult;
     float inv_pw, inv_ph;
-    bool blend, fog, depth_cmp, depth_write;
+    bool blend, cutout, depth_cmp, depth_write;
+    int list, fog;
+    float fog_rgb[3];
     bool decal;
     bool filter;
 } Material;
@@ -141,6 +157,9 @@ static struct {
     Material mat;
     bool mat_for_rect;
     int mat_rect_tile;
+    int phase, mat_phase;
+    uint32_t pvr_fog_color;  // the PowerVR's vertex fog color this frame, if pvr_fog_set
+    bool pvr_fog_set;
     HeaderKey mat_key;     // header for the material, without the offset flag
     bool mat_key_changed;
     uint32_t out_gen;      // bumped when cached vertex outputs go stale
@@ -148,12 +167,41 @@ static struct {
 
 static matrix_t mvp __attribute__((aligned(32)));
 
-static pvr_dr_state_t dr;
-static HeaderKey cur_key;
-static bool have_key;
-static uint32_t vbuf_used;
+// The opaque list goes straight to the tile accelerator through the store queues as the display
+// list runs; the punch-through and translucent lists are kept in RAM and sent by DMA after it.
+#define LIST_BUF_SIZE (256 * 1024)
 
-static uint32_t stat_tris, stat_headers, stat_frame_tris, stat_tex_lookups, stat_mat_updates;
+static pvr_dr_state_t dr;
+static HeaderKey cur_key[LIST_COUNT];
+static bool have_key[LIST_COUNT];
+static uint8_t* list_buf[LIST_COUNT];
+static uint32_t list_used[LIST_COUNT];
+static int out_list;  // the list the next vertices go to
+static uint32_t vbuf_used;
+static uint32_t stat_list_bytes[LIST_COUNT];
+
+static inline void* out_target(void) {
+    if (out_list == LIST_OP) {
+        return pvr_dr_target(dr);
+    }
+    return list_buf[out_list] + list_used[out_list];
+}
+
+static inline void out_commit(void* p) {
+    if (out_list == LIST_OP) {
+        pvr_dr_commit(p);
+    } else {
+        list_used[out_list] += 32;
+    }
+}
+
+// Whether a header and n vertices fit in the vertex buffer and the list's RAM buffer.
+static inline bool list_room(int list, uint32_t n) {
+    uint32_t bytes = n * 32 + 32;
+    return vbuf_used + bytes <= VERTEX_BUF_LIMIT && (list == LIST_OP || list_used[list] + bytes <= LIST_BUF_SIZE);
+}
+
+static uint32_t stat_tris, stat_headers, stat_frame_tris, stat_tex_lookups, stat_mat_updates, stat_culled_dls;
 static bool warned_op[256];
 
 static inline float u8f(uint32_t v) {
@@ -337,15 +385,18 @@ static void load_vertices(uint32_t addr, uint32_t first, uint32_t count) {
 
 // --- Materials and PowerVR headers ---
 
-static void blend_mode(int cycle, bool* blend, bool* fog) {
+// blend: mixed with the framebuffer by alpha. cutout: pixels kept or dropped by alpha, by the alpha
+// compare or by texture edge coverage (alpha times coverage), without blending.
+static void blend_mode(int cycle, bool* blend, bool* cutout, bool* fog) {
     uint32_t l = g.ol;
     *fog = false;
     *blend = false;
+    *cutout = false;
     if (cycle == CYCLE_FILL) {
         return;
     }
     if (cycle == CYCLE_COPY) {
-        *blend = (l & 3) != 0;
+        *cutout = (l & 3) != 0;
         return;
     }
     uint32_t p1 = (l >> 30) & 3, a1 = (l >> 26) & 3, m1 = (l >> 22) & 3, b1 = (l >> 18) & 3;
@@ -355,8 +406,8 @@ static void blend_mode(int cycle, bool* blend, bool* fog) {
     bool xlu1 = p1 == 0 && a1 == 0 && m1 == 1 && b1 == 0;
     bool xlu2 = p2 == 0 && a2 == 0 && m2 == 1 && b2 == 0;
     bool xlu = cycle == CYCLE_2 ? xlu2 : (xlu1 || xlu2);
-    *blend = (xlu && (l & FORCE_BL)) || (l & 3) == G_AC_THRESHOLD || ((l & CVG_X_ALPHA) && (l & ALPHA_CVG_SEL)) ||
-             (l & ZMODE_MASK) == ZMODE_XLU;
+    *blend = (xlu && (l & FORCE_BL)) || (l & ZMODE_MASK) == ZMODE_XLU;
+    *cutout = (l & 3) == G_AC_THRESHOLD || ((l & CVG_X_ALPHA) && (l & ALPHA_CVG_SEL));
 }
 
 static float tile_shift(uint8_t shift) {
@@ -416,11 +467,48 @@ static void update_material(bool rect, int rect_tile) {
         m->inv_ph = 1.0f / (float)m->tex.ph;
     }
     m->filter = cycle != CYCLE_COPY && ((g.oh >> 12) & 3) != 0;
-    blend_mode(cycle, &m->blend, &m->fog);
+    bool fog;
+    blend_mode(cycle, &m->blend, &m->cutout, &fog);
     bool zb = !rect && (g.geom & G_ZBUFFER);
     m->depth_cmp = zb && (g.ol & Z_CMP);
     m->depth_write = zb && (g.ol & Z_UPD);
     m->decal = m->depth_cmp && (g.ol & ZMODE_MASK) == ZMODE_DEC;
+
+    // The PowerVR draws its opaque list, then punch-through, then translucent, and keeps the
+    // submission order only within the translucent list (presort is off). Depth tested surfaces
+    // can go to any list, since the depth test orders them. The background (before the first
+    // depth tested surface) is opaque and drawn in order. From the first surface without a depth
+    // test after that on (HUD, text boxes, fades), everything stays in order in the translucent list.
+    if (m->depth_cmp) {
+        if (g.phase == PHASE_BACKGROUND) {
+            g.phase = PHASE_SCENE;
+        }
+        m->list = g.phase == PHASE_OVERLAY ? LIST_TR : (m->blend ? LIST_TR : (m->cutout ? LIST_PT : LIST_OP));
+    } else if (g.phase == PHASE_BACKGROUND && !m->blend && !m->cutout) {
+        m->list = LIST_OP;
+    } else {
+        m->list = LIST_TR;
+        g.phase = PHASE_OVERLAY;
+    }
+    g.mat_phase = g.phase;
+
+    // Fog: the PowerVR's vertex fog, with the fog factor in the offset color's alpha, takes one fog
+    // color for the frame and needs a texture (untextured vertices have no offset color). Anything
+    // else has the fog color mixed into its vertex colors.
+    m->fog = FOG_NONE;
+    if (fog) {
+        uint32_t rgb = g.fog_color >> 8;
+        if (m->textured && (!g.pvr_fog_set || g.pvr_fog_color == rgb)) {
+            g.pvr_fog_set = true;
+            g.pvr_fog_color = rgb;
+            m->fog = FOG_PVR;
+        } else {
+            m->fog = FOG_CPU;
+            m->fog_rgb[0] = u8f(g.fog_color >> 24);
+            m->fog_rgb[1] = u8f(g.fog_color >> 16);
+            m->fog_rgb[2] = u8f(g.fog_color >> 8);
+        }
+    }
 
     HeaderKey* k = &g.mat_key;
     memset(k, 0, sizeof(*k));
@@ -434,8 +522,9 @@ static void update_material(bool rect, int rect_tile) {
         k->flip = (m->tex.mirror_s ? PVR_UVFLIP_U : 0) | (m->tex.mirror_t ? PVR_UVFLIP_V : 0);
         k->txralpha_dis = m->variant == TEXVAR_NOALPHA;
     }
-    k->blend = m->blend;
-    k->fog = m->fog;
+    k->list = m->list;
+    k->blend = m->blend || (m->cutout && m->list == LIST_TR);
+    k->fog = m->fog == FOG_PVR;
     k->depth_cmp = m->depth_cmp ? PVR_DEPTHCMP_GEQUAL : PVR_DEPTHCMP_ALWAYS;
     k->depth_write = m->depth_write;
     g.mat_key_changed = true;
@@ -448,31 +537,35 @@ static void update_material(bool rect, int rect_tile) {
 }
 
 static void ensure_material(bool rect, int rect_tile) {
-    if (g.mat_dirty || g.mat_for_rect != rect || (rect && g.mat_rect_tile != rect_tile)) {
+    if (g.mat_dirty || g.mat_for_rect != rect || (rect && g.mat_rect_tile != rect_tile) || g.mat_phase != g.phase) {
         update_material(rect, rect_tile);
     }
 }
 
+// Sends a header to the key's list, unless it's the list's current one. Leaves out_list on that list.
 static void submit_header(const HeaderKey* k) {
-    if (have_key && memcmp(k, &cur_key, sizeof(*k)) == 0) {
+    out_list = k->list;
+    if (have_key[k->list] && memcmp(k, &cur_key[k->list], sizeof(*k)) == 0) {
         return;
     }
-    cur_key = *k;
-    have_key = true;
+    cur_key[k->list] = *k;
+    have_key[k->list] = true;
 
+    pvr_list_t list = pvr_lists[k->list];
     pvr_poly_cxt_t cxt;
     if (k->tex != NULL) {
-        pvr_poly_cxt_txr(&cxt, PVR_LIST_TR_POLY, k->tex_fmt | PVR_TXRFMT_TWIDDLED, k->pw, k->ph, k->tex,
+        pvr_poly_cxt_txr(&cxt, list, k->tex_fmt | PVR_TXRFMT_TWIDDLED, k->pw, k->ph, k->tex,
                          k->filter ? PVR_FILTER_BILINEAR : PVR_FILTER_NEAREST);
         cxt.txr.env = PVR_TXRENV_MODULATEALPHA;
         cxt.txr.alpha = k->txralpha_dis ? PVR_TXRALPHA_DISABLE : PVR_TXRALPHA_ENABLE;
         cxt.txr.uv_clamp = k->clamp;
         cxt.txr.uv_flip = k->flip;
     } else {
-        pvr_poly_cxt_col(&cxt, PVR_LIST_TR_POLY);
+        pvr_poly_cxt_col(&cxt, list);
     }
     cxt.gen.culling = PVR_CULLING_NONE;
-    cxt.gen.alpha = k->blend ? PVR_ALPHA_ENABLE : PVR_ALPHA_DISABLE;
+    // Punch-through tests the alpha of texture times vertex color against PT_ALPHA_REF.
+    cxt.gen.alpha = k->blend || k->list == LIST_PT ? PVR_ALPHA_ENABLE : PVR_ALPHA_DISABLE;
     cxt.blend.src = k->blend ? PVR_BLEND_SRCALPHA : PVR_BLEND_ONE;
     cxt.blend.dst = k->blend ? PVR_BLEND_INVSRCALPHA : PVR_BLEND_ZERO;
     cxt.gen.fog_type = k->fog ? PVR_FOG_VERTEX : PVR_FOG_DISABLE;
@@ -482,12 +575,12 @@ static void submit_header(const HeaderKey* k) {
 
     pvr_poly_hdr_t hdr;
     pvr_poly_compile(&hdr, &cxt);
-    uint32_t* d = (uint32_t*)pvr_dr_target(dr);
+    uint32_t* d = (uint32_t*)out_target();
     const uint32_t* s = (const uint32_t*)&hdr;
     for (int i = 0; i < 8; i++) {
         d[i] = s[i];
     }
-    pvr_dr_commit(d);
+    out_commit(d);
     vbuf_used += 32;
     stat_headers++;
 }
@@ -523,7 +616,25 @@ static void finish_colors(const float mul[4], const float add[4], float fog, Cli
         out->ofs[1] = add[1];
         out->ofs[2] = add[2];
     }
-    out->ofs[3] = fog;
+    if (m->fog == FOG_PVR) {
+        out->ofs[3] = fog;
+        return;
+    }
+    out->ofs[3] = 0.0f;
+    if (m->fog == FOG_CPU) {
+        // The blender's fog * a + color * (1 - a): scale what the texture is multiplied by and mix the
+        // fog color into what's added (or into the color, when nothing comes from the texture).
+        float k = 1.0f - fog;
+        bool tex_rgb = m->textured && m->variant != TEXVAR_ALPHAONLY;
+        for (int i = 0; i < 3; i++) {
+            if (tex_rgb) {
+                out->col[i] *= k;
+                out->ofs[i] = out->ofs[i] * k + m->fog_rgb[i] * fog;
+            } else {
+                out->col[i] = out->col[i] * k + m->fog_rgb[i] * fog;
+            }
+        }
+    }
 }
 
 // How far to move a decal toward the camera, in PowerVR depth (1/w, larger is nearer), for a
@@ -557,7 +668,7 @@ static inline void project_clip(const ClipVert* c, float* x, float* y, float* z)
 }
 
 static inline void emit_vertex(const ClipVert* c, bool eol, bool screen, float zbias) {
-    pvr_vertex_t* d = pvr_dr_target(dr);
+    pvr_vertex_t* d = out_target();
     const Material* m = &g.mat;
     float x, y, z;
     if (screen) {
@@ -581,13 +692,16 @@ static inline void emit_vertex(const ClipVert* c, bool eol, bool screen, float z
     }
     d->argb = pack_color(c->col);
     d->oargb = pack_color(c->ofs);
-    pvr_dr_commit(d);
+    out_commit(d);
 }
 
 // The header for the current material; only compared against the last one sent when the
-// material or the offset color changed.
+// material or the offset color changed. Vertex fog reads the offset color, so it needs it on.
 static void submit_material_header(bool offset) {
-    if (!g.mat_key_changed && have_key && cur_key.offset == offset) {
+    int list = g.mat_key.list;
+    offset |= g.mat.fog == FOG_PVR;
+    if (!g.mat_key_changed && have_key[list] && cur_key[list].offset == offset) {
+        out_list = list;
         return;
     }
     HeaderKey k = g.mat_key;
@@ -597,7 +711,7 @@ static void submit_material_header(bool offset) {
 }
 
 static void submit_polygon(const ClipVert* v, int n, bool screen, float zbias) {
-    if (vbuf_used + (uint32_t)n * 32 + 32 > VERTEX_BUF_LIMIT) {
+    if (!list_room(g.mat.list, (uint32_t)n)) {
         return;
     }
     bool offset = false;
@@ -714,7 +828,7 @@ static void ensure_output(Vertex* v) {
 }
 
 static inline void emit_cached(const Vertex* v, uint32_t argb, uint32_t oargb, bool eol, float zbias) {
-    pvr_vertex_t* d = pvr_dr_target(dr);
+    pvr_vertex_t* d = out_target();
     d->flags = eol ? PVR_CMD_VERTEX_EOL : PVR_CMD_VERTEX;
     d->x = v->sx;
     d->y = v->sy;
@@ -723,7 +837,7 @@ static inline void emit_cached(const Vertex* v, uint32_t argb, uint32_t oargb, b
     d->v = v->v;
     d->argb = argb;
     d->oargb = oargb;
-    pvr_dr_commit(d);
+    out_commit(d);
 }
 
 static void draw_triangle(int i0, int i1, int i2) {
@@ -763,7 +877,7 @@ static void draw_triangle(int i0, int i1, int i2) {
     bool flat = !(g.geom & G_SHADING_SMOOTH);
     stat_frame_tris++;
     if (!near) {
-        if (vbuf_used + 3 * 32 + 32 > VERTEX_BUF_LIMIT) {
+        if (!list_room(g.mat.list, 3)) {
             return;
         }
         ensure_output(v[0]);
@@ -1145,7 +1259,8 @@ static void run_dl(uint32_t start) {
                 for (uint32_t i = first; i <= last; i++) {
                     all &= g.vtx[i].clip;
                 }
-                if (all & 0x0F) {
+                if (all & (0x0F | CLIP_NEAR)) {
+                    stat_culled_dls++;
                     if (sp == 0) {
                         return;
                     }
@@ -1261,8 +1376,7 @@ static void run_dl(uint32_t start) {
             case 0xF8:  // G_SETFOGCOLOR
                 if (g.fog_color != w1) {
                     g.fog_color = w1;
-                    PVR_SET(PVR_FOG_VERTEX_COLOR, (w1 >> 8) & 0xFFFFFF);
-                    PVR_SET(PVR_FOG_TABLE_COLOR, (w1 >> 8) & 0xFFFFFF);
+                    g.mat_dirty = true;
                 }
                 break;
 
@@ -1317,7 +1431,7 @@ static void run_dl(uint32_t start) {
 
 void gfx_init(void) {
     pvr_init_params_t params = {
-        .opb_sizes = { PVR_BINSIZE_0, PVR_BINSIZE_0, PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_0 },
+        .opb_sizes = { PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_16 },
         .vertex_buf_size = VERTEX_BUF_SIZE,
         .dma_enabled = 0,
         .fsaa_enabled = 0,
@@ -1327,6 +1441,8 @@ void gfx_init(void) {
     pvr_set_bg_color(0.0f, 0.0f, 0.0f);
     pvr_set_zclip(0.000001f);
     tex_init();
+    list_buf[LIST_PT] = memalign(32, LIST_BUF_SIZE);
+    list_buf[LIST_TR] = memalign(32, LIST_BUF_SIZE);
 
     memset(&g, 0, sizeof(g));
     for (int i = 0; i < 4; i++) {
@@ -1351,6 +1467,9 @@ void gfx_init(void) {
 
 // A red bar along the top of the screen on test discs.
 static void draw_test_banner(void) {
+    if (list_used[LIST_TR] + 5 * 32 > LIST_BUF_SIZE) {
+        return;
+    }
     pvr_poly_cxt_t cxt;
     pvr_poly_hdr_t hdr;
     pvr_poly_cxt_col(&cxt, PVR_LIST_TR_POLY);
@@ -1358,12 +1477,14 @@ static void draw_test_banner(void) {
     cxt.depth.comparison = PVR_DEPTHCMP_ALWAYS;
     cxt.depth.write = PVR_DEPTHWRITE_DISABLE;
     pvr_poly_compile(&hdr, &cxt);
-    uint32_t* h = (uint32_t*)pvr_dr_target(dr);
+    out_list = LIST_TR;
+    have_key[LIST_TR] = false;
+    uint32_t* h = (uint32_t*)out_target();
     memcpy(h, &hdr, sizeof(hdr));
-    pvr_dr_commit(h);
+    out_commit(h);
     const float xs[4] = { 0.0f, 640.0f, 0.0f, 640.0f }, ys[4] = { 0.0f, 0.0f, 6.0f, 6.0f };
     for (int i = 0; i < 4; i++) {
-        pvr_vertex_t* d = pvr_dr_target(dr);
+        pvr_vertex_t* d = out_target();
         d->flags = i == 3 ? PVR_CMD_VERTEX_EOL : PVR_CMD_VERTEX;
         d->x = xs[i];
         d->y = ys[i];
@@ -1371,9 +1492,14 @@ static void draw_test_banner(void) {
         d->u = d->v = 0.0f;
         d->argb = 0xFFFF0000;
         d->oargb = 0;
-        pvr_dr_commit(d);
+        out_commit(d);
     }
 }
+
+#define PVR_PT_ALPHA_REF 0x011C
+// Texture edge and alpha compare keep pixels by alpha; half way matches the edge that the
+// RDP's coverage blending shows.
+#define PT_ALPHA_REF 0x80
 
 static uint32_t frames;
 static uint32_t period_frames;
@@ -1389,14 +1515,20 @@ void gfx_run_task(uint32_t task) {
     pvr_wait_ready();
     uint64_t t1 = timer_us_gettime64();
     pvr_scene_begin();
-    pvr_list_begin(PVR_LIST_TR_POLY);
+    pvr_list_begin(PVR_LIST_OP_POLY);
     pvr_dr_init(&dr);
-    have_key = false;
+    for (int i = 0; i < LIST_COUNT; i++) {
+        have_key[i] = false;
+        list_used[i] = 0;
+    }
+    out_list = LIST_OP;
     vbuf_used = 0;
     stat_frame_tris = 0;
     g.mv_top = 0;
     g.mvp_dirty = true;
     g.mat_dirty = true;
+    g.phase = PHASE_BACKGROUND;
+    g.pvr_fog_set = false;
     // Look textures up again at least once a frame, which marks them as in use.
     g.tmem_gen++;
     tex_frame_begin();
@@ -1408,6 +1540,21 @@ void gfx_run_task(uint32_t task) {
     }
 
     pvr_list_finish();
+    stat_list_bytes[LIST_OP] = vbuf_used - list_used[LIST_PT] - list_used[LIST_TR];
+    for (int i = LIST_PT; i < LIST_COUNT; i++) {
+        stat_list_bytes[i] = list_used[i];
+        if (list_used[i] != 0) {
+            pvr_list_begin(pvr_lists[i]);
+            pvr_dma_load_ta(list_buf[i], list_used[i], true, NULL, NULL);
+            pvr_list_finish();
+        }
+    }
+    // Read when rendering; the previous frame may still be rendering, so a new fog color can reach
+    // its last tiles.
+    if (g.pvr_fog_set) {
+        PVR_SET(PVR_FOG_VERTEX_COLOR, g.pvr_fog_color);
+    }
+    PVR_SET(PVR_PT_ALPHA_REF, PT_ALPHA_REF);
     pvr_scene_finish();
     stat_tris = stat_frame_tris;
     frames++;
@@ -1422,17 +1569,21 @@ void gfx_print_stats(void) {
     uint32_t n = period_frames ? period_frames : 1;
     printf("[q64dc] gfx: %u frames, %u tris last frame, %u headers/s, %u material updates/s, %u texture lookups/s, "
            "%u TMEM copies/s, %u TMEM hashes/s, textures %u cached / %u uploaded, PVR %u fps, per frame: build %u us, "
-           "wait %u us, render %u us; VRAM free %u KB\n",
+           "wait %u us, render %u us; VRAM free %u KB; last frame OP/PT/TR %u/%u/%u KB, %u display lists culled/s\n",
            (unsigned)frames, (unsigned)stat_tris, (unsigned)stat_headers, (unsigned)stat_mat_updates,
            (unsigned)stat_tex_lookups, (unsigned)stat_tmem_copies, (unsigned)stat_tex_fallbacks,
            (unsigned)stat_tex_entries, (unsigned)stat_tex_uploads, (unsigned)st.frame_rate,
            (unsigned)(period_build_us / n), (unsigned)(period_wait_us / n), (unsigned)(st.rnd_last_time / 1000),
-           (unsigned)(pvr_mem_available() / 1024));
+           (unsigned)(pvr_mem_available() / 1024), (unsigned)(stat_list_bytes[LIST_OP] / 1024),
+           (unsigned)(stat_list_bytes[LIST_PT] / 1024), (unsigned)(stat_list_bytes[LIST_TR] / 1024),
+           (unsigned)stat_culled_dls);
+    stat_culled_dls = 0;
     stat_headers = 0;
     stat_mat_updates = 0;
     stat_tex_lookups = 0;
     stat_tmem_copies = 0;
-    stat_tex_fallbacks = 0;    period_frames = 0;
+    stat_tex_fallbacks = 0;
+    period_frames = 0;
     period_wait_us = 0;
     period_build_us = 0;
 }

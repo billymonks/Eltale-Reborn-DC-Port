@@ -114,7 +114,7 @@ stick 0 0 0
 warp 2 0 0                 # Holy Plain
 wait 1500
 to_battle
-battle_walk 30000
+battle_walk 30000 1234     # a fixed seed, so runs being compared fight the same enemies
 wait 2000
 shot g_bat_a
 wait 400

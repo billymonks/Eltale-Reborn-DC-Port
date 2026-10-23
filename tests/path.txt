@@ -1,0 +1,44 @@
+# The path out of Melrode Monastery: starts a new game, warps outside the monastery's front door,
+# walks down its steps (looking down over the garden fence and trees, the slowest spot of the
+# walk to the village) and into the garden along the fence, then looks out over the Holy Plain,
+# with a 10 s profile window at each.
+# make test-cdi TEST_SCRIPT=tests/path.txt, then scripts\flycast.ps1 200 -Test > build/path.log;
+# in the container, scripts/perf_fps.py build/path.log and scripts/profile.py build/path.log.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+
+warp 0 1 1                 # Melrode, at the top of the monastery's front steps
+wait 2000
+shot path_door
+stick 0 -70 1500           # down the steps
+wait 3000                  # past the camera's turn
+shot path_steps
+log PERF steps
+profile_start
+wait 10000
+profile_dump
+
+stick 70 -20 3500          # right, into the garden along the fence
+wait 2000
+shot path_garden
+log PERF garden
+profile_start
+wait 10000
+profile_dump
+
+warp 2 0 0                 # Holy Plain, outside Melrode's south gate
+wait 2000
+stick 0 -70 2500           # away from the gate, looking back north over the plain
+shot path_plain
+log PERF plain
+profile_start
+wait 10000
+profile_dump
+log PERF end
