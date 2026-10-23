@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
     // returns control here.
     static recomp_context ctx;
     memset(&ctx, 0, sizeof(ctx));
-    ctx.f_odd = &ctx.f0.u32h;
 
     printf("[q64dc] entering the game at 0x%08X\n", (unsigned)get_entrypoint_address());
     recomp_entrypoint(rdram, &ctx);

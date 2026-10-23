@@ -322,7 +322,6 @@ extern "C" void osCreateThread_recomp(uint8_t* rdram, recomp_context* ctx) {
     // Leave room for the o32 argument save area, as a caller would.
     t->sp = sp - 0x10;
     t->id = id;
-    t->ctx.f_odd = &t->ctx.f0.u32h;
     sem_init(&t->run, 0);
 
     kthread_attr_t attr = {};

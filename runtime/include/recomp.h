@@ -268,12 +268,23 @@ typedef struct {
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
         r24, r25, r26, r27, r28, r29, r30, r31;
-    fpr f0,  f1,  f2,  f3,  f4,  f5,  f6,  f7,
-        f8,  f9,  f10, f11, f12, f13, f14, f15,
-        f16, f17, f18, f19, f20, f21, f22, f23,
-        f24, f25, f26, f27, f28, f29, f30, f31;
+    // The generated code writes odd FPU registers as f_odd[(n - 1) * 2], the high word of the even
+    // register below. It's an array over the registers rather than a pointer to them so that the
+    // compiler sees those writes as writes to the context, which the generated functions take as
+    // a restrict pointer.
+    union {
+        struct {
+            fpr f0,  f1,  f2,  f3,  f4,  f5,  f6,  f7,
+                f8,  f9,  f10, f11, f12, f13, f14, f15,
+                f16, f17, f18, f19, f20, f21, f22, f23,
+                f24, f25, f26, f27, f28, f29, f30, f31;
+        };
+        struct {
+            uint32_t f_odd_pad;
+            uint32_t f_odd[63];
+        };
+    };
     gpr hi, lo;
-    uint32_t* f_odd;
     uint32_t status_reg;
     uint8_t mips3_float_mode;
 } recomp_context;

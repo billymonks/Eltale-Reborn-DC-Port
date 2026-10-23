@@ -15,7 +15,8 @@ import sys
 from pathlib import Path
 
 DECL = re.compile(r"^void (\w+)\(uint8_t\* rdram, recomp_context\* ctx\);", re.M)
-DEF = re.compile(r"\bvoid\s+(\w+)\s*\(\s*uint8_t\s*\*\s*rdram\s*,\s*recomp_context\s*\*\s*ctx\s*\)\s*\{")
+DEF = re.compile(r"\bvoid\s+(\w+)\s*\(\s*uint8_t\s*\*\s*(?:restrict\s+)?rdram\s*,"
+                 r"\s*recomp_context\s*\*\s*(?:restrict\s+)?ctx\s*\)\s*\{")
 CALL = re.compile(r"^\s*(\w+)\(rdram, ctx\);", re.M)
 NOT_FUNCS = {"LOOKUP_FUNC"}
 

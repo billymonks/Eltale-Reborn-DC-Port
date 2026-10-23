@@ -26,7 +26,9 @@ DECLS_H     := $(BUILD)/runtime_decls.h
 INCLUDES := -Iruntime/include -I$(RECOMP_DIR)
 
 # rdram is read through casts of every width, so strict aliasing would miscompile the generated code.
-COMMON_FLAGS := $(INCLUDES) -fno-strict-aliasing -fwrapv -Wno-unused-label -Wno-unused-variable -Wno-unused-but-set-variable
+# KOS builds with -fno-builtin, which makes every sqrtf, fabsf and small memcpy a library call;
+# without errno, sqrtf is the FPU's fsqrt, as exact as the N64's sqrt.s.
+COMMON_FLAGS := $(INCLUDES) -fno-strict-aliasing -fwrapv -fbuiltin -fno-math-errno -Wno-unused-label -Wno-unused-variable -Wno-unused-but-set-variable
 RECOMP_OPT   ?= -O2
 CFLAGS_GAME  := $(COMMON_FLAGS) $(RECOMP_OPT) -include $(DECLS_H)
 # Extra runtime defines (run `make clean` when changing them).
