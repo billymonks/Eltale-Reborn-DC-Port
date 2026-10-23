@@ -16,6 +16,8 @@
 //   to_battle                         put Brian in a zone, 70 units from one of the room's battle points
 //   warp <map> <room> <spawn>         start a warp, then wait until the new room is loaded and free
 //   to_npc <type> <distance>          put Brian <distance> in front of the first NPC of a type (6: innkeeper), facing it
+//   place <x> <z> [<x> <z>]           put Brian at a point of the room, facing the second point if given
+//   setbit <addr> <bit>               set bit <bit> counting from the byte at addr (hex), e.g. a mod's flag array
 //   poke8|poke16|poke32 <addr> <value>   (hex)
 //   peek32 <addr>                     print a word
 //   shot <name>                       print a SHOT line; run_flycast.sh saves build/screens/<name>.png
@@ -333,6 +335,23 @@ static bool step(uint64_t now) {
             return true;
         }
         printf("[q64dc] test: no NPC of type %u here\n", type);
+        return true;
+    }
+    if (strcmp(cmd, "place") == 0) {
+        float x = 0, z = 0, fx = 0, fz = 0;
+        int n = sscanf(args, "%f %f %f %f", &x, &z, &fx, &fz);
+        set_f32(PLAYER_POS + 0x00, x);
+        set_f32(PLAYER_POS + 0x08, z);
+        if (n == 4) {
+            set_f32(PLAYER_POS + 0x10, atan2f(fx - x, fz - z));
+        }
+        printf("[q64dc] test: Brian placed at (%d, %d)\n", (int)x, (int)z);
+        return true;
+    }
+    if (strcmp(cmd, "setbit") == 0) {
+        unsigned addr = 0, bit = 0;
+        sscanf(args, "%x %u", &addr, &bit);
+        MEM_BU(0, addr + bit / 8) |= (uint8_t)(1u << (bit % 8));
         return true;
     }
     if (strcmp(cmd, "to_zone") == 0) {

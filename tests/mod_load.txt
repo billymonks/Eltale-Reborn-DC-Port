@@ -1,0 +1,25 @@
+# Eltale Reborn: loads the save tests/mod_story.txt made, from a fresh boot with the same VMU, and
+# checks the mod's flags came back with it (the mod keeps them in bytes 0x160-0x1FF of the save).
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_load.txt
+#   scripts\flycast.ps1 100 -Test -Disc build/quest64-eltale-test.cdi   (without -ResetVmu)
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+peek32 {gModSave+8}            # cleared at the title: 0
+stick 70 0 300             # NEW -> LOAD
+wait 800
+tap A
+wait 3000
+shot ml_slots
+tap A                      # the first slot
+wait 2000
+tap A
+wait 6000
+shot ml_loaded
+peek32 {gModSave+8}            # as saved: 0x63011900
+peek32 80084EE4            # map (15: Melrode Inn)
+log mod load finished

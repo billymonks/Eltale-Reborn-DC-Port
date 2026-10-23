@@ -1,0 +1,60 @@
+# tests/perf.txt's scenes on a modded disc, with the mod's prologue marked as seen so the new game
+# reaches the monastery the way vanilla's does; the mod's own opening and rooms still run.
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_perf.txt
+#   scripts\flycast.ps1 240 -Test -Disc build/quest64-eltale-test.cdi > build/perf_eltale.log
+# then scripts/perf_fps.py on both logs. {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 8000
+log PERF opening
+profile_start
+wait 10000
+profile_dump
+wait 27000                 # the rest of the logos and the opening
+tap S
+wait 5000
+log PERF title
+profile_start
+wait 10000
+profile_dump
+tap S                      # PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8      # FLAG_PROLOGUE_DONE
+wait 2500
+talk 150000                # the Grand Abbott's farewell
+log PERF monastery
+profile_start
+wait 10000
+profile_dump
+
+warp 0 0 0                 # Melrode village
+wait 5000                  # past the map load
+log PERF melrode
+profile_start
+stick 0 -70 5000           # down the street and back; up first would go in at the inn door
+stick 0 70 4500
+stick 0 0 0
+profile_dump
+talk 20000                 # in case a scene caught him anyway
+
+warp 0x1A 0 0              # Blue Cave
+wait 5000                  # past the map load
+log PERF cave
+profile_start
+wait 10000
+profile_dump
+
+warp 2 0 0                 # Holy Plain
+wait 5000                  # past the map load
+to_battle
+battle_walk 30000 1234     # a fixed seed, so every run fights the same formation
+wait 2000
+shot perf_battle_a         # to check that runs being compared fight the same enemies
+log PERF battle
+profile_start
+wait 8000
+tap A 2 900                # swing the staff
+profile_dump
+shot perf_battle_b
+log PERF end

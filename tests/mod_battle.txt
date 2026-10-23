@@ -1,0 +1,36 @@
+# Eltale Reborn: a battle a mod script starts (BATTLE_AT, Lavaar's ring in Glencoe Forest, Ghost
+# Stalkers), with Brian given the HP to sit it out.
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_battle.txt
+#   scripts\flycast.ps1 200 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8          # FLAG_PROLOGUE_DONE: no prologue
+wait 2500
+talk 150000                # the Grand Abbott's farewell
+warp 0x20 0 0              # Glencoe Forest
+wait 1000
+poke16 8007BA84 3E7        # 999 HP of 999
+poke16 8007BA86 3E7
+poke16 8007BA8E 64         # defence 100
+poke32 8007BAD0 42680000   # y 58, the plateau's floor
+place -1380 10 -1380 -30   # inside the ring's trigger
+wait 3000
+shot mb_ring_1
+tap A 4 700
+shot mb_ring_2
+tap A 6 700                # the rest of the narration; the battle starts after it
+wait 8000
+shot mb_battle_1
+tap A 20 700               # swing at whatever is in reach
+shot mb_battle_2
+tap A 20 700
+shot mb_battle_3
+peek32 8007BA84            # Brian's HP
+log mod battle finished

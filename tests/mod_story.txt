@@ -1,0 +1,103 @@
+# Eltale Reborn: a new game through the mod's prologue, a sign, the village farewell and Mira on the
+# Melrode road (zone trigger at (12, 595), scripted walks), Odran's offer on the Holy Plain (a choice),
+# then a save at the Melrode Inn. tests/mod_load.txt loads it on the next boot.
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_story.txt
+#   scripts\flycast.ps1 600 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+# {gModSave+8} is the mod's flag array (scripts/test_syms.py finds it from the mod's link map).
+# peek32 shows flags 0-7 in the top byte: flag n of byte b is bit (8 * (3 - b) + n % 8).
+
+wait 14000
+shot ms_intro              # the mod's logo
+tap S                      # skip the intro
+wait 5000
+shot ms_title
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+shot ms_prologue_1
+tap A 12 700               # the mod's prologue, in the Abbott's chamber and after
+shot ms_prologue_2
+tap A 12 700
+shot ms_prologue_3
+tap A 12 700
+shot ms_prologue_4
+talk 300000
+shot ms_prologue_end
+pos
+peek32 {gModSave+8}            # flag 8 (PROLOGUE_DONE): 0x00010000
+
+setbit {gModSave+8} 16         # FLAG_FAREWELL_MONASTERY: skip the monastery goodbyes
+poke32 8007BA94 1F4        # 500 gold
+warp 0 0 0                 # Melrode town
+wait 1500
+shot ms_town
+place 175 -37 175 -43      # under the inn sign
+wait 300
+tap A
+wait 1500
+shot ms_sign
+talk 20000
+
+place 12 590 12 645        # the road out: the village sees Brian off, then Mira catches him up
+wait 2500
+shot ms_farewell_1
+tap A 6 700
+shot ms_farewell_2
+tap A 6 700
+shot ms_farewell_3
+talk 120000
+shot ms_farewell_end
+place 12 595 12 645        # in case Mira's scene waits for Brian to step in again
+wait 2500
+shot ms_mira_1
+tap A 6 700
+shot ms_mira_2
+tap A 6 700
+shot ms_mira_3
+talk 120000
+shot ms_mira_end
+pos
+peek32 {gModSave+8}            # + flag 19 (FAREWELL_VILLAGE) 0x0800, flag 5 (MIRA_ROAD_SCENE) 0x20000000
+
+warp 2 0 0                 # the Holy Plain, at the Melrode gate
+wait 1000
+place 70 60 70 40          # Odran's zone; no random battles while his scene runs
+wait 3000
+shot ms_odran_1
+tap A 5 700
+shot ms_odran_2
+tap A 5 700
+shot ms_odran_3            # the offer (choice)
+tap A 5 700
+shot ms_odran_4
+talk 120000
+shot ms_odran_end
+pos
+peek32 {gModSave+8}            # + flag 6 (MET_ODRAN) 0x40000000
+
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A                      # talk
+wait 1500
+shot ms_inn_1
+tap A                      # next page
+wait 1500
+shot ms_inn_2
+tap A                      # "Will you stay?" Yes
+wait 3000
+shot ms_save_1
+tap A
+wait 2500
+shot ms_save_2
+tap A
+wait 2500
+shot ms_save_3             # saved; "Continue save?"
+stick 0 -70 300            # No
+tap A
+wait 3000
+shot ms_save_4
+peek32 {gModSave+8}
+log mod story finished
