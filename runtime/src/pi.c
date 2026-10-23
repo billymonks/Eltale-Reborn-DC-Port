@@ -41,14 +41,6 @@ void osPiStartDma_recomp(uint8_t* rdram, recomp_context* ctx) {
     }
     dram_addr &= 0x9FFFFFFFu;
 
-    if (direction == OS_READ) {
-        rom_dma_to_rdram(rom_addr, dram_addr, size);
-        stat_dma_count++;
-        stat_dma_bytes += size;
-    } else {
-        printf("[q64dc] ignored PI write: 0x%X bytes to cart 0x%08X\n", (unsigned)size, (unsigned)dev_addr);
-    }
-
     // OSIoMesg, as osPiStartDma fills it in.
     MEM_BU(0x02, mb) = (uint8_t)ctx->r5;
     MEM_W(0x04, mb) = (int32_t)mq;
@@ -56,8 +48,15 @@ void osPiStartDma_recomp(uint8_t* rdram, recomp_context* ctx) {
     MEM_W(0x0C, mb) = (int32_t)dev_addr;
     MEM_W(0x10, mb) = (int32_t)size;
 
-    if (mq != 0) {
-        mq_send_nonblock(mq, mb);
+    if (direction == OS_READ) {
+        stat_dma_count++;
+        stat_dma_bytes += size;
+        rom_start_dma(rom_addr, dram_addr, size, mq, mb);
+    } else {
+        printf("[q64dc] ignored PI write: 0x%X bytes to cart 0x%08X\n", (unsigned)size, (unsigned)dev_addr);
+        if (mq != 0) {
+            mq_send_nonblock(mq, mb);
+        }
     }
     ctx->r2 = 0;
 }

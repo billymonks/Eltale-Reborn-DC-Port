@@ -22,6 +22,7 @@ static uint32_t outside;
 static uint32_t samples;
 static volatile bool running;
 static uint32_t start_vi, start_swaps;
+static uint32_t start_misses, start_reads, start_read_ms;
 
 bool profile_running(void) {
     return running;
@@ -59,6 +60,7 @@ void profile_start(void) {
     timer_start(TMU1);
     start_vi = stat_vi_count;
     start_swaps = stat_swap_count;
+    rom_totals(&start_misses, &start_reads, &start_read_ms);
     running = true;
     printf("[q64dc] profile: started\n");
 }
@@ -72,6 +74,11 @@ void profile_dump(void) {
     printf("[q64dc] profile: %lu samples, %lu outside the image; %lu retraces, %lu swaps\n",
            (unsigned long)samples, (unsigned long)outside, (unsigned long)(stat_vi_count - start_vi),
            (unsigned long)(stat_swap_count - start_swaps));
+    uint32_t misses, reads, read_ms;
+    rom_totals(&misses, &reads, &read_ms);
+    printf("[q64dc] profile: ROM %lu blocks in %lu reads, %lu ms\n",
+           (unsigned long)(misses - start_misses), (unsigned long)(reads - start_reads),
+           (unsigned long)(read_ms - start_read_ms));
     for (uint32_t i = 0; i < bucket_count; i++) {
         if (buckets[i]) {
             printf("[q64dc] prof %08lx %u\n",

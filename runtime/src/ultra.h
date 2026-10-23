@@ -84,9 +84,20 @@ void pak_flush_idle(void);
 
 // ROM cache statistics (rom.c).
 void rom_print_stats(void);
+// Blocks read from the disc, disc commands and time reading, since boot.
+void rom_totals(uint32_t* misses, uint32_t* reads, uint32_t* read_ms);
+// Test discs: print every cache miss, with the message queue of the DMA that missed.
+extern bool rom_trace;
+extern uint32_t rom_trace_tag;
 
 // ROM access with a block cache (rom.c). rdram_addr may be any alignment.
+// Reads on the calling thread.
 void rom_dma_to_rdram(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size);
+// PI DMA: copies at once if the data is cached, otherwise leaves it to the reader thread; either
+// way sends mb to mq (if not 0) once the data is in rdram.
+void rom_start_dma(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size, uint32_t mq, uint32_t mb);
+// Waits until every PI DMA started so far from the audio data has finished.
+void rom_wait_audio(void);
 
 #ifdef __cplusplus
 }

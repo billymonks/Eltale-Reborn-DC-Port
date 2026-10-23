@@ -328,6 +328,9 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
     } else {
         if (type == M_AUDTASK) {
             stat_audio_tasks++;
+            // The audio manager starts its sample DMAs and runs the task without waiting for them,
+            // as N64 PI DMA beats the RSP to the data.
+            rom_wait_audio();
             audio_run_task(task);
         }
         events_post(OS_EVENT_SP);

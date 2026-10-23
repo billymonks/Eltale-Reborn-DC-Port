@@ -24,9 +24,12 @@
 //   watch <addr>                      print every change of a halfword, checked at each controller poll (hex, up to 4)
 //   burn <ms>                         busy-wait that long in every controller poll, to slow the game down (0: off)
 //   profile_start, profile_dump       sample the program counter in between (profile.c)
+//   romtrace [0|1]                    print every ROM cache miss (rom.c)
+//   mem                               print the heap's size and use, and the largest block malloc can still give
 //   loop                              start over
 
 #include <kos.h>
+#include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -403,6 +406,29 @@ static bool step(uint64_t now) {
         } else {
             printf("[q64dc] test: %s\n", args);
         }
+        return true;
+    }
+    if (strcmp(cmd, "mem") == 0) {
+        struct mallinfo mi = mallinfo();
+        uint32_t lo = 0, hi = 16 * 1024 * 1024;
+        while (hi - lo > 4096) {
+            uint32_t mid = (lo + hi) / 2;
+            void* p = malloc(mid);
+            if (p) {
+                free(p);
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        printf("[q64dc] test: mem: heap %u KB, %u KB of it free; largest new block %u KB\n",
+               (unsigned)(mi.arena / 1024), (unsigned)(mi.fordblks / 1024), (unsigned)(lo / 1024));
+        return true;
+    }
+    if (strcmp(cmd, "romtrace") == 0) {
+        unsigned on = 1;
+        sscanf(args, "%u", &on);
+        rom_trace = on != 0;
         return true;
     }
     if (strcmp(cmd, "pos") == 0) {
