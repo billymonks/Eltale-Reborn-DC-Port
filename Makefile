@@ -96,6 +96,14 @@ $(OBJ_DIR)/runtime/runtime_stubs.o: $(STUBS_C) runtime/include/runtime.h
 CDI      := $(BUILD)/quest64-dc.cdi
 TEST_CDI := $(BUILD)/quest64-dc-test.cdi
 
+# Cover art: your own assets/cover.png (never committed) becomes 0GDTEX.PVR in the disc root,
+# which Flycast and GDEMU menus show. Without it the discs have no cover.
+COVER := assets/cover.png
+GDTEX := $(if $(wildcard $(COVER)),$(BUILD)/0GDTEX.PVR)
+
+$(BUILD)/0GDTEX.PVR: $(COVER) scripts/make_gdtex.py
+	python3 scripts/make_gdtex.py $< $@
+
 # `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds a separate disc, $(TEST_CDI), that also
 # carries a scripted-input test (see runtime/src/test.c). The normal disc never has one.
 TEST_SCRIPT ?=
@@ -110,19 +118,19 @@ test-cdi:
 	@$(MAKE) --no-print-directory all
 	@$(MAKE) --no-print-directory $(TEST_CDI)
 
-$(CDI): $(TARGET) $(ROM)
+$(CDI): $(TARGET) $(ROM) $(GDTEX)
 	@mkdir -p $(BUILD)/disc
 	cmp -s $(ROM) $(BUILD)/disc/quest64.z64 || cp $(ROM) $(BUILD)/disc/quest64.z64
-	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 \
-		-n "Quest 64 DC" -a "Quest64-DC-Port" -s "Q64-DC" -o $@ --allow-overwrite
+	mkdcdisc -e $(TARGET) -f $(BUILD)/disc/quest64.z64 $(addprefix -f ,$(GDTEX)) \
+		-n "QUEST 64" -a "Quest64-DC-Port" -s "Q64-DC" -o $@ --allow-overwrite
 
 # Rebuilt every time, so a changed script takes effect. Its own serial keeps its VMU apart in Flycast.
-$(TEST_CDI): $(TARGET) $(ROM) FORCE
+$(TEST_CDI): $(TARGET) $(ROM) $(GDTEX) FORCE
 	@mkdir -p $(BUILD)/test-disc
 	cmp -s $(ROM) $(BUILD)/test-disc/quest64.z64 || cp $(ROM) $(BUILD)/test-disc/quest64.z64
 	cp $(TEST_SCRIPT) $(BUILD)/test-disc/q64test.txt
 	mkdcdisc -e $(TARGET) -f $(BUILD)/test-disc/quest64.z64 -f $(BUILD)/test-disc/q64test.txt \
-		-n "Quest 64 DC TEST" -a "Quest64-DC-Port" -s "Q64-DC-T" -o $@ --allow-overwrite
+		$(addprefix -f ,$(GDTEX)) -n "QUEST 64 TEST" -a "Quest64-DC-Port" -s "Q64-DC-T" -o $@ --allow-overwrite
 
 FORCE:
 

@@ -7,3 +7,6 @@
 *.cdi
 *.iso
 *.gdi
+/assets/cover.png
+*.pvr
+*.PVR

@@ -128,6 +128,10 @@ scripts\dc.ps1 make -j16                       # Windows (scripts/dc.sh on Linux
 
 The runtime looks for the ROM at `/cd/quest64.z64` (the disc), `/pc/quest64.us.z64` (dcload's host filesystem) and `/sd/quest64.z64`.
 
+**Disc title and cover.** The discs are titled `QUEST 64` (test discs `QUEST 64 TEST`) with the serial `Q64-DC` (`Q64-DC-T`); Flycast names VMU saves after the serial, so it stays fixed. For cover art, put a 512x512 PNG of your own at `assets/cover.png` (it is never committed): `make cdi` and `make test-cdi` then convert it with `scripts/make_gdtex.py` to `0GDTEX.PVR` in the disc root, the cover file Flycast, GDEMU menus and their card managers read. Without it the discs have no cover.
+
+**Flycast's game list.** Flycast takes a disc's name and cover from TheGamesDB, searched by the serial, then by the IP.BIN title, and caches them in `data/boxart/flycast-gamedb.json` next to `flycast.exe` (or in its home folder), keyed by file name. Quest 64 isn't in TheGamesDB's Dreamcast list, so the list shows the cover from `0GDTEX.PVR` with the file name. Earlier discs were titled `Quest 64 DC`, which TheGamesDB matched to its homebrew Quake, and Flycast keeps a cached entry until it's removed. To fix the list, close Flycast, back up `flycast-gamedb.json`, and in the object whose `file_name` is `quest64-dc.cdi`, either delete the whole object (Flycast reads the cover from the disc again) or set `"name": "Quest 64"` and `"boxart_path"` to a PNG or JPG in that folder. `parsed` and `scraped` stay `true` so Flycast keeps the entry.
+
 ## Running
 
 Test discs print their progress once a second to the debug console (dcload, or the serial port): video retraces, buffer swaps, graphics and audio tasks, ROM DMA, and the game's mode, state and map, then the renderer's and the audio's statistics. Every 10 seconds they add the ROM cache, the time no game thread could run, and how many frames took one, two, three or more retraces. Release discs don't print them, as the serial port is slow enough to cost frames.
@@ -157,6 +161,7 @@ Test discs print their progress once a second to the debug console (dcload, or t
 | `runtime/src/audio*.c` | Audio microcode commands (`audio_hle.c`), the AI and the sound stream (`audio.c`) |
 | `tools/audio_test/` | Bit-for-bit comparison of `audio_hle.c` with Quest64-Recomp's recompiled audio microcode |
 | `scripts/gen_stubs.py` | Stubs every runtime function the game calls that isn't implemented |
+| `scripts/make_gdtex.py` | Converts `assets/cover.png` to the disc's `0GDTEX.PVR` cover |
 | `runtime/src/test.c` | Scripted input for test discs |
 | `runtime/src/profile.c` | Program counter sampler for test discs |
 | `scripts/profile.py`, `scripts/perf_fps.py` | Profile by function and object file; fps per scene of `tests/perf.txt` |
