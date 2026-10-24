@@ -260,8 +260,8 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
 | `tests/` | Test scripts |
 | `scripts/flycast.ps1`, `scripts/flycast.sh` | Headless Flycast run with screenshots and, optionally, an audio recording |
 | `scripts/audio_dump.py` | Loudness and clipping of an audio recording; cuts WAV clips |
-| `tools/N64Recomp` | Upstream N64Recomp (submodule, pinned to the commit Quest64-Recomp uses) |
-| `tools/patches/` | Patches applied to it by `scripts/build_n64recomp.sh` |
+| `tools/N64Recomp` | [N64Recomp-DC](https://github.com/billymonks/N64Recomp-DC) (submodule, `main`) |
+| `tools/patches/` | `gpr_32bit` and return-hook patches; `scripts/build_n64recomp.sh` applies any that are not already in the submodule |
 | `Quest64Syms` | Function and data symbols of the ROM (submodule) |
 | `docker/Dockerfile` | Toolchain image |
 | `docker/flycast/Dockerfile` | Headless Flycast image (downloads the official Flycast release; ImageMagick for screenshots) |

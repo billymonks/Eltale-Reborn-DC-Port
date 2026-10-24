@@ -1,6 +1,7 @@
 [submodule "tools/N64Recomp"]
 	path = tools/N64Recomp
-	url = https://github.com/N64Recomp/N64Recomp
+	url = https://github.com/billymonks/N64Recomp-DC.git
+	branch = main
 [submodule "Quest64Syms"]
 	path = Quest64Syms
 	url = https://github.com/Rainchus/Quest64Syms
