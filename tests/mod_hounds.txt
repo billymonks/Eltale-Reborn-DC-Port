@@ -1,0 +1,28 @@
+# Eltale Reborn: the prologue's night battle with the Hell Hounds at the monastery wall, through the mod's
+# dev mode (its "dev_scene" config option jumps there the first time Brian is free), with Brian given the HP
+# to sit it out.
+#   make MOD=eltale MOD_CONFIG=eltale.dev_scene=4 test-cdi TEST_SCRIPT=tests/mod_hounds.txt
+#   scripts\flycast.ps1 230 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8      # FLAG_PROLOGUE_DONE: Brian is free in the monastery, and dev mode jumps
+wait 2500
+poke16 8007BA84 3E7        # 999 HP of 999
+poke16 8007BA86 3E7
+poke16 8007BA8E 64         # defence 100
+tap A 30 1200              # the scene's lines, then swings at the hound
+shot mh_1
+tap A 30 1200
+shot mh_2
+tap A 30 1200
+shot mh_3
+tap A 30 1200
+shot mh_4
+log mod hounds finished

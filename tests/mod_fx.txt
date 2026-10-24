@@ -1,0 +1,22 @@
+# Eltale Reborn: the mod's scripted spell visuals (src/fx.c, the game's own spell effects placed and moved by
+# a script) in its dev-mode test scene in Melrode, which loops; run with a screenshot interval.
+#   make MOD=eltale MOD_CONFIG=eltale.dev_scene=2 test-cdi TEST_SCRIPT=tests/mod_fx.txt
+#   scripts\flycast.ps1 120 3 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8      # FLAG_PROLOGUE_DONE: Brian is free in the monastery, and dev mode jumps
+wait 2500
+tap A 20 1500              # the scene's lines
+shot mf_1
+wait 6000
+shot mf_2
+wait 6000
+shot mf_3
+log mod fx finished

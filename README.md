@@ -229,9 +229,13 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
   - Odran's offer on the Holy Plain;
   - a save at the inn, then a fresh boot that loads it and checks the mod's flags.
 - `mod_battle.txt`: the battle Lavaar's ring in Glencoe Forest starts.
+- `mod_hounds.txt` and `mod_fx.txt` use the mod's dev mode, whose `dev_scene` config option jumps to a test scene the first time Brian is free (build with `MOD_CONFIG=eltale.dev_scene=<n>`, the option's index in its mod.toml):
+  - `mod_hounds.txt` (`dev_scene=4`): the prologue's night battle with the Hell Hounds at the monastery wall;
+  - `mod_fx.txt` (`dev_scene=2`): the scripted spell visuals in Melrode, a scene that loops; run it with a screenshot interval.
 - `mod_perf.txt`: `perf.txt`'s scenes, with the Melrode walk turned away from the inn door, which the mod's town would take Brian through.
-  - With the mod, the opening runs at 59.1 fps, the title at 59.9, and the monastery, the Blue Cave and the battle at 29.8-30, as without it.
-  - Melrode on that walk runs at 28.2 fps with the mod against 27.0 without it.
+  - With Eltale Reborn 0.11.22, the title runs at 59.9 fps, and the monastery, the Blue Cave and the battle at 30, as without it.
+  - The mod's own opening (its notice, logos and attract mode) runs at 56.6 fps (57.4 without the frame cadence), with the CPU two-thirds idle.
+  - Melrode on that walk runs at 28.0 fps with the mod against 27.0 without it.
 - `mod_pace.txt` (with `-ResetVmu`): frame pacing in the village farewell, Mira on the road and Odran's scene (see [Frame pacing](#performance)).
   - The mod's scenes move the camera from its hook on the player update, once a game frame. It moves a fixed fraction of the way to the shot each frame (`CAM_PAN`), or along an eased path over a set number of frames. Nothing there reads a clock, so the camera takes the same steps as on the N64.
   - On PC, Quest64-Recomp draws at the monitor's refresh rate by default and RT64 interpolates between the game's frames, so a pan there is smoother than any 30 fps build. At its "original" frame rate it is 30 fps like the Dreamcast.
