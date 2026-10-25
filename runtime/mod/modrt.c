@@ -18,6 +18,18 @@ void mods_init(void) {
     for (uint32_t i = 0; i < mods_count; i++) {
         const ModInfo* mod = mods_list[i];
         printf("[q64dc] mod %s %u.%u.%u\n", mod->id, (unsigned)mod->version[0], (unsigned)mod->version[1], (unsigned)mod->version[2]);
+        // The config is fixed at build time: mod.toml's defaults, or MOD_CONFIG. Enums show the
+        // index of their choice.
+        for (uint32_t c = 0; c < mod->num_config; c++) {
+            const ModConfigValue* v = &mod->config[c];
+            if (v->str != NULL && v->str[0] != '\0') {
+                printf("[q64dc]   config %s = \"%s\"\n", v->key, v->str);
+            } else if (v->dbl == (double)v->u32) {
+                printf("[q64dc]   config %s = %u\n", v->key, (unsigned)v->u32);
+            } else {
+                printf("[q64dc]   config %s = %g\n", v->key, v->dbl);
+            }
+        }
     }
     printf("[q64dc] mods at 0x%08X-0x%08X, %u KB of mod heap\n", (unsigned)MOD_RAM_BASE, (unsigned)mods_end_vram,
            (unsigned)((MOD_RAM_BASE + MOD_RAM_SIZE - mods_end_vram) / 1024));
@@ -208,7 +220,19 @@ static const ModConfigValue* config_value(uint8_t* rdram, recomp_context* ctx, c
             return &mod->config[i];
         }
     }
-    printf("[q64dc] %s asked for config option \"%s\", which its mod.toml doesn't have\n", mod->id, key);
+    // Mods read their options every frame, and the serial port is slow, so each missing one is
+    // reported once.
+    static char reported[16][64];
+    static uint32_t num_reported;
+    for (uint32_t i = 0; i < num_reported; i++) {
+        if (strcmp(reported[i], key) == 0) {
+            return NULL;
+        }
+    }
+    if (num_reported < 16) {
+        strcpy(reported[num_reported++], key);
+    }
+    printf("[q64dc] %s asked for config option \"%s\", which its mod.toml doesn't have; it reads 0\n", mod->id, key);
     return NULL;
 }
 

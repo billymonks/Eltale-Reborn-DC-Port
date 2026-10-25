@@ -11,7 +11,7 @@
 #
 # Modded builds: add MOD=<mods> (e.g. MOD=eltale or MOD=eltale,gameplay) to any of the above to build
 # the game with N64Recomp mods statically recompiled in, as build/quest64-<mods>.elf/.cdi with its
-# own disc title, serial and VMU save. Stage the mods first on the host with scripts\mod.ps1 (which
+# own disc title, serial and VMU save (the gameplay mod doesn't change them beside another mod). Stage the mods first on the host with scripts\mod.ps1 (which
 # also runs this) or scripts/stage_mods.py. MOD_CONFIG=eltale.time_log=Off,... overrides mod.toml
 # config defaults.
 
@@ -62,9 +62,12 @@ MOD_INPUTS   := $(foreach m,$(MODS),$(addprefix $(MOD_STAGE)/$(m)/,mod_syms.bin 
 MOD_RAM_SIZE ?= 0x200000
 MOD_CONFIG   ?=
 
-# Short codes for the disc serial and VMU file: ELT, GP, ELTGP, ...
+# Short codes for the disc serial and VMU file: ELT, GP, ... The gameplay mod saves nothing and
+# plays with any story, so beside another mod it leaves the disc's identity alone: Eltale Reborn
+# with it is still Q64-ELT, and its saves are the Eltale disc's.
 mod_code = $(if $(filter eltale,$(1)),ELT,$(if $(filter gameplay,$(1)),GP,$(shell echo $(1) | cut -c1-3 | tr a-z A-Z)))
-MOD_CODE     := $(subst $(space),,$(foreach m,$(MODS),$(call mod_code,$(m))))
+ID_MODS      := $(or $(filter-out gameplay,$(MODS)),$(MODS))
+MOD_CODE     := $(subst $(space),,$(foreach m,$(ID_MODS),$(call mod_code,$(m))))
 MOD_TITLE    ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,QUEST 64 $(MOD_CODE))
 MOD_DESC     ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,Quest 64 $(MOD_CODE))
 
@@ -119,8 +122,12 @@ $(MODRECOMP): $(N64RECOMP) tools/modrecomp/main.cpp tools/modrecomp/CMakeLists.t
 $(MOD_STAGE)/%/mod_syms.bin $(MOD_STAGE)/%/mod_binary.bin $(MOD_STAGE)/%/mod.toml:
 	@echo "No staged mod in $(MOD_STAGE)/$*: run scripts\\mod.ps1 -Mod $(MOD) (or python3 scripts/stage_mods.py $(MOD)) on the host first." && false
 
-# Re-run modrecomp when MOD_RAM_SIZE or MOD_CONFIG change.
+# Re-run modrecomp when MOD_RAM_SIZE or MOD_CONFIG change, and recompile the runtime when its mod
+# defines (the VMU file's name) do.
 $(shell mkdir -p $(MODGEN) && (echo '$(MOD_RAM_SIZE) $(MOD_CONFIG)' | cmp -s - $(MODGEN)/options || echo '$(MOD_RAM_SIZE) $(MOD_CONFIG)' > $(MODGEN)/options))
+MOD_DEFS_TEXT := $(subst ',,$(MOD_DEFINES))
+$(shell echo '$(MOD_DEFS_TEXT)' | cmp -s - $(MODGEN)/defines || echo '$(MOD_DEFS_TEXT)' > $(MODGEN)/defines)
+RT_DEPS    := $(MODGEN)/defines
 
 # modrecomp only rewrites outputs whose contents change, so the stamp stands for all of them.
 $(MODGEN)/stamp: $(MODRECOMP) $(MOD_INPUTS) Quest64Syms/dump.toml $(MODGEN)/options
@@ -158,7 +165,7 @@ $(STUBS_C) $(DECLS_H) &: $(RECOMP_DIR)/funcs.h $(RUNTIME_C) $(RUNTIME_CXX) scrip
 	python3 scripts/gen_stubs.py $(RECOMP_DIR) runtime/src $(STUBS_C) $(DECLS_H) $(STUBS_DIRS)
 
 ifneq ($(MOD),)
-$(OBJ_DIR)/modrt/%.o: runtime/mod/%.c runtime/mod/modrt.h runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H)
+$(OBJ_DIR)/modrt/%.o: runtime/mod/%.c runtime/mod/modrt.h runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H) $(RT_DEPS)
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -Iruntime/mod -c $< -o $@
 
@@ -176,11 +183,11 @@ $(OBJ_DIR)/recomp/lookup.o: $(RECOMP_DIR)/lookup.cpp runtime/include/recomp.h
 	@mkdir -p $(dir $@)
 	kos-cc -x c $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H)
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.c runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H) $(RT_DEPS)
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -c $< -o $@
 
-$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H)
+$(OBJ_DIR)/runtime/%.o: runtime/src/%.cpp runtime/include/recomp.h runtime/include/runtime.h $(RUNTIME_H) $(RT_DEPS)
 	@mkdir -p $(dir $@)
 	kos-c++ $(CFLAGS_RT) -c $< -o $@
 

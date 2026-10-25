@@ -124,7 +124,7 @@ The frames left over 2 vblanks are frames the game took longer than 2 vblanks to
 | Y | R | | Item menu |
 | Start | Start | Start menu (status, items) | Start menu (status, map) |
 
-Dreamcast X sends a bit of the N64 button word that no N64 button uses and Quest 64 never reads, so a mod can bind it without taking another button: Eltale Reborn's sprint (its `src/sprint.c`) makes Brian's steps 1.5 times as long while X is held on the field (`tests/mod_sprint.txt`). In the unmodded game X does nothing; the right trigger is the only Z.
+Dreamcast X sends a bit of the N64 button word that no N64 button uses and Quest 64 never reads, so a mod can bind it without taking another button: the field sprint (the gameplay mod's `sprint_speed`, 1.25 by default; earlier versions had it in Eltale Reborn at 1.5) makes Brian's steps longer while X is held (`tests/mod_sprint.txt`). In the unmodded game X does nothing; the right trigger is the only Z.
 
 The stick is scaled to the N64's range: a radial deadzone of 14 (out of the Dreamcast's ±128), full deflection at 110, mapped to the N64 stick's ±80, with the direction kept. Menus such as the title screen's NEW / LOAD / DELETE move with the stick, not the D-pad.
 
@@ -182,7 +182,10 @@ Plain `make` and `make cdi` always build the unmodded game; its generated code a
 | --- | --- | --- | --- | --- |
 | (none) | `build/quest64-dc.cdi` | QUEST 64 | Q64-DC (Q64-DC-T) | `QUEST64.PAK` |
 | `eltale` | `build/quest64-eltale.cdi` | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
-| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | Eltale Reborn | Q64-ELTGP (Q64-TELTGP) | `Q64ELTGP.PAK` |
+| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
+| `gameplay` | `build/quest64-gameplay.cdi` | QUEST 64 GP | Q64-GP (Q64-TGP) | `Q64GP.PAK` |
+
+The gameplay mod (Quest 64: Modern Gameplay, in the same repo) saves nothing and works with any story, so with Eltale Reborn the disc stays Eltale Reborn's, saves and all, and either disc loads the other's saves. Its options include Start opening the map and the field sprint's speed, so a disc without it has neither.
 
 The cover is `assets/cover-<first mod>.png` (e.g. `assets/cover-eltale.png`), else `assets/cover.png`, else none.
 
@@ -204,7 +207,7 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
   - Implemented (`runtime/mod/modrt.c`): `recomp_printf`, `recomp_alloc`/`recomp_free`, `recomp_get_config_u32`/`_double`/`_string`, `recomp_free_config_string`, `recomp_get_mod_version`, `recomp_is_dependency_met`, and the `recomphook_get_return_*` helpers.
   - Cross-mod imports and exports also work.
   - `recomp_printf` goes to the serial console on test discs only, at most 30 messages a second; build with `RT_DEFINES=-DMOD_PRINTF=1` to keep it on a release disc.
-  - Config options take their defaults from `mod.toml`. Override them at build time with `MOD_CONFIG=eltale.time_log=On,gameplay.<option>=<value>`, where enums take a name or an index.
+  - Config options take their defaults from `mod.toml`. Override them at build time with `MOD_CONFIG=eltale.time_log=On,gameplay.<option>=<value>`, where enums take a name or an index. The options are resolved when the disc is built, and an option of a type the port doesn't know fails the build. At boot every disc prints each mod's options to the serial console (`config start_on_map = 1`; enums as the index of their choice), and a mod asking for an option its mod.toml doesn't have gets 0 and one line saying so.
 
 **Memory.** Eltale Reborn 0.9.42 takes 947 KB (0x80410000-0x804FCB00: 775 KB of code and data, 171 KB of bss). The gameplay mod takes 11 KB after it. The modded ELF is 1.3 MB larger than the unmodded one, from the recompiled mod code and the mod's image. With the 2 MB mod area, the largest block still free in Melrode drops from 5.2 MB to 2.2 MB. Eltale Reborn allocates nothing, so a smaller `MOD_RAM_SIZE` (e.g. `0x110000`) gives back most of its 1.1 MB heap.
 
@@ -235,7 +238,8 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
 - `mod_hounds.txt` and `mod_fx.txt` use the mod's dev mode, whose `dev_scene` config option jumps to a test scene the first time Brian is free (build with `MOD_CONFIG=eltale.dev_scene=<n>`, the option's index in its mod.toml):
   - `mod_hounds.txt` (`dev_scene=4`): the prologue's night battle with the Hell Hounds at the monastery wall;
   - `mod_fx.txt` (`dev_scene=2`): the scripted spell visuals in Melrode, a scene that loops; run it with a screenshot interval.
-- `mod_sprint.txt`: Brian walks 0.6 s in Melrode without and then with X held (the test command `hold X`); pos shows about 27 and 40 units.
+- `mod_sprint.txt`: Brian walks 0.6 s in Melrode without and then with X held (the test command `hold X`); pos shows about 27 units, then that times the sprint speed (34 with the gameplay mod's 1.25).
+- `mod_menu.txt` (`-Mod eltale,gameplay`): Start opens the world map (the gameplay mod's `start_on_map`), and the stick still turns to the next page.
 - `mod_perf.txt`: `perf.txt`'s scenes, with the Melrode walk turned away from the inn door, which the mod's town would take Brian through.
   - With Eltale Reborn 0.11.22, the title runs at 59.9 fps, and the monastery, the Blue Cave and the battle at 30, as without it.
   - The mod's own opening (its notice, logos and attract mode) runs at 56.6 fps (57.4 without the frame cadence), with the CPU two-thirds idle.
