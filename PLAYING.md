@@ -50,5 +50,3 @@ dc-tool-ip -t <dreamcast ip> -c . -x build/quest64-dc.elf
 `-c .` serves this directory as `/pc`, so the ROM is `quest64.us.z64` over the link. That is slow, worse over serial. Use the disc for anything long. `dc-tool-ser` takes the same `-c` and `-x`.
 
 `build/quest64-dc.cdi` is about 740 MB and fits an 80-minute CD-R. mkdcdisc writes raw 2336-byte sectors and pads the data track to the outer edge, where a real drive reads fastest. The disc is about 73 minutes (the data track is 316,212 sectors, the ELF and ROM in the last 8,700). A GDEMU or similar can take the CDI as it is. Passing mkdcdisc `-N` would put the files at the slow inner edge in a 22 MB image. The build leaves them on the outer edge.
-
-If Flycast's list shows the wrong name or a Quake box, an older title (`Quest 64 DC`) was matched to TheGamesDB and cached. Close Flycast, back up `data/boxart/flycast-gamedb.json` (next to `flycast.exe`, or in Flycast's home folder), and find the object whose `file_name` is `quest64-dc.cdi`. Delete that object, or set `"name"` to `Quest 64` and `"boxart_path"` to a PNG or JPG in that folder. Leave `parsed` and `scraped` true.

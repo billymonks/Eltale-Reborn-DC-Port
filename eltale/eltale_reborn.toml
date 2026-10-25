@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.13.21"
+version = "0.13.23"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -53,6 +53,6 @@ default = "Off"
 [inputs]
 elf_path = "build/mod.elf"
 mod_filename = "eltale_reborn"
-func_reference_syms_file = "../Quest64Syms/dump.toml"
-data_reference_syms_files = [ "../Quest64Syms/data_dump.toml" ]
+func_reference_syms_file = "Quest64Syms/dump.toml"
+data_reference_syms_files = [ "Quest64Syms/data_dump.toml" ]
 additional_files = [ ]

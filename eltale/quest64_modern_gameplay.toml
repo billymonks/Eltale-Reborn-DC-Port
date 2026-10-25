@@ -246,6 +246,6 @@ default = 20.0
 [inputs]
 elf_path = "../../build/gameplay/mod.elf"
 mod_filename = "quest64_modern_gameplay"
-func_reference_syms_file = "../../../Quest64Syms/dump.toml"
-data_reference_syms_files = [ "../../../Quest64Syms/data_dump.toml" ]
+func_reference_syms_file = "../../Quest64Syms/dump.toml"
+data_reference_syms_files = [ "../../Quest64Syms/data_dump.toml" ]
 additional_files = [ ]
