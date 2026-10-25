@@ -1,7 +1,7 @@
 # Eltale Reborn: a battle a mod script starts (BATTLE_AT, Lavaar's ring in Glencoe Forest, Ghost
 # Stalkers), with Brian given the HP to sit it out.
 #   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_battle.txt
-#   scripts\flycast.ps1 200 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+#   scripts\flycast.ps1 200 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 14000

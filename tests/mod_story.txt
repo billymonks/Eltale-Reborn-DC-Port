@@ -2,7 +2,7 @@
 # Melrode road (zone trigger at (12, 595), scripted walks), Odran's offer on the Holy Plain (a choice),
 # then a save at the Melrode Inn. tests/mod_load.txt loads it on the next boot.
 #   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_story.txt
-#   scripts\flycast.ps1 600 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+#   scripts\flycast.ps1 600 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is the mod's flag array (scripts/test_syms.py finds it from the mod's link map).
 # peek32 shows flags 0-7 in the top byte: flag n of byte b is bit (8 * (3 - b) + n % 8).
 

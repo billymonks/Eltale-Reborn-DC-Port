@@ -1,7 +1,7 @@
 # tests/perf.txt's scenes on a modded disc, with the mod's prologue marked as seen so the new game
 # reaches the monastery the way vanilla's does; the mod's own opening and rooms still run.
 #   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_perf.txt
-#   scripts\flycast.ps1 240 -Test -Disc build/quest64-eltale-test.cdi > build/perf_eltale.log
+#   scripts\flycast.ps1 240 -Test -Disc build/eltale-reborn-test.cdi > build/perf_eltale.log
 # then scripts/perf_fps.py on both logs. {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 8000

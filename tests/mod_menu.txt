@@ -1,8 +1,8 @@
 # The gameplay companion's "start_on_map" (default On): Start opens the world map. gPauseFlags'
 # low 2 bits are the Start menu's page: 0 status, 1 sound, 2 the map, 3 spirits; peek32 shows them
 # in the top halfword. The stick should still move between pages.
-#   scripts\mod.ps1 -Mod eltale,gameplay make -j24 test-cdi TEST_SCRIPT=tests/mod_menu.txt
-#   scripts\flycast.ps1 100 -Test -ResetVmu -Disc build/quest64-eltale-gameplay-test.cdi
+#   scripts\mod.ps1 make -j24 test-cdi TEST_SCRIPT=tests/mod_menu.txt
+#   scripts\flycast.ps1 100 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is Eltale Reborn's flag array (see tests/mod_story.txt).
 
 wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s

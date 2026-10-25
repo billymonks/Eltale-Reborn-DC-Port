@@ -9,11 +9,12 @@
 #   make size      section sizes of the ELF
 #   make clean     remove build/ except the N64Recomp build
 #
-# Modded builds: add MOD=<mods> (e.g. MOD=eltale or MOD=eltale,gameplay) to any of the above to build
-# the game with N64Recomp mods statically recompiled in, as build/quest64-<mods>.elf/.cdi with its
-# own disc title, serial and VMU save (the gameplay mod doesn't change them beside another mod). Stage the mods first on the host with scripts\mod.ps1 (which
-# also runs this) or scripts/stage_mods.py. MOD_CONFIG=eltale.time_log=Off,... overrides mod.toml
-# config defaults.
+# Modded builds: add MOD=<mods> (e.g. MOD=eltale) to any of the above to build the game with
+# N64Recomp mods statically recompiled in, with its own disc title, serial and VMU save. Eltale Reborn
+# always comes with its gameplay companion: MOD=eltale builds both, as build/eltale-reborn.elf/.cdi.
+# Other mod lists build build/quest64-<mods>.elf/.cdi. Stage the mods first on the host with
+# scripts\mod.ps1 (which also runs this) or scripts/stage_mods.py. MOD_CONFIG=eltale.time_log=Off,...
+# overrides mod.toml config defaults.
 
 ROM        := quest64.us.z64
 BUILD      := build
@@ -43,16 +44,19 @@ MOD ?=
 comma := ,
 empty :=
 space := $(empty) $(empty)
-MODS := $(subst $(comma),$(space),$(MOD))
+MOD_LIST := $(subst $(comma),$(space),$(MOD))
+# Eltale Reborn is always built with the gameplay mod (scripts/stage_mods.py stages both).
+MODS := $(strip $(MOD_LIST) $(if $(filter eltale,$(MOD_LIST)),$(if $(filter gameplay,$(MOD_LIST)),,gameplay)))
 
 ifneq ($(MOD),)
-MOD_NAME     := $(subst $(comma),-,$(MOD))
+MOD_NAME     := $(subst $(space),-,$(MODS))
+DISC_NAME    := $(if $(filter eltale,$(MODS)),eltale-reborn,quest64-$(MOD_NAME))
 VBUILD       := $(BUILD)/mod-$(MOD_NAME)
 RECOMP_DIR   := $(VBUILD)/recomp
 OBJ_DIR      := $(VBUILD)/obj
 STUBS_C      := $(VBUILD)/runtime_stubs.c
 DECLS_H      := $(VBUILD)/runtime_decls.h
-TARGET       := $(BUILD)/quest64-$(MOD_NAME).elf
+TARGET       := $(BUILD)/$(DISC_NAME).elf
 GAME_CONFIG  := $(VBUILD)/quest64.toml
 MODGEN       := $(VBUILD)/modgen
 MODRECOMP    := $(TOOLS)/modrecomp/modrecomp
@@ -71,8 +75,8 @@ MOD_CODE     := $(subst $(space),,$(foreach m,$(ID_MODS),$(call mod_code,$(m))))
 MOD_TITLE    ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,QUEST 64 $(MOD_CODE))
 MOD_DESC     ?= $(if $(filter eltale,$(MODS)),Eltale Reborn,Quest 64 $(MOD_CODE))
 
-CDI          := $(BUILD)/quest64-$(MOD_NAME).cdi
-TEST_CDI     := $(BUILD)/quest64-$(MOD_NAME)-test.cdi
+CDI          := $(BUILD)/$(DISC_NAME).cdi
+TEST_CDI     := $(BUILD)/$(DISC_NAME)-test.cdi
 DISC_DIR     := $(VBUILD)/disc
 TEST_DISC_DIR := $(VBUILD)/test-disc
 DISC_TITLE   := $(MOD_TITLE)

@@ -2,7 +2,7 @@
 # Runs the disc image in headless Flycast (docker image q64dc-flycast).
 # Usage: [TEST=1] [RESET_VMU=1] [FLYCAST_REND=n] [AUDIO_DUMP=path] [DISC=path] scripts/flycast.sh [seconds] [screenshot interval in seconds]
 # TEST=1 runs build/quest64-dc-test.cdi (make test-cdi) instead of build/quest64-dc.cdi; DISC runs
-# another image, e.g. build/quest64-eltale-test.cdi from a modded build. FLYCAST_REND
+# another image, e.g. build/eltale-reborn-test.cdi from a modded build. FLYCAST_REND
 # is Flycast's pvr.rend: 0 OpenGL, 3 OpenGL per-pixel, 4 Vulkan, 5 Vulkan per-pixel. AUDIO_DUMP
 # records the audio output as raw 44.1 kHz stereo s16 to a path under the repo (e.g. build/audio/run.raw).
 # Screenshots go to build/screens, Flycast's VMU images stay in build/flycast-home between runs.

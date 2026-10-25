@@ -8,7 +8,7 @@ mod's mod.toml (for its config defaults) and its link map (for test scripts) to 
 The build's inputs are only rewritten when
 their contents change, so an unchanged mod doesn't trigger a rebuild.
 
-usage: stage_mods.py <mods, e.g. eltale or eltale,gameplay> [--mod-dir DIR] [--no-build]
+usage: stage_mods.py <mods, e.g. eltale (which also stages gameplay)> [--mod-dir DIR] [--no-build]
 """
 
 import argparse
@@ -44,7 +44,11 @@ def main():
     if not (mod_dir / "build.py").exists():
         sys.exit(f"stage_mods: no build.py in {mod_dir} (set MOD_DIR / --mod-dir to the mod repo)")
 
-    for name in args.mods.split(","):
+    mods = args.mods.split(",")
+    # Eltale Reborn is always built with its gameplay companion (the Makefile adds it too).
+    if "eltale" in mods and "gameplay" not in mods:
+        mods.append("gameplay")
+    for name in mods:
         if name not in MODS:
             sys.exit(f"stage_mods: unknown mod {name!r}; known: {', '.join(MODS)}")
         target, toml, build_dir = MODS[name]

@@ -2,7 +2,7 @@
 # dev mode (its "dev_scene" config option jumps there the first time Brian is free), with Brian given the HP
 # to sit it out.
 #   make MOD=eltale MOD_CONFIG=eltale.dev_scene=4 test-cdi TEST_SCRIPT=tests/mod_hounds.txt
-#   scripts\flycast.ps1 230 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+#   scripts\flycast.ps1 230 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s

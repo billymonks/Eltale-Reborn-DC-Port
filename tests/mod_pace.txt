@@ -1,7 +1,7 @@
 # Eltale Reborn: frame pacing of scripted scenes with camera pans (CAM_PAN) and NPC walks: the village
 # farewell and Mira on the Melrode road, then Odran on the Holy Plain. See tests/pace.txt.
 #   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_pace.txt
-#   scripts\flycast.ps1 250 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+#   scripts\flycast.ps1 250 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s

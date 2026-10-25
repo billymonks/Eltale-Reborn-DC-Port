@@ -3,8 +3,8 @@
 # buttons to make Brian's steps longer. Brian walks for 0.6 s from the same spot in Melrode, without and
 # then with X held, and pos prints where he got to each time: about 27 units, then that times the
 # sprint speed. About 45 units ahead he walks into something, so longer walks end level.
-#   make MOD=eltale,gameplay test-cdi TEST_SCRIPT=tests/mod_sprint.txt
-#   scripts\flycast.ps1 100 -Test -ResetVmu -Disc build/quest64-eltale-gameplay-test.cdi
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_sprint.txt
+#   scripts\flycast.ps1 100 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s

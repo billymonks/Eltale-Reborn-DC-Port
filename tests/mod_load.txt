@@ -1,7 +1,7 @@
 # Eltale Reborn: loads the save tests/mod_story.txt made, from a fresh boot with the same VMU, and
 # checks the mod's flags came back with it (the mod keeps them in bytes 0x160-0x1FF of the save).
 #   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_load.txt
-#   scripts\flycast.ps1 100 -Test -Disc build/quest64-eltale-test.cdi   (without -ResetVmu)
+#   scripts\flycast.ps1 100 -Test -Disc build/eltale-reborn-test.cdi   (without -ResetVmu)
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
 wait 14000

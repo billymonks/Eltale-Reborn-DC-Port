@@ -15,7 +15,7 @@ The game is playable on the Dreamcast with its music and sound effects. In Flyca
 | 3 | F3DEX renderer on the PowerVR; title screen | done |
 | 4 | Rooms load from disc, Dreamcast controller, VMU saves | done |
 | 5 | Audio: audio microcode commands in C, streamed to the AICA | done |
-| 6 | Eltale Reborn compiled in ahead of time | done (`MOD=eltale`, optionally `MOD=eltale,gameplay`) |
+| 6 | Eltale Reborn compiled in ahead of time | done (`MOD=eltale`, with its gameplay mod) |
 | 7 | Performance: 30 fps everywhere with audio on | in progress: 30 fps in the measured scenes, except during map loads and on the Holy Plain (29.3) |
 
 ## How it works
@@ -158,7 +158,7 @@ The runtime looks for the ROM at `/cd/quest64.z64` (the disc), `/pc/quest64.us.z
 Test discs print their progress once a second to the debug console (dcload, or the serial port): video retraces, buffer swaps, graphics and audio tasks, ROM DMA, and the game's mode, state and map, then the renderer's and the audio's statistics. Every 10 seconds they add the ROM cache, the time no game thread could run, and how many frames took one, two, three or more retraces. Release discs don't print them, as the serial port is slow enough to cost frames.
 
 - **Emulator, headless.** `docker build -t q64dc-flycast docker/flycast` once, then `scripts\dc.ps1 make cdi` and `scripts\flycast.ps1 [seconds] [screenshot interval]` (`scripts/flycast.sh` on Linux/macOS). It runs Flycast under Xvfb and prints the serial console; with an interval, it also saves a screenshot every that many seconds to `build/screens/shot_<seconds>.png`. Flycast's VMU images live in `build/flycast-home/`, so saves survive between runs; `-ResetVmu` (`RESET_VMU=1`) starts with blank ones. `-Renderer n` (`FLYCAST_REND=n`) picks Flycast's renderer (`pvr.rend`). The image uses Flycast 2.7; `docker build --build-arg FLYCAST_VERSION=2.6 --build-arg FLYCAST_APPIMAGE=flycast-x86_64.AppImage -t q64dc-flycast26 docker/flycast` builds a 2.6 one.
-- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling, tracing the ROM cache's disc reads, free memory). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`), and a modded one with `-Disc build/quest64-eltale-test.cdi` (`DISC=...`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
+- **Test scripts.** Flycast has no input in headless mode, so `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds `build/quest64-dc-test.cdi`, a separate disc with a script that the runtime plays as controller 1 input (`runtime/src/test.c` lists the commands: button taps, the stick, waiting for Brian to be free, warps, placing Brian, forcing a random battle, memory peeks, pokes and watches, Brian's position, named screenshots, slowing the game down, profiling, tracing the ROM cache's disc reads, free memory). Run it with `scripts\flycast.ps1 -Test` (`TEST=1`), and a modded one with `-Disc build/eltale-reborn-test.cdi` (`DISC=...`). A test disc prints a banner on the console and draws a red bar across the top of the screen. The scripts in `tests/`:
   - `tour.txt`: a new game, then Melrode, the Holy Plain, the Blue Cave, the monastery, Dondoran Castle, Dindom Dries and the Melrode Inn, with the spell and Start menus.
   - `battle.txt`: a random battle on the Holy Plain.
   - `gfx.txt`: bursts of screenshots while walking in the monastery, Melrode, the Blue Cave and a monastery corridor, then a battle, for depth and culling errors.
@@ -181,23 +181,21 @@ Plain `make` and `make cdi` always build the unmodded game; its generated code a
 | `MOD=` | Disc | Title | Serial (test disc) | VMU file |
 | --- | --- | --- | --- | --- |
 | (none) | `build/quest64-dc.cdi` | QUEST 64 | Q64-DC (Q64-DC-T) | `QUEST64.PAK` |
-| `eltale` | `build/quest64-eltale.cdi` | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
-| `eltale,gameplay` | `build/quest64-eltale-gameplay.cdi` | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
+| `eltale` (or `eltale,gameplay`) | `build/eltale-reborn.cdi` (test disc `build/eltale-reborn-test.cdi`) | Eltale Reborn | Q64-ELT (Q64-TELT) | `Q64ELT.PAK` |
 | `gameplay` | `build/quest64-gameplay.cdi` | QUEST 64 GP | Q64-GP (Q64-TGP) | `Q64GP.PAK` |
 
-The gameplay mod (Quest 64: Modern Gameplay, in the same repo) saves nothing and works with any story, so with Eltale Reborn the disc stays Eltale Reborn's, saves and all, and either disc loads the other's saves. Its options include Start opening the map and the field sprint's speed, so a disc without it has neither.
+Eltale Reborn is always built with its companion, Quest 64: Modern Gameplay (`mods/gameplay` in the same repo): `MOD=eltale` and `scripts\mod.ps1 -Mod eltale` add it, and `scripts\mod.ps1` builds both by default. The gameplay mod saves nothing and works with any story, so the disc keeps Eltale Reborn's title, serial and saves. Its options include Start opening the map and the field sprint's speed. Earlier builds named the disc `quest64-eltale.cdi` (Eltale Reborn alone) or `quest64-eltale-gameplay.cdi`; they use the same save file.
 
 The cover is `assets/cover-<first mod>.png` (e.g. `assets/cover-eltale.png`), else `assets/cover.png`, else none.
 
 **Building.** The mods are built by their own build script on the host, where their toolchain is, and consumed from their repository; nothing of a mod is copied into this one. For Eltale Reborn (the `Quest-64-Good-Edition` repo, checked out next to this one by default):
 
 ```
-scripts\mod.ps1                                       # MOD=eltale, make -j16 cdi
-scripts\mod.ps1 -Mod eltale,gameplay make -j24 cdi    # with the optional gameplay mod
+scripts\mod.ps1 make -j24 cdi                        # build/eltale-reborn.cdi: Eltale Reborn and its gameplay mod
 scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCRIPT=tests/mod_story.txt
 ```
 
-`scripts\mod.ps1` takes the mod repo from `-ModDir`, else `MOD_DIR`, else `..\Quest-64-Good-Edition`. It runs `scripts/stage_mods.py`, which runs the mod's `python build.py story` (and `gameplay`; this needs the mod's Python requirements and zig, as for the desktop build) and copies `mod_syms.bin` and `mod_binary.bin` out of the `.nrm`, plus `mod.toml` and the link map, to `build/mods/<mod>/`, rewriting only what changed. Then it runs `make MOD=<mods>` in the toolchain container. With the mod already built, `-NoBuild` skips its build, and `scripts\dc.ps1 make MOD=eltale cdi` builds from what's staged. After a change to the mod, the same command rebuilds the disc; nothing is listed by hand.
+`scripts\mod.ps1` takes the mod repo from `-ModDir`, else `MOD_DIR`, else `..\Quest-64-Good-Edition`. It runs `scripts/stage_mods.py`, which runs the mod's `python build.py story` and `python build.py gameplay` (this needs the mod's Python requirements and zig, as for the desktop build) and copies `mod_syms.bin` and `mod_binary.bin` out of the `.nrm`, plus `mod.toml` and the link map, to `build/mods/<mod>/`, rewriting only what changed. Then it runs `make MOD=<mods>` in the toolchain container. With the mod already built, `-NoBuild` skips its build, and `scripts\dc.ps1 make MOD=eltale cdi` builds from what's staged. After a change to the mod, the same command rebuilds the disc; nothing is listed by hand.
 
 **How it's wired in.**
 - `tools/modrecomp` (built from N64Recomp's library) reads the staged mods and places each one at a fixed address from 0x80410000, after the game's 4 MB and the runtime's 64 KB. Sections are 16-byte aligned with their bss after them, and there are 0x400 bytes between mods. It applies the data relocations at build time, recompiles the code to C whose section addresses are constants, and checks every import against the runtime's.
@@ -227,7 +225,7 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
   - Of the base patches it must not patch, only the Controller Pak scan (`func_80031574`) and the limb drawing (`func_8001DC78`, interpolation tags) are active there; the others are commented out. The port runs the game's own versions with its own Controller Pak.
   - Its 160-byte save block at 0x160-0x1FF round-trips (see [Saves](#saves)).
 
-**Tests.** `tests/mod_*.txt` run on modded test discs (`make MOD=eltale test-cdi TEST_SCRIPT=...`, `scripts\flycast.ps1 <s> -Test -Disc build/quest64-eltale-test.cdi`). In them, `{symbol}` or `{symbol+offset}` stands for a mod symbol's Dreamcast address, looked up in the staged link map (`scripts/test_syms.py`). This keeps the scripts working when the mod's layout changes; for example, `{gModSave+8}` is Eltale Reborn's flag array.
+**Tests.** `tests/mod_*.txt` run on modded test discs (`make MOD=eltale test-cdi TEST_SCRIPT=...`, `scripts\flycast.ps1 <s> -Test -Disc build/eltale-reborn-test.cdi`). In them, `{symbol}` or `{symbol+offset}` stands for a mod symbol's Dreamcast address, looked up in the staged link map (`scripts/test_syms.py`). This keeps the scripts working when the mod's layout changes; for example, `{gModSave+8}` is Eltale Reborn's flag array.
 - `mod_story.txt` (with `-ResetVmu`), then `mod_load.txt`:
   - a new game through the mod's logo and prologue;
   - the inn sign;
@@ -239,7 +237,7 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
   - `mod_hounds.txt` (`dev_scene=4`): the prologue's night battle with the Hell Hounds at the monastery wall;
   - `mod_fx.txt` (`dev_scene=2`): the scripted spell visuals in Melrode, a scene that loops; run it with a screenshot interval.
 - `mod_sprint.txt`: Brian walks 0.6 s in Melrode without and then with X held (the test command `hold X`); pos shows about 27 units, then that times the sprint speed (34 with the gameplay mod's 1.25).
-- `mod_menu.txt` (`-Mod eltale,gameplay`): Start opens the world map (the gameplay mod's `start_on_map`), and the stick still turns to the next page.
+- `mod_menu.txt`: Start opens the world map (the gameplay mod's `start_on_map`), and the stick still turns to the next page.
 - `mod_perf.txt`: `perf.txt`'s scenes, with the Melrode walk turned away from the inn door, which the mod's town would take Brian through.
   - With Eltale Reborn 0.11.22, the title runs at 59.9 fps, and the monastery, the Blue Cave and the battle at 30, as without it.
   - The mod's own opening (its notice, logos and attract mode) runs at 56.6 fps (57.4 without the frame cadence), with the CPU two-thirds idle.
