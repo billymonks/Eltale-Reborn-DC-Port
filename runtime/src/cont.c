@@ -25,6 +25,9 @@
 #define N64_D_RIGHT 0x0100
 #define N64_L       0x0020
 #define N64_R       0x0010
+// No N64 button uses this bit, and Quest 64 never reads it. Dreamcast X maps here so a mod can
+// bind it (Eltale Reborn: sprint) without taking Z, which opens chests.
+#define N64_X       0x0040
 #define N64_C_UP    0x0008
 #define N64_C_DOWN  0x0004
 #define N64_C_LEFT  0x0002
@@ -66,14 +69,15 @@ static void scale_stick(int x, int y, int8_t* out_x, int8_t* out_y) {
     *out_y = (int8_t)lrintf(y * k);
 }
 
-// Dreamcast A/B are N64 A/B, the D-pad is the C buttons (the four spirits in battle), X and the
-// left trigger are Z, Y and the right trigger are R, Start is Start.
+// Dreamcast A/B are N64 A/B. The D-pad is the C buttons (the four spirits in battle). Y is R
+// (the item menu). X is the unused N64_X bit. The left trigger is L, the right trigger is Z
+// (chests), Start is Start.
 static uint16_t map_buttons(const cont_state_t* st) {
     uint32_t b = st->buttons;
     uint16_t out = 0;
     if (b & CONT_A) out |= N64_A;
     if (b & CONT_B) out |= N64_B;
-    if (b & CONT_X) out |= N64_Z;
+    if (b & CONT_X) out |= N64_X;
     if (b & CONT_Y) out |= N64_R;
     if (b & CONT_START) out |= N64_START;
     if (b & CONT_DPAD_UP) out |= N64_C_UP;

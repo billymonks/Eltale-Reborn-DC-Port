@@ -4,7 +4,7 @@
 //
 // Commands, one per line (# starts a comment, times are milliseconds of real time):
 //   wait <ms>                         do nothing
-//   hold <buttons> <ms>               hold buttons, e.g. A, S+A, CU (buttons: A B Z S L R CU CD CL CR DU DD DL DR)
+//   hold <buttons> <ms>               hold buttons, e.g. A, S+A, CU (buttons: A B Z S L R X CU CD CL CR DU DD DL DR; X is Dreamcast X's bit)
 //   tap <buttons> [count] [gap ms]    press for 100 ms, then release for gap (default 400)
 //   stick <x> <y> <ms>                hold the stick (N64 units, -80..80); 0 ms keeps it held until changed
 //   talk <timeout ms>                 tap A until Brian is free to move (no text, menu, warp or load)
@@ -98,7 +98,7 @@ static const struct {
 } button_names[] = {
     { "A", 0x8000 }, { "B", 0x4000 }, { "Z", 0x2000 }, { "S", 0x1000 },
     { "DU", 0x0800 }, { "DD", 0x0400 }, { "DL", 0x0200 }, { "DR", 0x0100 },
-    { "L", 0x0020 }, { "R", 0x0010 },
+    { "L", 0x0020 }, { "R", 0x0010 }, { "X", 0x0040 },
     { "CU", 0x0008 }, { "CD", 0x0004 }, { "CL", 0x0002 }, { "CR", 0x0001 },
 };
 

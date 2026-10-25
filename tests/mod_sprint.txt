@@ -1,0 +1,39 @@
+# Eltale Reborn's sprint (src/sprint.c): Dreamcast X sends the unused N64 bit 0x0040, which the mod reads
+# from the game's held buttons to make Brian's steps 1.5x as long. Brian walks for 0.6 s from the same
+# spot in Melrode, without and then with X held, and pos prints where he got to each time: about 27 and
+# 40 units. About 45 units ahead he walks into something, so longer walks end level.
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/mod_sprint.txt
+#   scripts\flycast.ps1 100 -Test -ResetVmu -Disc build/quest64-eltale-test.cdi
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
+
+wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8      # FLAG_PROLOGUE_DONE: no prologue
+wait 2500
+talk 150000                # the Grand Abbott's farewell
+warp 0 0 0                 # Melrode village
+wait 1500
+log SPRINT walk
+pos
+stick 0 -70 0              # down the street; up would go in at the inn door
+wait 600
+stick 0 0 0
+wait 500
+pos
+shot sp_walk
+warp 0 0 0
+wait 1500
+log SPRINT sprint
+pos
+stick 0 -70 0
+hold X 600
+stick 0 0 0
+wait 500
+pos
+shot sp_sprint
+log mod sprint finished

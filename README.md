@@ -112,16 +112,19 @@ The frames left over 2 vblanks are frames the game took longer than 2 vblanks to
 
 ## Controls
 
-| Dreamcast | N64 | In Quest 64 |
-| --- | --- | --- |
-| Analog stick | Stick | Walk; move cursors |
-| A | A | Talk, confirm, attack |
-| B | B | Cancel, close menus |
-| D-pad | C buttons | Spirits; C-up opens the spell menu |
-| Left trigger | L | |
-| X, right trigger | Z | |
-| Y | R | |
-| Start | Start | Start menu (status, items) |
+| Dreamcast | N64 | In Quest 64 | In Eltale Reborn |
+| --- | --- | --- | --- |
+| Analog stick | Stick | Walk; move cursors | |
+| A | A | Talk, confirm, attack | |
+| B | B | Cancel, close menus | |
+| D-pad | C buttons | Spirits; C-up opens the spell menu | |
+| Left trigger | L | | Previous item filter |
+| Right trigger | Z | | Next item filter; open chests |
+| X | Bit 0x0040 (no N64 button) | | Sprint (hold) |
+| Y | R | | Item menu |
+| Start | Start | Start menu (status, items) | Start menu (status, map) |
+
+Dreamcast X sends a bit of the N64 button word that no N64 button uses and Quest 64 never reads, so a mod can bind it without taking another button: Eltale Reborn's sprint (its `src/sprint.c`) makes Brian's steps 1.5 times as long while X is held on the field (`tests/mod_sprint.txt`). In the unmodded game X does nothing; the right trigger is the only Z.
 
 The stick is scaled to the N64's range: a radial deadzone of 14 (out of the Dreamcast's ±128), full deflection at 110, mapped to the N64 stick's ±80, with the direction kept. Menus such as the title screen's NEW / LOAD / DELETE move with the stick, not the D-pad.
 
@@ -232,6 +235,7 @@ scripts\mod.ps1 -ModDir D:\src\Quest-64-Good-Edition make -j24 test-cdi TEST_SCR
 - `mod_hounds.txt` and `mod_fx.txt` use the mod's dev mode, whose `dev_scene` config option jumps to a test scene the first time Brian is free (build with `MOD_CONFIG=eltale.dev_scene=<n>`, the option's index in its mod.toml):
   - `mod_hounds.txt` (`dev_scene=4`): the prologue's night battle with the Hell Hounds at the monastery wall;
   - `mod_fx.txt` (`dev_scene=2`): the scripted spell visuals in Melrode, a scene that loops; run it with a screenshot interval.
+- `mod_sprint.txt`: Brian walks 0.6 s in Melrode without and then with X held (the test command `hold X`); pos shows about 27 and 40 units.
 - `mod_perf.txt`: `perf.txt`'s scenes, with the Melrode walk turned away from the inn door, which the mod's town would take Brian through.
   - With Eltale Reborn 0.11.22, the title runs at 59.9 fps, and the monastery, the Blue Cave and the battle at 30, as without it.
   - The mod's own opening (its notice, logos and attract mode) runs at 56.6 fps (57.4 without the frame cadence), with the CPU two-thirds idle.
