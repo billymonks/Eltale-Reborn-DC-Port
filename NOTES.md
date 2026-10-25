@@ -103,7 +103,7 @@ One KallistiOS thread per N64 thread, and only one of them runs game code at a t
 
 ## Mods
 
-The Dreamcast does not recompile an `.nrm` at runtime. `scripts/stage_mods.py` runs the mod repo's `build.py` on the host and copies `mod_syms.bin`, `mod_binary.bin`, `mod.toml`, and the link map into `build/mods/<mod>/`. `tools/modrecomp` then places each mod at a fixed address from `0x80410000` (after the game's 4 MB and 64 KB of runtime), 16-byte aligned, bss after the section, 0x400 bytes between mods. Data relocations are applied at build time. `scripts/gen_mod_config.py` turns `RECOMP_PATCH`, `RECOMP_HOOK`, and `RECOMP_HOOK_RETURN` into hooks in a copy of `config/quest64.us.toml`. Two mods patching one function, or a mod patching a function this port stubs, fails the build.
+The Dreamcast does not recompile an `.nrm` at runtime. `scripts/stage_mods.py` unpacks the packages in `eltale/` and copies `mod_syms.bin`, `mod_binary.bin`, `mod.toml`, and the link map into `build/mods/<mod>/`. `tools/modrecomp` then places each mod at a fixed address from `0x80410000` (after the game's 4 MB and 64 KB of runtime), 16-byte aligned, bss after the section, 0x400 bytes between mods. Data relocations are applied at build time. `scripts/gen_mod_config.py` turns `RECOMP_PATCH`, `RECOMP_HOOK`, and `RECOMP_HOOK_RETURN` into hooks in a copy of `config/quest64.us.toml`. Two mods patching one function, or a mod patching a function this port stubs, fails the build.
 
 At boot, `mods_init` copies the image into place. Indirect calls go through a sorted table. The rest of the 2 MB mod area (`MOD_RAM_SIZE`) is the `recomp_alloc` heap.
 

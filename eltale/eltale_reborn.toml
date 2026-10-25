@@ -1,0 +1,58 @@
+# Eltale Reborn: Holy Magic Century - mod config for RecompModTool.
+
+[manifest]
+
+id = "eltale_reborn"
+version = "0.13.21"
+display_name = "Eltale Reborn: Holy Magic Century"
+description = """
+A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
+new events and side quests, and reworked progression.
+
+Work in progress."""
+short_description = "Story, NPC and progression overhaul for Quest 64."
+authors = [ "Billy Monks" ]
+
+# Mod game ID registered by Quest 64: Recompiled.
+game_id = "qs64"
+minimum_recomp_version = "1.0.0"
+
+dependencies = [
+]
+
+optional_dependencies = [
+]
+
+native_libraries = [
+]
+
+[[manifest.config_options]]
+id = "button_names"
+name = "Controller names in dialogue"
+description = "Dreamcast uses the port's buttons when dialogue names one: the right trigger opens a chest, Y opens the item menu, the D-pad casts magic, and L and R change the item list. A and B stay the same."
+type = "Enum"
+options = [ "Nintendo 64", "Dreamcast" ]
+default = "Dreamcast"
+
+[[manifest.config_options]]
+id = "time_log"
+name = "Log the time of day"
+description = "Debugging: once a second in towns and fields, write the clock, the lighting time and whatever is holding the clock to the log."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "dev_scene"
+name = "Dev mode: jump to a test scene"
+description = "Debugging: the first time Brian is free after a new game or a load, jump straight to this scene (setting the flags it needs). Leave Off to play normally."
+type = "Enum"
+options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds" ]
+default = "Off"
+
+[inputs]
+elf_path = "build/mod.elf"
+mod_filename = "eltale_reborn"
+func_reference_syms_file = "../Quest64Syms/dump.toml"
+data_reference_syms_files = [ "../Quest64Syms/data_dump.toml" ]
+additional_files = [ ]

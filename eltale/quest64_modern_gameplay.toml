@@ -1,0 +1,251 @@
+# Quest 64: Modern Gameplay - mod config for RecompModTool. Paths are relative to this file.
+
+[manifest]
+
+id = "quest64_modern_gameplay"
+version = "0.4.0"
+display_name = "Quest 64: Modern Gameplay"
+description = """
+Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
+faster stat growth and fewer random battles. Works on its own or together with the Eltale Reborn: Holy Magic Century story mod."""
+short_description = "Field sprint, bigger battle area, no early grind, faster growth."
+authors = [ "Billy Monks" ]
+
+game_id = "qs64"
+minimum_recomp_version = "1.0.0"
+
+dependencies = [
+]
+
+optional_dependencies = [
+]
+
+native_libraries = [
+]
+
+[[manifest.config_options]]
+id = "sprint_speed"
+name = "Sprint speed"
+description = "How much faster Brian moves on the field while sprint is held. 1.0 is his normal speed."
+type = "Number"
+min = 1.0
+max = 1.5
+step = 0.05
+precision = 2
+percent = false
+default = 1.25
+
+[[manifest.config_options]]
+id = "battle_move_scale"
+name = "Battle movement range"
+description = "Size of Brian's movement circle in battle, as a multiple of the original (which grows with Agility: about 18 at the start)."
+type = "Number"
+min = 1.0
+max = 3.0
+step = 0.1
+precision = 1
+percent = false
+default = 1.5
+
+[[manifest.config_options]]
+id = "arena_scale"
+name = "Battle arena size"
+description = "Size of the large battle circle (leave it to escape a random battle; bosses keep you inside it), as a multiple of the original."
+type = "Number"
+min = 1.0
+max = 2.5
+step = 0.1
+precision = 1
+percent = false
+default = 1.0
+
+[[manifest.config_options]]
+id = "encounter_rate"
+name = "Encounter rate"
+description = "How often random battles happen, as a multiple of the original rate."
+type = "Number"
+min = 0.25
+max = 1.0
+step = 0.05
+precision = 2
+percent = false
+default = 0.5
+
+[[manifest.config_options]]
+id = "stat_growth"
+name = "Stat growth speed"
+description = "HP, MP, Agility and Defense level up this many times faster (each level needs original / this much use)."
+type = "Number"
+min = 1.0
+max = 4.0
+step = 0.25
+precision = 2
+percent = false
+default = 2.5
+
+[[manifest.config_options]]
+id = "exp_rate"
+name = "EXP multiplier"
+description = "EXP from defeated enemies, which earns Spirit points."
+type = "Number"
+min = 1.0
+max = 3.0
+step = 0.25
+precision = 2
+percent = false
+default = 2.5
+
+[[manifest.config_options]]
+id = "enemy_hp"
+name = "Enemy HP"
+description = "HP of normal enemies, as a multiple of the original. Brian's damage grows with his spirits much more slowly than enemy HP grows from area to area; at 0.6 most enemies take 2-3 hits or spells instead of 4-6 in Act 2."
+type = "Number"
+min = 0.3
+max = 1.5
+step = 0.05
+precision = 2
+percent = false
+default = 0.6
+
+[[manifest.config_options]]
+id = "boss_hp"
+name = "Boss HP"
+description = "HP of bosses, as a multiple of their HP (including the Eltale Reborn story mod's retuned values). At 0.6 Zelse takes about 11 staff hits at Act 2 strength instead of about 19."
+type = "Number"
+min = 0.3
+max = 1.5
+step = 0.05
+precision = 2
+percent = false
+default = 0.6
+
+[[manifest.config_options]]
+id = "healing2_power"
+name = "Healing Lv2 strength"
+description = "Healing Lv2 (Water, Earth, Earth; 25 Water Spirits, 3 MP) heals this % of max HP plus Water/2. Original: 8, the same as Healing Lv1 with 'Healing from the start' on."
+type = "Number"
+min = 8
+max = 40
+step = 1
+precision = 0
+percent = false
+default = 20
+
+[[manifest.config_options]]
+id = "head_start"
+name = "Stronger start"
+description = "New games start with 65 HP, 20 MP, 8 Agility and 6 Defense instead of 50 / 15 / 5 / 4."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "early_healing"
+name = "Healing from the start"
+description = "Healing (Water, then Earth) can be cast with 1 Water Spirit instead of 7 and restores 8% of max HP + Water/2 instead of 2%, so you don't have to grind for it."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "balanced_magic"
+name = "Balanced magic"
+description = "On: every element adds to a spell, and points in that spell's element count double, so a focused build still hits hardest but the others aren't wasted. Healing uses the same rule. Avalanche is 4 rocks instead of 10 and not as heavy, Homing Arrow and the later wind spells hit harder, and Magic Barrier halves enemy spell damage instead of blocking it. Off: the original spell math."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "fast_battles"
+name = "Faster battles"
+description = "Shorter pause before enemy turns (20 to 8 frames) and a shorter battle intro (60 to 30 frames)."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "start_on_map"
+name = "Start opens the map"
+description = "On: Start opens the world map. Off: Start opens Brian's status, and the map is two screens to either side. The stick still moves between status, sound, the map and spirits. Saving and loading are unchanged."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "melee_aim"
+name = "Staff attack aiming"
+description = "Facing (vanilla): the staff icon appears only when an enemy is directly in front of Brian, and pressing A any other time ends the turn. Distance: the icon appears whenever he is close enough to connect, from any side, and the swing turns him to face that enemy."
+type = "Enum"
+options = [ "Distance", "Facing" ]
+default = "Distance"
+
+[[manifest.config_options]]
+id = "dodge_enemy_spells"
+name = "Dodge enemy spells"
+description = "Brian can walk while an enemy charges a spell (within the dodge range below), so he can get out of the way. His next turn keeps that same circle. Attacking, casting and items still wait for his turn."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "dodge_range"
+name = "Dodge range"
+description = "How far Brian can walk while an enemy charges a spell, as a fraction of his movement circle (measured from where he stood when the cast began)."
+type = "Number"
+min = 0.25
+max = 1.0
+step = 0.05
+precision = 2
+percent = false
+default = 1.0
+
+[[manifest.config_options]]
+id = "enemy_cast_camera"
+name = "Camera on enemy spells"
+description = "Vanilla: the camera stays on the caster until after the spell is released. Short glance: back to the battle view after 20 frames. Stay on Brian: no close-up on the caster."
+type = "Enum"
+options = [ "Vanilla", "Short glance", "Stay on Brian" ]
+default = "Stay on Brian"
+
+[[manifest.config_options]]
+id = "enemy_aim"
+name = "Enemy spell aim"
+description = "Cast start: enemies aim where Brian stood when they began charging (vanilla; a sidestep during the charge dodges straight shots). Release: they keep turning to follow Brian while charging and lock on when the spell comes out, so you have to dodge the spell in flight."
+type = "Enum"
+options = [ "Cast start", "Release" ]
+default = "Release"
+
+[[manifest.config_options]]
+id = "area_attacks"
+name = "Boss area attacks"
+description = "Always hit (vanilla): some boss waves (like Solvaring's earth attack) hit Brian as soon as they start, wherever he is. Dodgeable: they only hit when the wave actually reaches him."
+type = "Enum"
+options = [ "Always hit", "Dodgeable" ]
+default = "Dodgeable"
+
+[[manifest.config_options]]
+id = "rock_shower"
+name = "Enemy Rock Shower"
+description = "Hits anywhere (vanilla): when Rocky, Cockatrice or Judgment casts Rock Shower, the small rocks only fall around the caster, but Brian is hit wherever he is. Only under the rocks: he is hit only if he is where the rocks fall. Brian's own Rock Shower is unchanged."
+type = "Enum"
+options = [ "Hits anywhere", "Only under the rocks" ]
+default = "Only under the rocks"
+
+[[manifest.config_options]]
+id = "area_attack_size"
+name = "Boss area attack hit size"
+description = "How close a dodgeable boss wave has to get to Brian to hit him, in game units (Brian's movement circle is about 30 at the start)."
+type = "Number"
+min = 5.0
+max = 60.0
+step = 5.0
+precision = 0
+percent = false
+default = 20.0
+
+[inputs]
+elf_path = "../../build/gameplay/mod.elf"
+mod_filename = "quest64_modern_gameplay"
+func_reference_syms_file = "../../../Quest64Syms/dump.toml"
+data_reference_syms_files = [ "../../../Quest64Syms/data_dump.toml" ]
+additional_files = [ ]

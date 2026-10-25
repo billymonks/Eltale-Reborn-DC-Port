@@ -1,3 +1,4 @@
 # Scripts and the Makefile run inside the Linux toolchain container.
 * text=auto eol=lf
 *.ps1 text eol=crlf
+*.nrm binary

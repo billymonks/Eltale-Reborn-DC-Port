@@ -12,8 +12,8 @@
 # Modded builds: add MOD=<mods> (e.g. MOD=eltale) to any of the above to build the game with
 # N64Recomp mods statically recompiled in, with its own disc title, serial and VMU save. Eltale Reborn
 # always comes with its gameplay companion: MOD=eltale builds both, as build/eltale-reborn.elf/.cdi.
-# Other mod lists build build/quest64-<mods>.elf/.cdi. Stage the mods first on the host with
-# scripts\mod.ps1 (which also runs this) or scripts/stage_mods.py. MOD_CONFIG=eltale.time_log=Off,...
+# Other mod lists build build/quest64-<mods>.elf/.cdi. The .nrm packages are in eltale/.
+# scripts\mod.ps1 unpacks them and builds this target. MOD_CONFIG=eltale.time_log=Off,...
 # overrides mod.toml config defaults.
 
 ROM        := quest64.us.z64

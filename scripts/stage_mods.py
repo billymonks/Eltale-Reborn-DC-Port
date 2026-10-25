@@ -1,28 +1,25 @@
 #!/usr/bin/env python3
-"""Builds mods with their own build script and stages them for a modded Dreamcast build.
+"""Stages the Eltale Reborn packages in eltale/ for a Dreamcast build.
 
-Runs on the host, where the mod's toolchain is (Quest-64-Good-Edition's build.py uses zig/clang
-and downloads RecompModTool). For each mod it runs `python build.py <target>` in the mod repo,
-then copies what the Dreamcast build needs out of the .nrm (mod_syms.bin, mod_binary.bin), the
-mod's mod.toml (for its config defaults) and its link map (for test scripts) to build/mods/<name>/.
-The build's inputs are only rewritten when
-their contents change, so an unchanged mod doesn't trigger a rebuild.
+Each .nrm is a zip. mod_syms.bin and mod_binary.bin come out of it. The matching .toml is
+written as mod.toml, and the .map (test scripts only) as mod.map. Output is build/mods/<name>/.
+Files are rewritten only when their contents change.
 
-usage: stage_mods.py <mods, e.g. eltale (which also stages gameplay)> [--mod-dir DIR] [--no-build]
+usage: stage_mods.py <mods, e.g. eltale (which also stages gameplay)>
 """
 
 import argparse
-import subprocess
 import sys
 import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+ELTALE = ROOT / "eltale"
 
-# name -> (build.py target, mod.toml and build dir relative to the mod repo)
+# name -> (nrm, toml, link map) under eltale/
 MODS = {
-    "eltale": ("story", "mod.toml", "build"),
-    "gameplay": ("gameplay", "mods/gameplay/mod.toml", "build/gameplay"),
+    "eltale": ("eltale_reborn.nrm", "eltale_reborn.toml", "eltale_reborn.map"),
+    "gameplay": ("quest64_modern_gameplay.nrm", "quest64_modern_gameplay.toml", "quest64_modern_gameplay.map"),
 }
 
 
@@ -36,13 +33,7 @@ def write_if_changed(path, data):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("mods")
-    parser.add_argument("--mod-dir", default=str(ROOT.parent / "Quest-64-Good-Edition"))
-    parser.add_argument("--no-build", action="store_true", help="stage the mod's existing build output")
     args = parser.parse_args()
-
-    mod_dir = Path(args.mod_dir).resolve()
-    if not (mod_dir / "build.py").exists():
-        sys.exit(f"stage_mods: no build.py in {mod_dir} (set MOD_DIR / --mod-dir to the mod repo)")
 
     mods = args.mods.split(",")
     # Eltale Reborn is always built with its gameplay companion (the Makefile adds it too).
@@ -51,27 +42,29 @@ def main():
     for name in mods:
         if name not in MODS:
             sys.exit(f"stage_mods: unknown mod {name!r}; known: {', '.join(MODS)}")
-        target, toml, build_dir = MODS[name]
-        if not args.no_build:
-            print(f"stage_mods: building {name} (python build.py {target}) in {mod_dir}", flush=True)
-            subprocess.run([sys.executable, "build.py", target], cwd=mod_dir, check=True)
-        nrms = sorted((mod_dir / build_dir).glob("*.nrm"), key=lambda p: p.stat().st_mtime)
-        if not nrms:
-            sys.exit(f"stage_mods: no .nrm in {mod_dir / build_dir}")
-        nrm = nrms[-1]
+        nrm_name, toml_name, map_name = MODS[name]
+        nrm = ELTALE / nrm_name
+        toml = ELTALE / toml_name
+        if not nrm.is_file():
+            sys.exit(f"stage_mods: missing {nrm.relative_to(ROOT)}")
+        if not toml.is_file():
+            sys.exit(f"stage_mods: missing {toml.relative_to(ROOT)}")
 
         out = ROOT / "build" / "mods" / name
         out.mkdir(parents=True, exist_ok=True)
         changed = []
         with zipfile.ZipFile(nrm) as z:
             for member in ("mod_syms.bin", "mod_binary.bin"):
-                if write_if_changed(out / member, z.read(member)):
+                try:
+                    data = z.read(member)
+                except KeyError:
+                    sys.exit(f"stage_mods: {nrm.name} has no {member}")
+                if write_if_changed(out / member, data):
                     changed.append(member)
-        if write_if_changed(out / "mod.toml", (mod_dir / toml).read_bytes()):
+        if write_if_changed(out / "mod.toml", toml.read_bytes()):
             changed.append("mod.toml")
-        # Only test scripts use the map (scripts/test_syms.py), so it isn't one of the build's inputs.
-        mod_map = mod_dir / build_dir / "mod.map"
-        if mod_map.exists():
+        mod_map = ELTALE / map_name
+        if mod_map.is_file():
             (out / "mod.map").write_bytes(mod_map.read_bytes())
         print(f"stage_mods: {name} from {nrm.name} -> {out.relative_to(ROOT)}"
               + (f" (updated {', '.join(changed)})" if changed else " (unchanged)"))

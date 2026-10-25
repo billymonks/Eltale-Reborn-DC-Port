@@ -1,0 +1,503 @@
+     VMA      LMA     Size Align Out     In      Symbol
+       0        0        0     1 RAMBASE = 0x81000000
+81000000 81000000       40     4 .rodata.cst4
+81000000 81000000       40     4         <internal>:(.rodata.cst4)
+81000040 81000040      4b2     1 .rodata.str1.1
+81000040 81000040      4b2     1         <internal>:(.rodata.str1.1)
+810004f4 810004f4       6c     4 .rodata
+810004f4 810004f4       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.rodata)
+810004f4 810004f4       18     1                 sAreaSpells
+8100050c 8100050c       54     2         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rodata)
+8100050c 8100050c       54     1                 sTunes
+81000560 81000560       c8     4 .recomp_import.*
+81000560 81000560       80     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.recomp_import.*)
+81000560 81000560        8     1                 recomp_alloc
+81000568 81000568        8     1                 recomp_free
+81000570 81000570       10     1                 recomp_printf
+81000580 81000580        8     1                 recomphook_get_return_s32
+81000588 81000588        8     1                 recomphook_get_return_u32
+81000590 81000590        8     1                 recomphook_get_return_ptr
+81000598 81000598        8     1                 recomphook_get_return_s16
+810005a0 810005a0        8     1                 recomphook_get_return_u16
+810005a8 810005a8        8     1                 recomphook_get_return_s8
+810005b0 810005b0        8     1                 recomphook_get_return_u8
+810005b8 810005b8        8     1                 recomphook_get_return_s64
+810005c0 810005c0        8     1                 recomphook_get_return_u64
+810005c8 810005c8        8     1                 recomphook_get_return_float
+810005d0 810005d0        8     1                 recomphook_get_return_double
+810005d8 810005d8        8     1                 recomp_is_dependency_met
+810005e0 810005e0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.recomp_import.*)
+810005e0 810005e0        8     1                 recomp_get_config_u32
+810005e8 810005e8        8     1                 recomp_get_config_double
+810005f0 810005f0        8     1                 recomp_get_config_string
+810005f8 810005f8        8     1                 recomp_free_config_string
+81000600 81000600        8     1                 recomp_get_mod_version
+81000608 81000608        8     1                 recomp_change_save_file
+81000610 81000610        8     1                 recomp_get_save_file_path
+81000618 81000618        8     1                 recomp_get_mod_folder_path
+81000620 81000620        8     1                 recomp_get_mod_file_path
+81000628 81000628       1c     4 .text.gp_aim_attack_started
+81000628 81000628       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.text.gp_aim_attack_started)
+81000628 81000628       1c     1                 gp_aim_attack_started
+81000644 81000644      32c     4 .recomp_hook.func_80009D78
+81000644 81000644      32c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.recomp_hook.func_80009D78)
+81000644 81000644      32c     1                 gp_before_enemy_spell
+81000970 81000970       f8     4 .recomp_hook.func_8000B300
+81000970 81000970       f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.recomp_hook.func_8000B300)
+81000970 81000970       f8     1                 gp_before_boss_script
+81000a68 81000a68       c8     4 .recomp_hook_return.func_8000B300
+81000a68 81000a68       c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.recomp_hook_return.func_8000B300)
+81000a68 81000a68       c8     1                 gp_after_boss_script
+81000b30 81000b30      1fc     4 .text.gp_apply_area_attacks
+81000b30 81000b30      1fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.text.gp_apply_area_attacks)
+81000b30 81000b30      1fc     1                 gp_apply_area_attacks
+81000d2c 81000d2c      17c     4 .recomp_hook.func_8001613C
+81000d2c 81000d2c      17c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.recomp_hook.func_8001613C)
+81000d2c 81000d2c      17c     1                 gp_before_spell_distance_test
+81000ea8 81000ea8       60     4 .recomp_hook_return.func_80003A1C
+81000ea8 81000ea8       44     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.recomp_hook_return.func_80003A1C)
+81000ea8 81000ea8       44     1                 gp_after_player_battle_setup
+81000eec 81000eec       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook_return.func_80003A1C)
+81000eec 81000eec       1c     1                 gp_dodge_battle_started
+81000f08 81000f08       fc     4 .text.gp_on_random_battle_start
+81000f08 81000f08       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.text.gp_on_random_battle_start)
+81000f08 81000f08       fc     1                 gp_on_random_battle_start
+81001004 81001004      160     4 .recomp_hook.func_8001C8C4
+81001004 81001004      160     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.recomp_hook.func_8001C8C4)
+81001004 81001004      160     1                 gp_before_boss_battle_setup
+81001164 81001164       24     4 .text.gp_config_encounter_rate
+81001164 81001164       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_encounter_rate)
+81001164 81001164       24     1                 gp_config_encounter_rate
+81001188 81001188       24     4 .text.gp_config_move_scale
+81001188 81001188       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_move_scale)
+81001188 81001188       24     1                 gp_config_move_scale
+810011ac 810011ac       24     4 .text.gp_config_arena_scale
+810011ac 810011ac       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_arena_scale)
+810011ac 810011ac       24     1                 gp_config_arena_scale
+810011d0 810011d0       24     4 .text.gp_config_stat_growth
+810011d0 810011d0       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_stat_growth)
+810011d0 810011d0       24     1                 gp_config_stat_growth
+810011f4 810011f4       24     4 .text.gp_config_exp_rate
+810011f4 810011f4       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_exp_rate)
+810011f4 810011f4       24     1                 gp_config_exp_rate
+81001218 81001218       24     4 .text.gp_config_head_start
+81001218 81001218       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_head_start)
+81001218 81001218       24     1                 gp_config_head_start
+8100123c 8100123c       24     4 .text.gp_config_early_healing
+8100123c 8100123c       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_early_healing)
+8100123c 8100123c       24     1                 gp_config_early_healing
+81001260 81001260       24     4 .text.gp_config_fast_battles
+81001260 81001260       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_fast_battles)
+81001260 81001260       24     1                 gp_config_fast_battles
+81001284 81001284       24     4 .text.gp_config_start_on_map
+81001284 81001284       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_start_on_map)
+81001284 81001284       24     1                 gp_config_start_on_map
+810012a8 810012a8       24     4 .text.gp_config_melee_distance
+810012a8 810012a8       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_melee_distance)
+810012a8 810012a8       24     1                 gp_config_melee_distance
+810012cc 810012cc       24     4 .text.gp_config_dodge
+810012cc 810012cc       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_dodge)
+810012cc 810012cc       24     1                 gp_config_dodge
+810012f0 810012f0       24     4 .text.gp_config_dodge_range
+810012f0 810012f0       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_dodge_range)
+810012f0 810012f0       24     1                 gp_config_dodge_range
+81001314 81001314       20     4 .text.gp_config_cast_camera
+81001314 81001314       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_cast_camera)
+81001314 81001314       20     1                 gp_config_cast_camera
+81001334 81001334       20     4 .text.gp_config_enemy_aim
+81001334 81001334       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_enemy_aim)
+81001334 81001334       20     1                 gp_config_enemy_aim
+81001354 81001354       24     4 .text.gp_config_dodgeable_areas
+81001354 81001354       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_dodgeable_areas)
+81001354 81001354       24     1                 gp_config_dodgeable_areas
+81001378 81001378       24     4 .text.gp_config_area_size
+81001378 81001378       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_area_size)
+81001378 81001378       24     1                 gp_config_area_size
+8100139c 8100139c       24     4 .text.gp_config_rock_shower
+8100139c 8100139c       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_rock_shower)
+8100139c 8100139c       24     1                 gp_config_rock_shower
+810013c0 810013c0       24     4 .text.gp_config_enemy_hp
+810013c0 810013c0       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_enemy_hp)
+810013c0 810013c0       24     1                 gp_config_enemy_hp
+810013e4 810013e4       24     4 .text.gp_config_boss_hp
+810013e4 810013e4       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_boss_hp)
+810013e4 810013e4       24     1                 gp_config_boss_hp
+81001408 81001408       38     4 .text.gp_config_healing2_power
+81001408 81001408       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_healing2_power)
+81001408 81001408       38     1                 gp_config_healing2_power
+81001440 81001440       24     4 .text.gp_config_balanced_magic
+81001440 81001440       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.text.gp_config_balanced_magic)
+81001440 81001440       24     1                 gp_config_balanced_magic
+81001464 81001464      14c     4 .text.gp_dodge_turn_ended
+81001464 81001464      14c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.text.gp_dodge_turn_ended)
+81001464 81001464      14c     1                 gp_dodge_turn_ended
+810015b0 810015b0      430     4 .recomp_hook.func_80003B60
+810015b0 810015b0      430     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook.func_80003B60)
+810015b0 810015b0      430     1                 gp_before_player_walk
+810019e0 810019e0       98     4 .recomp_hook_return.func_80003B60
+810019e0 810019e0       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook_return.func_80003B60)
+810019e0 810019e0       98     1                 gp_after_player_walk
+81001a78 81001a78      1f0     4 .recomp_hook_return.func_8001CFE8
+81001a78 81001a78      1f0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook_return.func_8001CFE8)
+81001a78 81001a78      1f0     1                 gp_after_battle_turn_start
+81001c68 81001c68       20     4 .recomp_hook.func_8000A284
+81001c68 81001c68       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook.func_8000A284)
+81001c68 81001c68       20     1                 gp_before_enemy_attack
+81001c88 81001c88       9c     4 .recomp_hook_return.func_8000A284
+81001c88 81001c88       9c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.recomp_hook_return.func_8000A284)
+81001c88 81001c88       9c     1                 gp_after_enemy_attack
+81001d24 81001d24       3c     4 .recomp_hook.func_8001C5F4
+81001d24 81001d24       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.recomp_hook.func_8001C5F4)
+81001d24 81001d24       3c     1                 gp_before_encounter_check
+81001d60 81001d60       c4     4 .recomp_hook_return.func_8001C5F4
+81001d60 81001d60       c4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.recomp_hook_return.func_8001C5F4)
+81001d60 81001d60       c4     1                 gp_after_encounter_check
+81001e24 81001e24       24     4 .text.gp_enemies_battle_started
+81001e24 81001e24       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.text.gp_enemies_battle_started)
+81001e24 81001e24       24     1                 gp_enemies_battle_started
+81001e48 81001e48      204     4 .recomp_hook.func_80008C20
+81001e48 81001e48      204     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.recomp_hook.func_80008C20)
+81001e48 81001e48      204     1                 gp_before_enemy_update
+8100204c 8100204c      1b0     4 .text.gp_apply_spell_balance
+8100204c 8100204c      1b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.text.gp_apply_spell_balance)
+8100204c 8100204c      1b0     1                 gp_apply_spell_balance
+810021fc 810021fc      1dc     4 .recomp_hook.func_800175D4
+810021fc 810021fc      1dc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_800175D4)
+810021fc 810021fc      1dc     1                 gp_before_spell_power
+810023d8 810023d8       58     4 .recomp_hook_return.func_800175D4
+810023d8 810023d8       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_800175D4)
+810023d8 810023d8       58     1                 gp_after_spell_power
+81002430 81002430      17c     4 .recomp_hook.func_800165E4
+81002430 81002430      17c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_800165E4)
+81002430 81002430      17c     1                 gp_before_heal
+810025ac 810025ac       3c     4 .recomp_hook_return.func_800165E4
+810025ac 810025ac       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_800165E4)
+810025ac 810025ac       3c     1                 gp_after_heal
+810025e8 810025e8       84     4 .recomp_hook.func_800156D0
+810025e8 810025e8       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_800156D0)
+810025e8 810025e8       84     1                 gp_before_spell_resolve
+8100266c 8100266c       60     4 .recomp_hook_return.func_800156D0
+8100266c 8100266c       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_800156D0)
+8100266c 8100266c       60     1                 gp_after_spell_resolve
+810026cc 810026cc       54     4 .recomp_hook.func_80016520
+810026cc 810026cc       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_80016520)
+810026cc 810026cc       54     1                 gp_before_spell_damage
+81002720 81002720        c     4 .recomp_hook_return.func_80016520
+81002720 81002720        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_80016520)
+81002720 81002720        c     1                 gp_after_spell_damage
+8100272c 8100272c       9c     4 .recomp_hook.func_80006BEC
+8100272c 8100272c       9c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_80006BEC)
+8100272c 8100272c       9c     1                 gp_before_brian_hurt
+810027c8 810027c8       30     4 .recomp_hook_return.func_80006BEC
+810027c8 810027c8       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_80006BEC)
+810027c8 810027c8       30     1                 gp_after_brian_hurt
+810027f8 810027f8      12c     4 .recomp_hook.func_80016CB0
+810027f8 810027f8      12c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook.func_80016CB0)
+810027f8 810027f8      12c     1                 gp_before_dispel
+81002924 81002924       74     4 .recomp_hook_return.func_80016CB0
+81002924 81002924       74     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.recomp_hook_return.func_80016CB0)
+81002924 81002924       74     1                 gp_after_dispel
+81002998 81002998       28     4 .recomp_hook.func_80031C40
+81002998 81002998       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\main.o:(.recomp_hook.func_80031C40)
+81002998 81002998       28     1                 gp_on_title_screen_load
+810029c0 810029c0      34c     4 .recomp_hook.func_80006774
+810029c0 810029c0      34c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.recomp_hook.func_80006774)
+810029c0 810029c0      34c     1                 gp_before_melee_target
+81002d0c 81002d0c       30     4 .recomp_hook_return.func_80006774
+81002d0c 81002d0c       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.recomp_hook_return.func_80006774)
+81002d0c 81002d0c       30     1                 gp_after_melee_target
+81002d3c 81002d3c       c4     4 .recomp_hook.func_800069FC
+81002d3c 81002d3c       c4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.recomp_hook.func_800069FC)
+81002d3c 81002d3c       c4     1                 gp_before_staff_attack
+81002e00 81002e00       64     4 .recomp_hook.func_800020B4
+81002e00 81002e00       64     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\menu.o:(.recomp_hook.func_800020B4)
+81002e00 81002e00       64     1                 gp_before_pause_menu
+81002e64 81002e64       4c     4 .recomp_hook_return.func_8001D358
+81002e64 81002e64       4c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\pacing.o:(.recomp_hook_return.func_8001D358)
+81002e64 81002e64       4c     1                 gp_after_turn_end
+81002eb0 81002eb0       60     4 .recomp_hook_return.func_8001CACC
+81002eb0 81002eb0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\pacing.o:(.recomp_hook_return.func_8001CACC)
+81002eb0 81002eb0       60     1                 gp_after_battle_intro
+81002f10 81002f10      4fc     4 .text.gp_apply_tables
+81002f10 81002f10      4fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.text.gp_apply_tables)
+81002f10 81002f10      4fc     1                 gp_apply_tables
+8100340c 8100340c       1c     4 .recomp_hook.func_800027D0
+8100340c 8100340c       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.recomp_hook.func_800027D0)
+8100340c 8100340c       1c     1                 gp_before_player_init
+81003428 81003428       18     4 .recomp_hook.func_80009818
+81003428 81003428       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.recomp_hook.func_80009818)
+81003428 81003428       18     1                 gp_before_enemy_defeat
+81003440 81003440       94     4 .recomp_hook_return.func_80009818
+81003440 81003440       94     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.recomp_hook_return.func_80009818)
+81003440 81003440       94     1                 gp_after_enemy_defeat
+810034d4 810034d4      410     4 .text.gp_rock_shower_before_test
+810034d4 810034d4      410     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.text.gp_rock_shower_before_test)
+810034d4 810034d4      410     1                 gp_rock_shower_before_test
+810038e4 810038e4       2c     4 .recomp_hook_return.func_8001613C
+810038e4 810038e4       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.recomp_hook_return.func_8001613C)
+810038e4 810038e4       2c     1                 gp_rock_shower_after_test
+81003910 81003910      1dc     4 .recomp_hook.func_80005748
+81003910 81003910      1dc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.recomp_hook.func_80005748)
+81003910 81003910      1dc     1                 sprint_before_move
+81003aec 81003aec       4c     4 .recomp_hook_return.func_80005748
+81003aec 81003aec       4c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.recomp_hook_return.func_80005748)
+81003aec 81003aec       4c     1                 sprint_after_move
+81003b40 81003b40      268    16 .bss
+81003b40 81003b40       54    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.bss)
+81003b40 81003b40        4     1                 sAimEnemy
+81003b44 81003b44        4     1                 sAimTurned
+81003b48 81003b48        4     1                 sEffects
+81003b4c 81003b4c        4     1                 sWatchScript
+81003b50 81003b50        4     1                 sActiveBefore
+81003b54 81003b54       40     1                 sEffectAge
+81003ba0 81003ba0       1c    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.bss)
+81003ba0 81003ba0        1     1                 gp_apply_area_attacks.sWarned
+81003ba4 81003ba4        1     1                 sSaved
+81003ba8 81003ba8        4     1                 sVanillaRadius.0
+81003bac 81003bac        4     1                 sVanillaRadius.1
+81003bb0 81003bb0        4     1                 sVanillaRadius.2
+81003bb4 81003bb4        4     1                 sConverted
+81003bb8 81003bb8        4     1                 gp_before_spell_distance_test.sCalls
+81003bc0 81003bc0       24    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.bss)
+81003bc0 81003bc0        1     1                 sBossArenaSaved
+81003bc4 81003bc4        4     1                 sBossArenaVanilla.0
+81003bc8 81003bc8        4     1                 sBossArenaVanilla.1
+81003bcc 81003bcc        4     1                 sBossArenaVanilla.2
+81003bd0 81003bd0        4     1                 sBossArenaVanilla.3
+81003bd4 81003bd4        4     1                 sBossArenaVanilla.4
+81003bd8 81003bd8        4     1                 sBossArenaVanilla.5
+81003bdc 81003bdc        4     1                 sBossArenaVanilla.6
+81003be0 81003be0        4     1                 sBossArenaVanilla.7
+81003bf0 81003bf0       3c    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.bss)
+81003bf0 81003bf0        1     1                 sCastSeen
+81003bf4 81003bf4        1     1                 sKeepCircle
+81003bf8 81003bf8        1     1                 sRadiusHeld
+81003bfc 81003bfc        4     1                 sDodgeX
+81003c00 81003c00        4     1                 sDodgeZ
+81003c04 81003c04        4     1                 sDodgeScale
+81003c08 81003c08        1     1                 sDodging
+81003c0c 81003c0c        1     1                 sHidEnemyTurn
+81003c10 81003c10        4     1                 sSavedTurnX
+81003c14 81003c14        4     1                 sSavedTurnZ
+81003c18 81003c18        4     1                 sSavedMoveScale
+81003c1c 81003c1c        2     1                 sSavedOutside
+81003c20 81003c20        4     1                 sDodgeDraw
+81003c24 81003c24        4     1                 sAttackingEnemy
+81003c28 81003c28        4     1                 sRestoreRadius
+81003c30 81003c30        a    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.bss)
+81003c30 81003c30        4     1                 sDistanceBefore
+81003c34 81003c34        4     1                 sStep
+81003c38 81003c38        2     1                 sBattleStateBefore
+81003c40 81003c40       24    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.bss)
+81003c40 81003c40       18     1                 sScaledBase
+81003c58 81003c58        c     1                 sScaledMax
+81003c70 81003c70       48    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.bss)
+81003c70 81003c70        1     1                 gp_apply_spell_balance.sWarned
+81003c74 81003c74        1     1                 sPowerSwapped
+81003c78 81003c78        4     1                 sPowerSaved
+81003c7c 81003c7c        1     1                 sHealSwapped
+81003c80 81003c80        4     1                 sHealByte
+81003c84 81003c84        1     1                 sHealSaved
+81003c88 81003c88        1     1                 sBarrier
+81003c8c 81003c8c        1     1                 sDispelled
+81003c90 81003c90        1     1                 sUndoPurge
+81003c94 81003c94        1     1                 sHitBrian
+81003c98 81003c98        1     1                 sDefenseRaised
+81003c9c 81003c9c        2     1                 sSavedDefense
+81003ca0 81003ca0        4     1                 sPurgeStatus
+81003ca4 81003ca4        2     1                 sPurgeBits
+81003ca8 81003ca8        2     1                 sPurgeStat
+81003cac 81003cac        2     1                 sPurgeDefense
+81003cb0 81003cb0        2     1                 sPurgeAttack
+81003cb4 81003cb4        4     1                 sPurgeScale
+81003cc0 81003cc0        8    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.bss)
+81003cc0 81003cc0        1     1                 sTurned
+81003cc4 81003cc4        4     1                 sSavedYaw
+81003cd0 81003cd0       b1    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.bss)
+81003cd0 81003cd0       70     1                 sStatCostVanilla
+81003d40 81003d40        4     1                 sNewGameVanilla.0
+81003d44 81003d44        4     1                 sNewGameVanilla.1
+81003d48 81003d48        4     1                 sNewGameVanilla.2
+81003d4c 81003d4c        4     1                 sNewGameVanilla.3
+81003d50 81003d50        4     1                 sNewGameVanilla.4
+81003d54 81003d54        4     1                 sNewGameVanilla.5
+81003d58 81003d58        4     1                 sNewGameVanilla.6
+81003d5c 81003d5c        4     1                 sNewGameVanilla.7
+81003d60 81003d60        4     1                 sNewGameVanilla.8
+81003d64 81003d64        4     1                 sNewGameVanilla.9
+81003d68 81003d68        4     1                 sNewGameVanilla.10
+81003d6c 81003d6c        4     1                 sNewGameVanilla.11
+81003d70 81003d70        4     1                 sNewGameVanilla.12
+81003d74 81003d74        4     1                 sNewGameVanilla.13
+81003d78 81003d78        1     1                 gp_apply_tables.sWarned
+81003d7c 81003d7c        4     1                 sExpBefore
+81003d80 81003d80        1     1                 sSaved
+81003d90 81003d90       10    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.bss)
+81003d90 81003d90        4     1                 gp_rock_shower_before_test.sCalls
+81003d94 81003d94        4     1                 sSpell
+81003d98 81003d98        4     1                 sFootprint
+81003d9c 81003d9c        4     1                 sVanillaRadius
+81003da0 81003da0        8    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.bss)
+81003da0 81003da0        1     1                 sSprinted
+81003da4 81003da4        4     1                 sScale
+       0        0        0     1 .mdebug.abi32
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\main.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\menu.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\pacing.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.mdebug.abi32)
+       0        0       30     4 .rel.text.gp_aim_attack_started
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.rel.text.gp_aim_attack_started)
+       0        0      188     4 .rel.recomp_hook.func_80009D78
+       0        0      188     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.rel.recomp_hook.func_80009D78)
+       0        0       70     4 .rel.recomp_hook.func_8000B300
+       0        0       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.rel.recomp_hook.func_8000B300)
+       0        0       70     4 .rel.recomp_hook_return.func_8000B300
+       0        0       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\aim.o:(.rel.recomp_hook_return.func_8000B300)
+       0        0       e8     4 .rel.text.gp_apply_area_attacks
+       0        0       e8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.rel.text.gp_apply_area_attacks)
+       0        0       70     4 .rel.recomp_hook.func_8001613C
+       0        0       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.rel.recomp_hook.func_8001613C)
+       0        0       18     4 .rel.rodata
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\area.o:(.rel.rodata)
+       0        0       48     4 .rel.recomp_hook_return.func_80003A1C
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.rel.recomp_hook_return.func_80003A1C)
+      18       18       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook_return.func_80003A1C)
+       0        0       40     4 .rel.text.gp_on_random_battle_start
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.rel.text.gp_on_random_battle_start)
+       0        0      128     4 .rel.recomp_hook.func_8001C8C4
+       0        0      128     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\arena.o:(.rel.recomp_hook.func_8001C8C4)
+       0        0       18     4 .rel.text.gp_config_encounter_rate
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_encounter_rate)
+       0        0       18     4 .rel.text.gp_config_move_scale
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_move_scale)
+       0        0       18     4 .rel.text.gp_config_arena_scale
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_arena_scale)
+       0        0       18     4 .rel.text.gp_config_stat_growth
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_stat_growth)
+       0        0       18     4 .rel.text.gp_config_exp_rate
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_exp_rate)
+       0        0       18     4 .rel.text.gp_config_head_start
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_head_start)
+       0        0       18     4 .rel.text.gp_config_early_healing
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_early_healing)
+       0        0       18     4 .rel.text.gp_config_fast_battles
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_fast_battles)
+       0        0       18     4 .rel.text.gp_config_start_on_map
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_start_on_map)
+       0        0       18     4 .rel.text.gp_config_melee_distance
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_melee_distance)
+       0        0       18     4 .rel.text.gp_config_dodge
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_dodge)
+       0        0       18     4 .rel.text.gp_config_dodge_range
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_dodge_range)
+       0        0       18     4 .rel.text.gp_config_cast_camera
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_cast_camera)
+       0        0       18     4 .rel.text.gp_config_enemy_aim
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_enemy_aim)
+       0        0       18     4 .rel.text.gp_config_dodgeable_areas
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_dodgeable_areas)
+       0        0       18     4 .rel.text.gp_config_area_size
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_area_size)
+       0        0       18     4 .rel.text.gp_config_rock_shower
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_rock_shower)
+       0        0       18     4 .rel.text.gp_config_enemy_hp
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_enemy_hp)
+       0        0       18     4 .rel.text.gp_config_boss_hp
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_boss_hp)
+       0        0       28     4 .rel.text.gp_config_healing2_power
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_healing2_power)
+       0        0       18     4 .rel.text.gp_config_balanced_magic
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\config.o:(.rel.text.gp_config_balanced_magic)
+       0        0      108     4 .rel.text.gp_dodge_turn_ended
+       0        0      108     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.text.gp_dodge_turn_ended)
+       0        0      248     4 .rel.recomp_hook.func_80003B60
+       0        0      248     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook.func_80003B60)
+       0        0       70     4 .rel.recomp_hook_return.func_80003B60
+       0        0       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook_return.func_80003B60)
+       0        0      100     4 .rel.recomp_hook_return.func_8001CFE8
+       0        0      100     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook_return.func_8001CFE8)
+       0        0       18     4 .rel.recomp_hook.func_8000A284
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook.func_8000A284)
+       0        0       18     4 .rel.recomp_hook_return.func_8000A284
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\dodge.o:(.rel.recomp_hook_return.func_8000A284)
+       0        0       30     4 .rel.recomp_hook.func_8001C5F4
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.rel.recomp_hook.func_8001C5F4)
+       0        0       58     4 .rel.recomp_hook_return.func_8001C5F4
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\encounters.o:(.rel.recomp_hook_return.func_8001C5F4)
+       0        0       18     4 .rel.text.gp_enemies_battle_started
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.rel.text.gp_enemies_battle_started)
+       0        0       50     4 .rel.recomp_hook.func_80008C20
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\enemies.o:(.rel.recomp_hook.func_80008C20)
+       0        0       60     4 .rel.text.gp_apply_spell_balance
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.text.gp_apply_spell_balance)
+       0        0       58     4 .rel.recomp_hook.func_800175D4
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_800175D4)
+       0        0       30     4 .rel.recomp_hook_return.func_800175D4
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_800175D4)
+       0        0       60     4 .rel.recomp_hook.func_800165E4
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_800165E4)
+       0        0       40     4 .rel.recomp_hook_return.func_800165E4
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_800165E4)
+       0        0       50     4 .rel.recomp_hook.func_800156D0
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_800156D0)
+       0        0       28     4 .rel.recomp_hook_return.func_800156D0
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_800156D0)
+       0        0       30     4 .rel.recomp_hook.func_80016520
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_80016520)
+       0        0       10     4 .rel.recomp_hook_return.func_80016520
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_80016520)
+       0        0       40     4 .rel.recomp_hook.func_80006BEC
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_80006BEC)
+       0        0       28     4 .rel.recomp_hook_return.func_80006BEC
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_80006BEC)
+       0        0       a8     4 .rel.recomp_hook.func_80016CB0
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook.func_80016CB0)
+       0        0       78     4 .rel.recomp_hook_return.func_80016CB0
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\magic.o:(.rel.recomp_hook_return.func_80016CB0)
+       0        0       20     4 .rel.recomp_hook.func_80031C40
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\main.o:(.rel.recomp_hook.func_80031C40)
+       0        0       80     4 .rel.recomp_hook.func_80006774
+       0        0       80     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.rel.recomp_hook.func_80006774)
+       0        0       28     4 .rel.recomp_hook_return.func_80006774
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.rel.recomp_hook_return.func_80006774)
+       0        0       10     4 .rel.recomp_hook.func_800069FC
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\melee.o:(.rel.recomp_hook.func_800069FC)
+       0        0        8     4 .rel.recomp_hook.func_800020B4
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\menu.o:(.rel.recomp_hook.func_800020B4)
+       0        0       10     4 .rel.recomp_hook_return.func_8001D358
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\pacing.o:(.rel.recomp_hook_return.func_8001D358)
+       0        0        8     4 .rel.recomp_hook_return.func_8001CACC
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\pacing.o:(.rel.recomp_hook_return.func_8001CACC)
+       0        0      2b0     4 .rel.text.gp_apply_tables
+       0        0      2b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.rel.text.gp_apply_tables)
+       0        0        8     4 .rel.recomp_hook.func_800027D0
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.rel.recomp_hook.func_800027D0)
+       0        0       10     4 .rel.recomp_hook.func_80009818
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.rel.recomp_hook.func_80009818)
+       0        0       48     4 .rel.recomp_hook_return.func_80009818
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\progression.o:(.rel.recomp_hook_return.func_80009818)
+       0        0      150     4 .rel.text.gp_rock_shower_before_test
+       0        0      150     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.rel.text.gp_rock_shower_before_test)
+       0        0       28     4 .rel.recomp_hook_return.func_8001613C
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\rain.o:(.rel.recomp_hook_return.func_8001613C)
+       0        0       90     4 .rel.recomp_hook.func_80005748
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.rel.recomp_hook.func_80005748)
+       0        0       30     4 .rel.recomp_hook_return.func_80005748
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\gameplay\src\sprint.o:(.rel.recomp_hook_return.func_80005748)
+       0        0     1540     4 .symtab
+       0        0     1540     4         <internal>:(.symtab)
+       0        0     1115     1 .shstrtab
+       0        0     1115     1         <internal>:(.shstrtab)
+       0        0     100d     1 .strtab
+       0        0     100d     1         <internal>:(.strtab)

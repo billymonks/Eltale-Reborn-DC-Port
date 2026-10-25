@@ -1,0 +1,2115 @@
+     VMA      LMA     Size Align Out     In      Symbol
+       0        0        0     1 RAMBASE = 0x81000000
+81000000 81000000    59969     1 .rodata.str1.1
+81000000 81000000    59969     1         <internal>:(.rodata.str1.1)
+81059970 81059970       50     8 .rodata.cst8
+81059970 81059970       50     8         <internal>:(.rodata.cst8)
+810599c0 810599c0      140     4 .rodata.cst4
+810599c0 810599c0      140     4         <internal>:(.rodata.cst4)
+81059b00 81059b00       3c     4 .rodata.bart_model_build
+81059b00 81059b00       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.rodata.bart_model_build)
+81059b40 81059b40    74020     8 .rodata
+81059b40 81059b40       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.rodata)
+81059b40 81059b40       24     1                 sBartCopy
+81059b64 81059b64       30     1                 sBartChunks
+81059b94 81059b94       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rodata)
+81059b94 81059b94       48     1                 sRing
+81059bdc 81059bdc       50     2         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rodata)
+81059bdc 81059bdc       50     1                 sTuning
+81059c2c 81059c2c       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\brannoch_models.o:(.rodata)
+81059c2c 81059c2c       24     1                 sLavaar
+81059c50 81059c50       30     1                 sLavaarChunks
+81059c80 81059c80    18098     8         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rodata)
+81059c80 81059c80       94     1                 sCreditCards
+81059d14 81059d14      9d8     1                 sCreditImages
+8105a6f0 8105a6f0    17628     1                 sCreditArt
+81071d18 81071d18       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rodata)
+81071d18 81071d18       90     1                 sFallbacks
+81071da8 81071da8     121c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.rodata)
+81071da8 81071da8       1c     1                 sDevScripts
+81071dc4 81071dc4      144     1                 sDevGuns
+81071f08 81071f08      c18     1                 sDevFx
+81072b20 81072b20       b4     1                 sDevPrologueNight
+81072bd4 81072bd4       b4     1                 sDevPrologueWall
+81072c88 81072c88      168     1                 sDevPrologueHome
+81072df0 81072df0      1d4     1                 sDevPrologueWon
+81072fc4 81072fc4       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rodata)
+81072fc4 81072fc4       10     1                 control_names.to
+81072fd4 81072fd4      2a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rodata)
+81072fd4 81072fd4        6     1                 sShopStockCount
+81072fda 81072fda       60     1                 sShopStock
+8107303c 8107303c       68     1                 sBuyPrice
+810730a4 810730a4       68     1                 sSellPrice
+8107310c 8107310c      168     1                 sEnemyGold
+81073274 81073274       74     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\enemy_models.o:(.rodata)
+81073274 81073274       24     1                 sHound
+81073298 81073298       50     1                 sHoundChunks
+810732e8 810732e8      150     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rodata)
+810732e8 810732e8       24     1                 sFlora
+8107330c 8107330c       30     1                 sFloraChunks
+8107333c 8107333c       24     1                 sLeonardo
+81073360 81073360       30     1                 sLeonardoChunks
+81073390 81073390       24     1                 sKiliac
+810733b4 810733b4       30     1                 sKiliacChunks
+810733e4 810733e4       24     1                 sLeila
+81073408 81073408       30     1                 sLeilaChunks
+81073438 81073438       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rodata)
+81073438 81073438       90     1                 sVisuals
+810734c8 810734c8      b8c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rodata)
+810734c8 810734c8      2f4     1                 sVariants
+810737bc 810737bc       1c     1                 sAgnes
+810737d8 810737d8        8     1                 sAgnesSources
+810737e0 810737e0       10     1                 sAgnesTexes
+810737f0 810737f0       1c     1                 sAuden
+8107380c 8107380c       10     1                 sAudenSources
+8107381c 8107381c       1c     1                 sBalu
+81073838 81073838        8     1                 sBaluSources
+81073840 81073840       10     1                 sBaluTexes
+81073850 81073850       1c     1                 sBilly
+8107386c 8107386c        8     1                 sBillySources
+81073874 81073874       1c     1                 sBoren
+81073890 81073890       18     1                 sBorenSources
+810738a8 810738a8       1c     1                 sClaire
+810738c4 810738c4       10     1                 sClaireSources
+810738d4 810738d4       1c     1                 sCurtis
+810738f0 810738f0       20     1                 sCurtisSources
+81073910 81073910       1c     1                 sDavy
+8107392c 8107392c        8     1                 sDavySources
+81073934 81073934       10     1                 sDavyTexes
+81073944 81073944       1c     1                 sEdgar
+81073960 81073960        8     1                 sEdgarSources
+81073968 81073968       1c     1                 sEdward
+81073984 81073984        8     1                 sEdwardSources
+8107398c 8107398c       10     1                 sEdwardTexes
+8107399c 8107399c       1c     1                 sElle
+810739b8 810739b8       20     1                 sElleSources
+810739d8 810739d8       10     1                 sElleTexes
+810739e8 810739e8       1c     1                 sElspet
+81073a04 81073a04        8     1                 sElspetSources
+81073a0c 81073a0c       1c     1                 sFrank
+81073a28 81073a28       10     1                 sFrankSources
+81073a38 81073a38       10     1                 sFrankTexes
+81073a48 81073a48       1c     1                 sGelis
+81073a64 81073a64       10     1                 sGelisSources
+81073a74 81073a74       10     1                 sGelisTexes
+81073a84 81073a84       1c     1                 sGelus
+81073aa0 81073aa0       18     1                 sGelusSources
+81073ab8 81073ab8       1c     1                 sGrant
+81073ad4 81073ad4       10     1                 sGrantSources
+81073ae4 81073ae4       1c     1                 sGylmyne
+81073b00 81073b00       10     1                 sGylmyneSources
+81073b10 81073b10       10     1                 sGylmyneTexes
+81073b20 81073b20       1c     1                 sHew
+81073b3c 81073b3c       10     1                 sHewSources
+81073b4c 81073b4c       20     1                 sHewTexes
+81073b6c 81073b6c       1c     1                 sHolly
+81073b88 81073b88       10     1                 sHollySources
+81073b98 81073b98       30     1                 sHollyTexes
+81073bc8 81073bc8       1c     1                 sIan
+81073be4 81073be4        8     1                 sIanSources
+81073bec 81073bec       1c     1                 sKain
+81073c08 81073c08       18     1                 sKainSources
+81073c20 81073c20       1c     1                 sKatie
+81073c3c 81073c3c        8     1                 sKatieSources
+81073c44 81073c44       10     1                 sKatieTexes
+81073c54 81073c54       1c     1                 sKelly
+81073c70 81073c70       48     1                 sKellySources
+81073cb8 81073cb8       70     1                 sKellyTexes
+81073d28 81073d28       1c     1                 sMable
+81073d44 81073d44       10     1                 sMableSources
+81073d54 81073d54       40     1                 sMableTexes
+81073d94 81073d94       1c     1                 sMacren
+81073db0 81073db0       10     1                 sMacrenSources
+81073dc0 81073dc0       30     1                 sMacrenTexes
+81073df0 81073df0       1c     1                 sMaggie
+81073e0c 81073e0c        8     1                 sMaggieSources
+81073e14 81073e14       1c     1                 sMarmaduke
+81073e30 81073e30       18     1                 sMarmadukeSources
+81073e48 81073e48       1c     1                 sMicah
+81073e64 81073e64       28     1                 sMicahSources
+81073e8c 81073e8c       1c     1                 sOlden
+81073ea8 81073ea8       10     1                 sOldenSources
+81073eb8 81073eb8       1c     1                 sPat
+81073ed4 81073ed4       10     1                 sPatSources
+81073ee4 81073ee4       10     1                 sPatTexes
+81073ef4 81073ef4       1c     1                 sPete
+81073f10 81073f10        8     1                 sPeteSources
+81073f18 81073f18       10     1                 sPeteTexes
+81073f28 81073f28       1c     1                 sRalph
+81073f44 81073f44        8     1                 sRalphSources
+81073f4c 81073f4c       1c     1                 sRosa
+81073f68 81073f68        8     1                 sRosaSources
+81073f70 81073f70       10     1                 sRosaTexes
+81073f80 81073f80       1c     1                 sRussel
+81073f9c 81073f9c        8     1                 sRusselSources
+81073fa4 81073fa4       30     1                 sRusselTexes
+81073fd4 81073fd4       1c     1                 sRyure
+81073ff0 81073ff0        8     1                 sRyureSources
+81073ff8 81073ff8       10     1                 sRyureTexes
+81074008 81074008       1c     1                 sSandra
+81074024 81074024       10     1                 sSandraSources
+81074034 81074034       20     1                 sSandraTexes
+81074058 81074058      6a0     8         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rodata)
+81074058 81074058       e0     1                 sSellArrowUpTex
+81074138 81074138      200     1                 sSellQuillPal
+81074338 81074338       90     1                 sSellQuillTex
+810743c8 810743c8      200     1                 sSellArrowSheetPal
+810745c8 810745c8       e0     1                 sSellArrowDownTex
+810746a8 810746a8        5     1                 sFilterNameLengths
+810746b0 810746b0       14     1                 sFilterNames
+810746f8 810746f8     3f20     8         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.rodata)
+810746f8 810746f8       20     1                 sLicenseNoticePal
+81074718 81074718     3f00     1                 sLicenseNotice
+81078618 81078618       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.rodata)
+81078618 81078618       24     1                 sDorey
+8107863c 8107863c       30     1                 sDoreyChunks
+8107866c 8107866c       24     1                 sHam
+81078690 81078690       30     1                 sHamChunks
+810786c0 810786c0      cd4     8         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.rodata)
+810786c0 810786c0       10     1                 sMiraHeadSwaps
+810786d0 810786d0        8     1                 sMiraSwaps
+810786d8 810786d8      400     1                 sMiraFaceEye
+81078ad8 81078ad8      800     1                 sMiraFaceMouth
+810792d8 810792d8       50     1                 sMiraChunks
+81079328 81079328       18     1                 sAileenSwaps
+81079340 81079340       24     1                 sAileen
+81079364 81079364       30     1                 sAileenChunks
+81079394 81079394       38     2         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\room_geometry.o:(.rodata)
+81079394 81079394       38     1                 sCourtRects
+810793cc 810793cc       34     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rodata)
+810793cc 810793cc       28     1                 sCamTurns
+810793f4 810793f4        c     1                 sCamScales
+81079400 81079400       74     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\shamwood_models.o:(.rodata)
+81079400 81079400       24     1                 sCaptain
+81079424 81079424       50     1                 sCaptainChunks
+81079474 81079474    1a860     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\text\npc_dialogue.o:(.rodata)
+81079474 81079474       24     1                 .compoundliteral
+81079498 81079498       30     1                 .compoundliteral.207
+810794c8 810794c8       24     1                 .compoundliteral.236
+810794ec 810794ec       24     1                 .compoundliteral.240
+81079510 81079510       24     1                 .compoundliteral.284
+81079534 81079534       24     1                 .compoundliteral.313
+81079558 81079558       30     1                 .compoundliteral.551
+81079588 81079588       30     1                 .compoundliteral.555
+810795b8 810795b8       30     1                 .compoundliteral.559
+810795e8 810795e8       30     1                 .compoundliteral.567
+81079618 81079618       30     1                 .compoundliteral.572
+81079648 81079648       30     1                 .compoundliteral.577
+81079678 81079678       30     1                 .compoundliteral.585
+810796a8 810796a8       30     1                 .compoundliteral.590
+810796d8 810796d8       30     1                 .compoundliteral.594
+81079708 81079708       30     1                 .compoundliteral.602
+81079738 81079738       30     1                 .compoundliteral.606
+81079768 81079768       30     1                 .compoundliteral.611
+81079798 81079798       30     1                 .compoundliteral.619
+810797c8 810797c8       30     1                 .compoundliteral.627
+810797f8 810797f8       30     1                 .compoundliteral.632
+81079828 81079828       30     1                 .compoundliteral.636
+81079858 81079858       30     1                 .compoundliteral.640
+81079888 81079888       24     1                 .compoundliteral.667
+810798ac 810798ac       30     1                 .compoundliteral.685
+810798dc 810798dc       30     1                 .compoundliteral.696
+8107990c 8107990c       24     1                 .compoundliteral.720
+81079930 81079930       30     1                 .compoundliteral.757
+81079960 81079960       24     1                 .compoundliteral.813
+81079984 81079984       24     1                 .compoundliteral.893
+810799a8 810799a8       24     1                 .compoundliteral.903
+810799cc 810799cc       24     1                 .compoundliteral.909
+810799f0 810799f0       24     1                 .compoundliteral.952
+81079a14 81079a14       24     1                 .compoundliteral.1030
+81079a38 81079a38       24     1                 .compoundliteral.1109
+81079a5c 81079a5c       24     1                 .compoundliteral.1118
+81079a80 81079a80       30     1                 .compoundliteral.1128
+81079ab0 81079ab0       24     1                 .compoundliteral.1141
+81079ad4 81079ad4       30     1                 .compoundliteral.1163
+81079b04 81079b04       30     1                 .compoundliteral.1201
+81079b34 81079b34       24     1                 .compoundliteral.1221
+81079b58 81079b58       24     1                 .compoundliteral.1240
+81079b7c 81079b7c       30     1                 .compoundliteral.1277
+81079bac 81079bac       24     1                 .compoundliteral.1340
+81079bd0 81079bd0       24     1                 .compoundliteral.1361
+81079bf4 81079bf4       30     1                 .compoundliteral.1386
+81079c24 81079c24       24     1                 .compoundliteral.1405
+81079c48 81079c48       24     1                 .compoundliteral.1408
+81079c6c 81079c6c       30     1                 .compoundliteral.1423
+81079c9c 81079c9c       30     1                 .compoundliteral.1450
+81079ccc 81079ccc       24     1                 .compoundliteral.1500
+81079cf0 81079cf0       24     1                 .compoundliteral.1510
+81079d14 81079d14       24     1                 .compoundliteral.1530
+81079d38 81079d38       24     1                 .compoundliteral.1536
+81079d5c 81079d5c       30     1                 .compoundliteral.1551
+81079d8c 81079d8c       24     1                 .compoundliteral.1563
+81079db0 81079db0       24     1                 .compoundliteral.1567
+81079dd4 81079dd4       24     1                 .compoundliteral.1583
+81079df8 81079df8       24     1                 .compoundliteral.1600
+81079e1c 81079e1c       30     1                 .compoundliteral.1610
+81079e4c 81079e4c       30     1                 .compoundliteral.1639
+81079e7c 81079e7c       24     1                 .compoundliteral.1648
+81079ea0 81079ea0       24     1                 .compoundliteral.1675
+81079ec4 81079ec4       24     1                 .compoundliteral.1719
+81079ee8 81079ee8       24     1                 .compoundliteral.1760
+81079f0c 81079f0c       30     1                 .compoundliteral.1766
+81079f3c 81079f3c       24     1                 .compoundliteral.1776
+81079f60 81079f60       24     1                 .compoundliteral.1862
+81079f84 81079f84       24     1                 .compoundliteral.1927
+81079fa8 81079fa8       24     1                 .compoundliteral.1941
+81079fcc 81079fcc       24     1                 .compoundliteral.1956
+81079ff0 81079ff0       24     1                 .compoundliteral.1963
+8107a014 8107a014       24     1                 .compoundliteral.1981
+8107a038 8107a038       24     1                 .compoundliteral.2007
+8107a05c 8107a05c       24     1                 .compoundliteral.2019
+8107a080 8107a080       24     1                 .compoundliteral.2031
+8107a0a4 8107a0a4       24     1                 .compoundliteral.2033
+8107a0c8 8107a0c8       30     1                 .compoundliteral.2096
+8107a0f8 8107a0f8       24     1                 .compoundliteral.2107
+8107a11c 8107a11c       30     1                 .compoundliteral.2124
+8107a14c 8107a14c       30     1                 .compoundliteral.2126
+8107a17c 8107a17c       24     1                 .compoundliteral.2135
+8107a1a0 8107a1a0       24     1                 .compoundliteral.2137
+8107a1c4 8107a1c4       24     1                 .compoundliteral.2156
+8107a1e8 8107a1e8       24     1                 .compoundliteral.2180
+8107a20c 8107a20c       24     1                 .compoundliteral.2200
+8107a230 8107a230       24     1                 .compoundliteral.2205
+8107a254 8107a254       3c     1                 .compoundliteral.2219
+8107a290 8107a290       30     1                 .compoundliteral.2227
+8107a2c0 8107a2c0       24     1                 .compoundliteral.2238
+8107a2e4 8107a2e4       24     1                 .compoundliteral.2249
+8107a308 8107a308       30     1                 .compoundliteral.2309
+8107a338 8107a338       30     1                 .compoundliteral.2324
+8107a368 8107a368       24     1                 .compoundliteral.2333
+8107a38c 8107a38c       24     1                 .compoundliteral.2341
+8107a3b0 8107a3b0       30     1                 .compoundliteral.2354
+8107a3e0 8107a3e0       24     1                 .compoundliteral.2361
+8107a404 8107a404       24     1                 .compoundliteral.2363
+8107a428 8107a428       24     1                 .compoundliteral.2380
+8107a44c 8107a44c       24     1                 .compoundliteral.2392
+8107a470 8107a470       24     1                 .compoundliteral.2402
+8107a494 8107a494       24     1                 .compoundliteral.2423
+8107a4b8 8107a4b8       30     1                 .compoundliteral.2470
+8107a4e8 8107a4e8       30     1                 .compoundliteral.2471
+8107a518 8107a518       30     1                 .compoundliteral.2472
+8107a548 8107a548       30     1                 .compoundliteral.2473
+8107a578 8107a578       30     1                 .compoundliteral.2474
+8107a5a8 8107a5a8       30     1                 .compoundliteral.2475
+8107a5d8 8107a5d8       24     1                 .compoundliteral.2485
+8107a5fc 8107a5fc       24     1                 .compoundliteral.2487
+8107a620 8107a620       24     1                 .compoundliteral.2496
+8107a644 8107a644       24     1                 .compoundliteral.2512
+8107a668 8107a668       24     1                 .compoundliteral.2514
+8107a68c 8107a68c    19644     1                 gDialogueTable
+81093cd0 81093cd0        4     1                 gDialogueTableCount
+81093cd8 81093cd8     a008     8         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rodata)
+81093cd8 81093cd8        4     1                 gTitleLogoTexture
+81093ce0 81093ce0     a000     1                 sTitleLogo
+8109dce0 8109dce0     6d14     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act1_scripts.o:(.rodata)
+8109dce0 8109dce0       eb     1                 gAct1AbbottIntro
+8109ddcb 8109ddcb      144     1                 gAct1SolvaringIntro
+8109df10 8109df10       90     1                 gScript_Prologue
+8109dfa0 8109dfa0        8     1                 sPathBrianStable
+8109dfa8 8109dfa8        8     1                 sPathBrianIn
+8109dfb0 8109dfb0       18     1                 sPathLavaarOut
+8109dfc8 8109dfc8       10     1                 sPathGabrielOut
+8109dfd8 8109dfd8      ab0     1                 gScript_PrologueNight
+8109ea88 8109ea88       10     1                 sPathStrayBridge
+8109ea98 8109ea98       90     1                 gScript_PrologueStray
+8109eb28 8109eb28       d8     1                 gScript_PrologueStrayFar
+8109ec00 8109ec00       18     1                 sPathHoundA1
+8109ec18 8109ec18       18     1                 sPathHoundB1
+8109ec30 8109ec30       10     1                 sPathBillyUp
+8109ec40 8109ec40        8     1                 sPathFrankUp
+8109ec48 8109ec48      480     1                 gScript_PrologueWall
+8109f0c8 8109f0c8       18     1                 sPathHoundA2
+8109f0e0 8109f0e0       18     1                 sPathHoundB2
+8109f0f8 8109f0f8       18     1                 sPathHoundC2
+8109f110 8109f110       20     1                 sPathHoundD2
+8109f130 8109f130       10     1                 sPathLavaarIn
+8109f140 8109f140        8     1                 sPathGabrielIn
+8109f148 8109f148       20     1                 sPathLavaarAway
+8109f168 8109f168       20     1                 sPathGabrielAway
+8109f188 8109f188     1170     1                 gScript_PrologueWallWon
+810a02f8 810a02f8       18     1                 sPathHollyBilly
+810a0310 810a0310       18     1                 sPathHollyFrank
+810a0328 810a0328       10     1                 sPathBartToBrian
+810a0338 810a0338      d5c     1                 gScript_PrologueHome
+810a1094 810a1094      1f8     1                 gScript_PrologueAgain
+810a128c 810a128c      558     1                 gScript_FarewellMonastery
+810a17e4 810a17e4      438     1                 gScript_FarewellVillage
+810a1c1c 810a1c1c      21c     1                 gScript_Bedwyr
+810a1e38 810a1e38      168     1                 gScript_CorinLeaves
+810a1fa0 810a1fa0      21c     1                 gScript_ForestGuardGreet
+810a21bc 810a21bc      1d4     1                 gScript_ForestGuardHalt
+810a2390 810a2390      264     1                 gScript_ForestGuardPass
+810a25f4 810a25f4      1b0     1                 gScript_DondoranArrival
+810a27a4 810a27a4      288     1                 gScript_KingAudience
+810a2a2c 810a2a2c      264     1                 gScript_FloraStair
+810a2c90 810a2c90      b88     1                 gScript_Meeting
+810a3818 810a3818      6c0     1                 gScript_FloraHome
+810a3ed8 810a3ed8      3a8     1                 gScript_FlatsTravellers
+810a4280 810a4280      21c     1                 gScript_GlencoeCamp
+810a449c 810a449c       48     1                 gScript_OdranLatePaid
+810a44e4 810a44e4      1b0     1                 gScript_GlencoeRing
+810a4694 810a4694      360     1                 gScript_FerryCrossing
+810a49f4 810a49f4     1b00     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_boat.o:(.rodata)
+810a49f4 810a49f4      168     1                 gScript_K_OnDeck
+810a4b5c 810a4b5c       6c     1                 gScript_K_Below
+810a4bc8 810a4bc8       b4     1                 gScript_K_BackOnDeck
+810a4c7c 810a4c7c     1194     1                 gScript_K_Attack
+810a5e10 810a5e10      318     1                 gScript_K_Recross
+810a6128 810a6128      360     1                 gScript_K_Ferry
+810a6488 810a6488       6c     1                 gScript_K_Migrate
+810a64f4 810a64f4     1248     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_larapool.o:(.rodata)
+810a64f4 810a64f4      384     1                 gScript_L_PellRoad
+810a6878 810a6878      318     1                 gScript_L_Workers
+810a6b90 810a6b90      288     1                 gScript_L_Dunn
+810a6e18 810a6e18      1d4     1                 gScript_L_LeilaOrb
+810a6fec 810a6fec      4c8     1                 gScript_L_GabrielGoes
+810a74b4 810a74b4      288     1                 gScript_L_MargeretSings
+810a773c 810a773c     2010     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_normoon.o:(.rodata)
+810a773c 810a773c       f2     1                 gN_ZelseIntro
+810a782e 810a782e      103     1                 gN_ZelseIntroLeonardo
+810a7934 810a7934      3a8     1                 gScript_N_Dragon
+810a7cdc 810a7cdc      1d4     1                 gScript_N_Bones
+810a7eb0 810a7eb0      4ec     1                 gScript_N_Sorley
+810a839c 810a839c       d8     1                 gScript_N_Echo
+810a8474 810a8474       fc     1                 gScript_N_Carving
+810a8570 810a8570      1d4     1                 gScript_N_Root
+810a8744 810a8744      2ac     1                 gScript_N_RootBreeze
+810a89f0 810a89f0      168     1                 gScript_N_LeoChallenge
+810a8b58 810a8b58      4a4     1                 gScript_N_LeoRace
+810a8ffc 810a8ffc      750     1                 gScript_N_AfterZelse
+810a974c 810a974c     1b58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_skye.o:(.rodata)
+810a974c 810a974c       e7     1                 gS_NeptyIntro
+810a9834 810a9834      384     1                 gScript_S_Deck
+810a9bb8 810a9bb8       6c     1                 gScript_S_Docked
+810a9c24 810a9c24      240     1                 gScript_S_Leonardo
+810a9e64 810a9e64      2d0     1                 gScript_S_Islanders
+810aa134 810aa134      750     1                 gScript_S_House
+810aa884 810aa884       90     1                 gScript_S_Shrine
+810aa914 810aa914      318     1                 gScript_S_AfterNepty
+810aac2c 810aac2c      438     1                 gScript_S_Homecoming
+810ab064 810ab064       d8     1                 gScript_S_CircleBack
+810ab13c 810ab13c       b4     1                 gScript_S_RowToCarmagh
+810ab1f0 810ab1f0       b4     1                 gScript_S_RowToSkye
+810ab2a4 810ab2a4     1d88     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_valley.o:(.rodata)
+810ab2a4 810ab2a4      2d0     1                 gScript_V_WaterGate
+810ab574 810ab574       6c     1                 gScript_V_Canals
+810ab5e0 810ab5e0       90     1                 gScript_V_OdranSign
+810ab670 810ab670       b4     1                 gScript_V_CaveAilsaWait
+810ab724 810ab724       48     1                 gScript_V_CaveAilsaRearm
+810ab76c 810ab76c      2f4     1                 gScript_V_CaveAilsa
+810aba60 810aba60      168     1                 gScript_V_CaveEcho
+810abbc8 810abbc8      120     1                 gScript_V_CaveMira
+810abce8 810abce8      318     1                 gScript_V_Arrival
+810ac000 810ac000      33c     1                 gScript_V_Epona
+810ac33c 810ac33c       d8     1                 gScript_V_WaitForMira
+810ac414 810ac414      288     1                 gScript_V_Mira
+810ac69c 810ac69c      120     1                 gScript_V_Circle
+810ac7bc 810ac7bc       d8     1                 gScript_V_CircleHome
+810ac894 810ac894      2d0     1                 gScript_V_MiraFarewell
+810acb64 810acb64      1f8     1                 gScript_V_Chosen
+810acd5c 810acd5c      2d0     1                 gScript_V_LeilaOrb
+810ad02c 810ad02c     1920     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_desert.o:(.rodata)
+810ad02c 810ad02c       f0     1                 gD4_FargoIntro
+810ad11c 810ad11c      21c     1                 gScript_D4_Arrival
+810ad338 810ad338      144     1                 gScript_D4_Gelson
+810ad47c 810ad47c       fc     1                 gScript_D4_Greenoch
+810ad578 810ad578      384     1                 gScript_D4_Zonne
+810ad8fc 810ad8fc      438     1                 gScript_D4_Corwen
+810add34 810add34       6c     1                 gScript_D4_MiraJournal
+810adda0 810adda0      18c     1                 gScript_D4_Shamwood
+810adf2c 810adf2c      5c4     1                 gScript_D4_Mira
+810ae4f0 810ae4f0       6c     1                 gScript_D4_BoilHole
+810ae55c 810ae55c      3f0     1                 gScript_D4_AfterFargo
+810ae94c 810ae94c     3f2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_limelin.o:(.rodata)
+810ae94c 810ae94c       df     1                 gL4_ShilfIntro
+810aea2c 810aea2c      630     1                 gScript_L4_Ferry
+810af05c 810af05c      4a4     1                 gScript_L4_FerryAgain
+810af500 810af500      4a4     1                 gScript_L4_FerryHome
+810af9a4 810af9a4      558     1                 gScript_L4_Patrol
+810afefc 810afefc      144     1                 gScript_L4_Wharf
+810b0040 810b0040      288     1                 gScript_L4_Arrival
+810b02c8 810b02c8      3a8     1                 gScript_L4_Audience
+810b0670 810b0670      33c     1                 gScript_L4_Truth
+810b09ac 810b09ac      57c     1                 gScript_L4_Courtyard
+810b0f28 810b0f28      5e8     1                 gScript_L4_CourtyardTown
+810b1510 810b1510       b4     1                 gScript_L4_MiraNote
+810b15c4 810b15c4      264     1                 gScript_L4_Margeret
+810b1828 810b1828       6c     1                 gScript_L4_ChamberLocked
+810b1894 810b1894      1b0     1                 gScript_L4_Journal
+810b1a44 810b1a44      1b0     1                 gScript_L4_Cell
+810b1bf4 810b1bf4       6c     1                 gScript_L4_TunnelHalt
+810b1c60 810b1c60      3a8     1                 gScript_L4_TunnelOpen
+810b2008 810b2008       48     1                 gScript_L4_TunnelTrail
+810b2050 810b2050       48     1                 gScript_L4_TunnelHelmet
+810b2098 810b2098       48     1                 gScript_L4_TunnelBend
+810b20e0 810b20e0      318     1                 gScript_L4_Orrin
+810b23f8 810b23f8      480     1                 gScript_L4_AfterShilf
+810b2878 810b2878     1cb0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_brannoch.o:(.rodata)
+810b2878 810b2878       6c     1                 gScript_B5_Moor
+810b28e4 810b28e4      120     1                 gScript_B5_Bation
+810b2a04 810b2a04       d8     1                 gScript_B5_Town
+810b2adc 810b2adc       fc     1                 gScript_B5_Inn
+810b2bd8 810b2bd8      384     1                 gScript_B5_Tobin
+810b2f5c 810b2f5c      45c     1                 gScript_B5_Dorley
+810b33b8 810b33b8      1d4     1                 gScript_B5_DorleyPlan
+810b358c 810b358c      60c     1                 gScript_B5_Maeve
+810b3b98 810b3b98      2d0     1                 gScript_B5_MiraWords
+810b3e68 810b3e68       90     1                 gScript_B5_Front
+810b3ef8 810b3ef8      45c     1                 gScript_B5_Gate
+810b4354 810b4354       90     1                 gScript_B5_GateAgain
+810b43e4 810b43e4       90     1                 gScript_B5_SideGate
+810b4474 810b4474       b4     1                 gScript_B5_SideGateOver
+810b4528 810b4528     3570     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.rodata)
+810b4528 810b4528     1008     1                 gScript_C5_GateHall
+810b5530 810b5530     1fec     1                 gScript_C5_Guns
+810b751c 810b751c       6c     1                 gScript_C5_Dragon
+810b7588 810b7588      45c     1                 gScript_C5_Chamber
+810b79e4 810b79e4       b4     1                 gScript_C5_MiraMigrate
+810b7a98 810b7a98     3db4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.rodata)
+810b7a98 810b7a98      111     1                 sGuiltyIntroCorwenDead
+810b7ba9 810b7ba9       cd     1                 sGuiltyIntroCorwen
+810b7c76 810b7c76      117     1                 sGuiltyIntroOwainDead
+810b7d8d 810b7d8d       d3     1                 sGuiltyIntroOwain
+810b7e60 810b7e60       ca     1                 sGuiltyIntroDead
+810b7f2a 810b7f2a       86     1                 sGuiltyIntro
+810b7fb0 810b7fb0      129     1                 sBeigisIntroCorwen
+810b80d9 810b80d9       e0     1                 sBeigisIntro
+810b81bc 810b81bc      3a8     1                 gScript_FC_Arrival
+810b8564 810b8564     11b8     1                 gScript_FC_GateHall
+810b971c 810b971c      45c     1                 gScript_FC_Dinaldo
+810b9b78 810b9b78      534     1                 gScript_FC_Guilty
+810ba0ac 810ba0ac      318     1                 gScript_FC_Lords
+810ba3c4 810ba3c4      cf0     1                 gScript_FC_Cell
+810bb0b4 810bb0b4      2f4     1                 gScript_FC_Beigis
+810bb3a8 810bb3a8      4a4     1                 gScript_FC_Reveal
+810bb84c 810bb84c     3c9c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_ending.o:(.rodata)
+810bb84c 810bb84c      318     1                 gScript_E_Gaol
+810bbb64 810bbb64      360     1                 gScript_E_Brannoch
+810bbec4 810bbec4      5e8     1                 gScript_E_Limelin
+810bc4ac 810bc4ac      318     1                 gScript_E_Shilf
+810bc7c4 810bc7c4      3cc     1                 gScript_E_Loch
+810bcb90 810bcb90      1d4     1                 gScript_E_Leila
+810bcd64 810bcd64      288     1                 gScript_E_Cottage
+810bcfec 810bcfec      384     1                 gScript_E_Normoon
+810bd370 810bd370      318     1                 gScript_E_Dondoran
+810bd688 810bd688      288     1                 gScript_E_GoMoor
+810bd910 810bd910      288     1                 gScript_E_GoEast
+810bdb98 810bdb98      288     1                 gScript_E_GoDusk
+810bde20 810bde20      288     1                 gScript_E_GoValley
+810be0a8 810be0a8      288     1                 gScript_E_GoWest
+810be330 810be330      288     1                 gScript_E_GoFlats
+810be5b8 810be5b8      288     1                 gScript_E_GoGlencoe
+810be840 810be840      33c     1                 gScript_E_Road
+810beb7c 810beb7c      2f4     1                 gScript_E_Melrode
+810bee70 810bee70      33c     1                 gScript_E_Inn
+810bf1ac 810bf1ac      33c     1                 gScript_E_Home
+810bf4e8 810bf4e8     474c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_gather.o:(.rodata)
+810bf4e8 810bf4e8      b88     1                 gScript_FG_Inn
+810c0070 810c0070      7e0     1                 gScript_FG_Gabriel
+810c0850 810c0850      18c     1                 gScript_FG_Night
+810c09dc 810c09dc       90     1                 gScript_FG_Shed
+810c0a6c 810c0a6c      384     1                 gScript_FG_ClayAsk
+810c0df0 810c0df0       48     1                 gScript_FG_LoopMigrate
+810c0e38 810c0e38      4a4     1                 gScript_FG_ClayMend
+810c12dc 810c12dc      69c     1                 gScript_FG_Dragon
+810c1978 810c1978      654     1                 gScript_FG_DockWest
+810c1fcc 810c1fcc      630     1                 gScript_FG_DockEast
+810c25fc 810c25fc       d8     1                 gScript_FG_Sail
+810c26d4 810c26d4      e7c     1                 gScript_FG_Rite
+810c3550 810c3550       b4     1                 gScript_FG_RampLamp
+810c3604 810c3604      1d4     1                 gScript_FG_RampTop
+810c37d8 810c37d8      2ac     1                 gScript_FG_Return
+810c3a84 810c3a84       d8     1                 gScript_FG_GateThrough
+810c3b5c 810c3b5c       d8     1                 gScript_FG_GateBack
+810c3c34 810c3c34     2a0c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rodata)
+810c3c34 810c3c34      1c0     1                 sMammonIntroBoth
+810c3df4 810c3df4      165     1                 sMammonIntroAlive
+810c3f59 810c3f59      226     1                 sMammonLookEpona
+810c417f 810c417f      1cb     1                 sMammonLook
+810c434a 810c434a      233     1                 sMammonGuiltyEpona
+810c457d 810c457d      1d8     1                 sMammonGuilty
+810c4755 810c4755      22f     1                 sMammonMixEpona
+810c4984 810c4984      1d4     1                 sMammonMix
+810c4b58 810c4b58      1d1     1                 sMammonIntroEpona
+810c4d29 810c4d29      176     1                 sMammonIntro
+810c4ea0 810c4ea0      480     1                 gScript_FM_Abbott
+810c5320 810c5320       6c     1                 gScript_FM_World
+810c538c 810c538c      168     1                 gScript_FM_Dondoran
+810c54f4 810c54f4      21c     1                 gScript_FM_Limelin
+810c5710 810c5710      18c     1                 gScript_FM_Cellar
+810c589c 810c589c       90     1                 gScript_FM_Dragon
+810c592c 810c592c      144     1                 gScript_FM_Ship
+810c5a70 810c5a70      264     1                 gScript_FM_Hold
+810c5cd4 810c5cd4      1f8     1                 gScript_FM_Epona
+810c5ecc 810c5ecc      168     1                 gScript_FM_Melrode
+810c6034 810c6034      1f8     1                 gScript_FM_Road
+810c622c 810c622c      414     1                 gScript_FM_Gate
+810c6640 810c6640      6c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_melrode.o:(.rodata)
+810c6640 810c6640       b4     1                 gScript_FMR_Sky
+810c66f4 810c66f4      3a8     1                 gScript_FMR_Edge
+810c6a9c 810c6a9c      264     1                 gScript_FMR_DoorBarred
+810c6d00 810c6d00     5d64     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\placements.o:(.rodata)
+810c6d00 810c6d00     4b78     1                 gNpcPlacements
+810cb878 810cb878        4     1                 gNpcPlacementCount
+810cb87c 810cb87c      140     1                 gNpcHides
+810cb9bc 810cb9bc        4     1                 gNpcHideCount
+810cb9c0 810cb9c0       e0     1                 gWarpPatches
+810cbaa0 810cbaa0        4     1                 gWarpPatchCount
+810cbaa4 810cbaa4      80c     1                 gRoomTriggers
+810cc2b0 810cc2b0        4     1                 gRoomTriggerCount
+810cc2b4 810cc2b4      754     1                 gZoneTriggers
+810cca08 810cca08        4     1                 gZoneTriggerCount
+810cca0c 810cca0c       54     1                 gBossTriggers
+810cca60 810cca60        4     1                 gBossTriggerCount
+810cca64 810cca64      d38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\scripts.o:(.rodata)
+810cca64 810cca64      3a8     1                 gScript_MiraRoad
+810cce0c 810cce0c      57c     1                 gScript_OdranPlain
+810cd388 810cd388      414     1                 gScript_AfterSolvaring
+810cd79c 810cd79c      3c4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\signs.o:(.rodata)
+810cd79c 810cd79c      3c0     1                 gSigns
+810cdb5c 810cdb5c        4     1                 gSignCount
+810cdb60 810cdb60       18     4 .rodata.battle_update
+810cdb60 810cdb60       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rodata.battle_update)
+810cdb78 810cdb78       20     4 .rodata.after_boss_intro
+810cdb78 810cdb78       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rodata.after_boss_intro)
+810cdb98 810cdb98       30     4 .rodata.custom_model_load
+810cdb98 810cdb98       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rodata.custom_model_load)
+810cdbc8 810cdbc8       20     4 .rodata.cst32
+810cdbc8 810cdbc8       20     4         <internal>:(.rodata.cst32)
+810cdbe8 810cdbe8       b0     4 .rodata.q64_text_wrap
+810cdbe8 810cdbe8       b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rodata.q64_text_wrap)
+810cdc98 810cdc98       7c     4 .rodata.encode
+810cdc98 810cdc98       7c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rodata.encode)
+810cdd14 810cdd14       ec     4 .rodata.script_update
+810cdd14 810cdd14       ec     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rodata.script_update)
+810cde00 810cde00       10     4 .rodata.camera_solve
+810cde00 810cde00       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rodata.camera_solve)
+810cde10 810cde10       14     4 .rodata.camera_shot
+810cde10 810cde10       14     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rodata.camera_shot)
+810cde24 810cde24       14     4 .rodata.shot_geometry
+810cde24 810cde24       14     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rodata.shot_geometry)
+810cde38 810cde38       10     4 .rodata.mod_script_started
+810cde38 810cde38       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rodata.mod_script_started)
+810cde48 810cde48       10     4 .rodata.finale_mammon_intro
+810cde48 810cde48       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rodata.finale_mammon_intro)
+810cde58 810cde58       74     4 .rodata.after_room_npcs
+810cde58 810cde58       74     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rodata.after_room_npcs)
+810cdecc 810cdecc      148     4 .recomp_import.*
+810cdecc 810cdecc       80     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.recomp_import.*)
+810cdecc 810cdecc        8     1                 recomp_alloc
+810cded4 810cded4        8     1                 recomp_free
+810cdedc 810cdedc       10     1                 recomp_printf
+810cdeec 810cdeec        8     1                 recomphook_get_return_s32
+810cdef4 810cdef4        8     1                 recomphook_get_return_u32
+810cdefc 810cdefc        8     1                 recomphook_get_return_ptr
+810cdf04 810cdf04        8     1                 recomphook_get_return_s16
+810cdf0c 810cdf0c        8     1                 recomphook_get_return_u16
+810cdf14 810cdf14        8     1                 recomphook_get_return_s8
+810cdf1c 810cdf1c        8     1                 recomphook_get_return_u8
+810cdf24 810cdf24        8     1                 recomphook_get_return_s64
+810cdf2c 810cdf2c        8     1                 recomphook_get_return_u64
+810cdf34 810cdf34        8     1                 recomphook_get_return_float
+810cdf3c 810cdf3c        8     1                 recomphook_get_return_double
+810cdf44 810cdf44        8     1                 recomp_is_dependency_met
+810cdf4c 810cdf4c       c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.recomp_import.*)
+810cdfcc 810cdfcc        8     1                 recomp_get_config_u32
+810cdfd4 810cdfd4        8     1                 recomp_get_config_double
+810cdfdc 810cdfdc        8     1                 recomp_get_config_string
+810cdfe4 810cdfe4        8     1                 recomp_free_config_string
+810cdfec 810cdfec        8     1                 recomp_get_mod_version
+810cdff4 810cdff4        8     1                 recomp_change_save_file
+810cdffc 810cdffc        8     1                 recomp_get_save_file_path
+810ce004 810ce004        8     1                 recomp_get_mod_folder_path
+810ce00c 810ce00c        8     1                 recomp_get_mod_file_path
+810ce014 810ce014       30     4 .recomp_hook.func_80102074_ovl_intro
+810ce014 810ce014       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.recomp_hook.func_80102074_ovl_intro)
+810ce014 810ce014       30     1                 on_attract_sprites_draw
+810ce044 810ce044      acc     4 .recomp_hook_return.func_80102074_ovl_intro
+810ce044 810ce044      acc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.recomp_hook_return.func_80102074_ovl_intro)
+810ce044 810ce044      acc     1                 after_attract_sprites_draw
+810ceb10 810ceb10      92c     4 .text.bart_model_build
+810ceb10 810ceb10      92c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.text.bart_model_build)
+810ceb10 810ceb10      92c     1                 bart_model_build
+810cf43c 810cf43c        c     4 .text.battle_dinaldo
+810cf43c 810cf43c        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_dinaldo)
+810cf43c 810cf43c        c     1                 battle_dinaldo
+810cf448 810cf448      194     4 .text.battle_start
+810cf448 810cf448      194     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_start)
+810cf448 810cf448      194     1                 battle_start
+810cf5dc 810cf5dc       14     4 .text.battle_set_eye
+810cf5dc 810cf5dc       14     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_set_eye)
+810cf5dc 810cf5dc       14     1                 battle_set_eye
+810cf5f0 810cf5f0       ec     4 .text.battle_camera_apply
+810cf5f0 810cf5f0       ec     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_camera_apply)
+810cf5f0 810cf5f0       ec     1                 battle_camera_apply
+810cf6dc 810cf6dc     1258     4 .text.battle_update
+810cf6dc 810cf6dc     1258     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_update)
+810cf6dc 810cf6dc     1258     1                 battle_update
+810d0934 810d0934       10     4 .text.battle_busy
+810d0934 810d0934       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_busy)
+810d0934 810d0934       10     1                 battle_busy
+810d0944 810d0944       14     4 .text.battle_fighting
+810d0944 810d0944       14     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_fighting)
+810d0944 810d0944       14     1                 battle_fighting
+810d0958 810d0958       18     4 .text.battle_collecting_rewards
+810d0958 810d0958       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_collecting_rewards)
+810d0958 810d0958       18     1                 battle_collecting_rewards
+810d0970 810d0970       48     4 .text.battle_after_player_update
+810d0970 810d0970       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_after_player_update)
+810d0970 810d0970       48     1                 battle_after_player_update
+810d09b8 810d09b8       80     4 .recomp_hook.func_80005748
+810d09b8 810d09b8       80     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.recomp_hook.func_80005748)
+810d09b8 810d09b8       80     1                 before_player_move
+810d0a38 810d0a38       30     4 .recomp_hook_return.func_80005748
+810d0a38 810d0a38       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.recomp_hook_return.func_80005748)
+810d0a38 810d0a38       30     1                 after_player_move
+810d0a68 810d0a68       58     4 .recomp_hook.func_8001CFE8
+810d0a68 810d0a68       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.recomp_hook.func_8001CFE8)
+810d0a68 810d0a68       58     1                 before_battle_turn_start
+810d0ac0 810d0ac0      140     4 .recomp_hook.func_80014A98
+810d0ac0 810d0ac0      140     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.recomp_hook.func_80014A98)
+810d0ac0 810d0ac0      140     1                 before_spell_cast
+810d0c00 810d0c00        c     4 .text.battle_result
+810d0c00 810d0c00        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_result)
+810d0c00 810d0c00        c     1                 battle_result
+810d0c0c 810d0c0c       74     4 .text.battle_reset
+810d0c0c 810d0c0c       74     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.battle_reset)
+810d0c0c 810d0c0c       74     1                 battle_reset
+810d0c80 810d0c80       f8     4 .text.rom_read
+810d0c80 810d0c80       f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.text.rom_read)
+810d0c80 810d0c80       f8     1                 rom_read
+810d0d78 810d0d78      12c     4 .recomp_hook.func_8000B7DC
+810d0d78 810d0d78      12c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.recomp_hook.func_8000B7DC)
+810d0d78 810d0d78      12c     1                 before_boss_setup
+810d0ea4 810d0ea4       18     4 .recomp_hook.func_8000BB68
+810d0ea4 810d0ea4       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.recomp_hook.func_8000BB68)
+810d0ea4 810d0ea4       18     1                 before_boss_reward
+810d0ebc 810d0ebc        c     4 .recomp_hook.func_8000BA4C
+810d0ebc 810d0ebc        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.recomp_hook.func_8000BA4C)
+810d0ebc 810d0ebc        c     1                 before_boss_intro
+810d0ec8 810d0ec8      148     4 .recomp_hook_return.func_8000BA4C
+810d0ec8 810d0ec8      148     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.recomp_hook_return.func_8000BA4C)
+810d0ec8 810d0ec8      148     1                 after_boss_intro
+810d1010 810d1010       20     4 .text.lavaar_model_build
+810d1010 810d1010       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\brannoch_models.o:(.text.lavaar_model_build)
+810d1010 810d1010       20     1                 lavaar_model_build
+810d1030 810d1030      154     4 .text.credits_start
+810d1030 810d1030      154     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.text.credits_start)
+810d1030 810d1030      154     1                 credits_start
+810d1184 810d1184       64     4 .text.credits_next_ready
+810d1184 810d1184       64     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.text.credits_next_ready)
+810d1184 810d1184       64     1                 credits_next_ready
+810d11e8 810d11e8       1c     4 .text.credits_idle
+810d11e8 810d11e8       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.text.credits_idle)
+810d11e8 810d11e8       1c     1                 credits_idle
+810d1204 810d1204       20     4 .text.credits_clear
+810d1204 810d1204       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.text.credits_clear)
+810d1204 810d1204       20     1                 credits_clear
+810d1224 810d1224      69c     4 .recomp_hook_return.func_800228F8
+810d1224 810d1224      5b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.recomp_hook_return.func_800228F8)
+810d1224 810d1224      5b0     1                 after_fade_draw
+810d17d4 810d17d4       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook_return.func_800228F8)
+810d17d4 810d17d4       90     1                 after_fade_draw_victory_gold
+810d1864 810d1864       5c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook_return.func_800228F8)
+810d1864 810d1864       5c     1                 after_fade_draw_sell
+810d18c0 810d18c0       64     4 .text.chunk_translate
+810d18c0 810d18c0       64     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.chunk_translate)
+810d18c0 810d18c0       64     1                 chunk_translate
+810d1924 810d1924       34     4 .text.copy_words
+810d1924 810d1924       34     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.copy_words)
+810d1924 810d1924       34     1                 copy_words
+810d1958 810d1958      130     4 .text.chunk_copy
+810d1958 810d1958      130     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.chunk_copy)
+810d1958 810d1958      130     1                 chunk_copy
+810d1a88 810d1a88      118     4 .text.chunk_relocate_dl
+810d1a88 810d1a88      118     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.chunk_relocate_dl)
+810d1a88 810d1a88      118     1                 chunk_relocate_dl
+810d1ba0 810d1ba0       84     4 .text.color_swap_dl
+810d1ba0 810d1ba0       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.color_swap_dl)
+810d1ba0 810d1ba0       84     1                 color_swap_dl
+810d1c24 810d1c24      6c0     4 .text.recolored_model_build
+810d1c24 810d1c24      6c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.recolored_model_build)
+810d1c24 810d1c24      6c0     1                 recolored_model_build
+810d22e4 810d22e4      1f8     4 .text.custom_model_load
+810d22e4 810d22e4      1f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.custom_model_load)
+810d22e4 810d22e4      1f8     1                 custom_model_load
+810d24dc 810d24dc       6c     4 .text.custom_model_fallback
+810d24dc 810d24dc       6c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.custom_model_fallback)
+810d24dc 810d24dc       6c     1                 custom_model_fallback
+810d2548 810d2548       2c     4 .text.custom_model_finale_busy
+810d2548 810d2548       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.custom_model_finale_busy)
+810d2548 810d2548       2c     1                 custom_model_finale_busy
+810d2574 810d2574       54     4 .text.custom_model_forget
+810d2574 810d2574       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.custom_model_forget)
+810d2574 810d2574       54     1                 custom_model_forget
+810d25c8 810d25c8       98     4 .text.custom_model_reload
+810d25c8 810d25c8       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.text.custom_model_reload)
+810d25c8 810d25c8       98     1                 custom_model_reload
+810d2660 810d2660       80     4 .recomp_hook.func_800102D0
+810d2660 810d2660       80     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.recomp_hook.func_800102D0)
+810d2660 810d2660       80     1                 before_clock
+810d26e0 810d26e0      30c     4 .recomp_hook_return.func_800102D0
+810d26e0 810d26e0      30c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.recomp_hook_return.func_800102D0)
+810d26e0 810d26e0      30c     1                 after_clock
+810d29ec 810d29ec       88     4 .text.dev_update
+810d29ec 810d29ec       88     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.text.dev_update)
+810d29ec 810d29ec       88     1                 dev_update
+810d2a74 810d2a74        c     4 .text.dev_reset
+810d2a74 810d2a74        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.text.dev_reset)
+810d2a74 810d2a74        c     1                 dev_reset
+810d2a80 810d2a80       38     4 .recomp_hook_return.func_80030668
+810d2a80 810d2a80       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.recomp_hook_return.func_80030668)
+810d2a80 810d2a80       38     1                 after_choice_box_sized
+810d2ab8 810d2ab8       2c     4 .recomp_patch
+810d2ab8 810d2ab8       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.recomp_patch)
+810d2ab8 810d2ab8       2c     1                 func_80008A00
+810d2ae4 810d2ae4      9b8     4 .text.show_message
+810d2ae4 810d2ae4      9b8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.show_message)
+810d2ae4 810d2ae4      9b8     1                 show_message
+810d349c 810d349c       34     4 .text.dialogue_start
+810d349c 810d349c       34     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.dialogue_start)
+810d349c 810d349c       34     1                 dialogue_start
+810d34d0 810d34d0       a4     4 .text.dialogue_give_item
+810d34d0 810d34d0       a4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.dialogue_give_item)
+810d34d0 810d34d0       a4     1                 dialogue_give_item
+810d3574 810d3574        c     4 .text.dialogue_last_choice
+810d3574 810d3574        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.dialogue_last_choice)
+810d3574 810d3574        c     1                 dialogue_last_choice
+810d3580 810d3580      d70     4 .text.dialogue_update
+810d3580 810d3580      d70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.dialogue_update)
+810d3580 810d3580      d70     1                 dialogue_update
+810d42f0 810d42f0       84     4 .recomp_hook.func_80004260
+810d42f0 810d42f0       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.recomp_hook.func_80004260)
+810d42f0 810d42f0       84     1                 on_talking_update
+810d4374 810d4374      13c     4 .recomp_hook_return.func_80004260
+810d4374 810d4374       64     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.recomp_hook_return.func_80004260)
+810d4374 810d4374       64     1                 after_talking_hold_sell
+810d43d8 810d43d8       d8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook_return.func_80004260)
+810d43d8 810d43d8       d8     1                 after_talk_shop_npc
+810d44b0 810d44b0       50     4 .recomp_hook_return.func_8002EAA0
+810d44b0 810d44b0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.recomp_hook_return.func_8002EAA0)
+810d44b0 810d44b0       50     1                 after_textbox_draw_shop_gold
+810d4500 810d4500       f0     4 .text.is_shop_message
+810d4500 810d4500       f0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.is_shop_message)
+810d4500 810d4500       f0     1                 is_shop_message
+810d45f0 810d45f0       d0     4 .text.encode_choice_label
+810d45f0 810d45f0       d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.encode_choice_label)
+810d45f0 810d45f0       d0     1                 encode_choice_label
+810d46c0 810d46c0       e8     4 .text.sell_return_to_shop
+810d46c0 810d46c0       e8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.sell_return_to_shop)
+810d46c0 810d46c0       e8     1                 sell_return_to_shop
+810d47a8 810d47a8      24c     4 .text.open_trade_confirm
+810d47a8 810d47a8      24c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.text.open_trade_confirm)
+810d47a8 810d47a8      24c     1                 open_trade_confirm
+810d49f4 810d49f4       3c     4 .text.gold_get
+810d49f4 810d49f4       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.gold_get)
+810d49f4 810d49f4       3c     1                 gold_get
+810d4a30 810d4a30       4c     4 .text.gold_add
+810d4a30 810d4a30       4c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.gold_add)
+810d4a30 810d4a30       4c     1                 gold_add
+810d4a7c 810d4a7c       6c     4 .text.gold_spend
+810d4a7c 810d4a7c       6c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.gold_spend)
+810d4a7c 810d4a7c       6c     1                 gold_spend
+810d4ae8 810d4ae8       28     4 .text.item_buy_price
+810d4ae8 810d4ae8       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.item_buy_price)
+810d4ae8 810d4ae8       28     1                 item_buy_price
+810d4b10 810d4b10       38     4 .text.item_sell_price
+810d4b10 810d4b10       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.item_sell_price)
+810d4b10 810d4b10       38     1                 item_sell_price
+810d4b48 810d4b48       2c     4 .text.item_is_sellable
+810d4b48 810d4b48       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.item_is_sellable)
+810d4b48 810d4b48       2c     1                 item_is_sellable
+810d4b74 810d4b74       24     4 .text.shop_stock_count
+810d4b74 810d4b74       24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.shop_stock_count)
+810d4b74 810d4b74       24     1                 shop_stock_count
+810d4b98 810d4b98       50     4 .text.shop_stock_item
+810d4b98 810d4b98       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.shop_stock_item)
+810d4b98 810d4b98       50     1                 shop_stock_item
+810d4be8 810d4be8       38     4 .text.inventory_has_space
+810d4be8 810d4be8       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.inventory_has_space)
+810d4be8 810d4be8       38     1                 inventory_has_space
+810d4c20 810d4c20       a4     4 .text.spirit_menu_pending
+810d4c20 810d4c20       a4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.text.spirit_menu_pending)
+810d4c20 810d4c20       a4     1                 spirit_menu_pending
+810d4cc4 810d4cc4       1c     4 .recomp_hook.func_80003A1C
+810d4cc4 810d4cc4       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook.func_80003A1C)
+810d4cc4 810d4cc4       1c     1                 before_battle_start_gold
+810d4ce0 810d4ce0       54     4 .recomp_hook.func_80009818
+810d4ce0 810d4ce0       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook.func_80009818)
+810d4ce0 810d4ce0       54     1                 before_enemy_defeat_gold
+810d4d34 810d4d34      388     4 .recomp_hook_return.func_80009818
+810d4d34 810d4d34      388     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook_return.func_80009818)
+810d4d34 810d4d34      388     1                 after_enemy_defeat_gold
+810d50bc 810d50bc       10     4 .recomp_hook_return.func_800027D0
+810d50bc 810d50bc       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook_return.func_800027D0)
+810d50bc 810d50bc       10     1                 after_player_stats_init_gold
+810d50cc 810d50cc       5c     4 .recomp_hook.func_800074A0
+810d50cc 810d50cc       5c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook.func_800074A0)
+810d50cc 810d50cc       5c     1                 before_stat_grow_hold_exp
+810d5128 810d5128       30     4 .recomp_hook_return.func_800074A0
+810d5128 810d5128       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook_return.func_800074A0)
+810d5128 810d5128       30     1                 after_stat_grow_hold_exp
+810d5158 810d5158      36c     4 .recomp_hook.func_80002F60
+810d5158 810d5158      23c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook.func_80002F60)
+810d5158 810d5158      23c     1                 on_player_update_gold
+810d5394 810d5394      130     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook.func_80002F60)
+810d5394 810d5394      130     1                 on_player_update
+810d54c4 810d54c4       64     4 .recomp_hook_return.func_80002F60
+810d54c4 810d54c4       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.recomp_hook_return.func_80002F60)
+810d54c4 810d54c4       48     1                 after_player_update_gold
+810d550c 810d550c       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook_return.func_80002F60)
+810d550c 810d550c       1c     1                 after_player_update
+810d5528 810d5528       50     4 .recomp_hook_return.func_8000BB68
+810d5528 810d5528       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.recomp_hook_return.func_8000BB68)
+810d5528 810d5528       50     1                 after_boss_reward
+810d5578 810d5578       10     4 .text.ending_to_title
+810d5578 810d5578       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.text.ending_to_title)
+810d5578 810d5578       10     1                 ending_to_title
+810d5588 810d5588       84     4 .recomp_hook_return.func_800011DC
+810d5588 810d5588       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.recomp_hook_return.func_800011DC)
+810d5588 810d5588       84     1                 after_frame_drawn
+810d560c 810d560c       a8     4 .text.hell_hound_model_build
+810d560c 810d560c       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\enemy_models.o:(.text.hell_hound_model_build)
+810d560c 810d560c       a8     1                 hell_hound_model_build
+810d56b4 810d56b4       20     4 .text.flora_model_build
+810d56b4 810d56b4       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.text.flora_model_build)
+810d56b4 810d56b4       20     1                 flora_model_build
+810d56d4 810d56d4       20     4 .text.leonardo_model_build
+810d56d4 810d56d4       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.text.leonardo_model_build)
+810d56d4 810d56d4       20     1                 leonardo_model_build
+810d56f4 810d56f4       20     4 .text.kiliac_model_build
+810d56f4 810d56f4       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.text.kiliac_model_build)
+810d56f4 810d56f4       20     1                 kiliac_model_build
+810d5714 810d5714       20     4 .text.leila_model_build
+810d5714 810d5714       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.text.leila_model_build)
+810d5714 810d5714       20     1                 leila_model_build
+810d5734 810d5734       d0     4 .text.flag_get
+810d5734 810d5734       d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.text.flag_get)
+810d5734 810d5734       d0     1                 flag_get
+810d5804 810d5804       84     4 .text.flag_set
+810d5804 810d5804       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.text.flag_set)
+810d5804 810d5804       84     1                 flag_set
+810d5888 810d5888       8c     4 .text.flag_clear
+810d5888 810d5888       8c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.text.flag_clear)
+810d5888 810d5888       8c     1                 flag_clear
+810d5914 810d5914       c4     4 .text.fx_spawn
+810d5914 810d5914       c4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_spawn)
+810d5914 810d5914       c4     1                 fx_spawn
+810d59d8 810d59d8      14c     4 .text.fx_move
+810d59d8 810d59d8      14c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_move)
+810d59d8 810d59d8      14c     1                 fx_move
+810d5b24 810d5b24       38     4 .text.fx_kill
+810d5b24 810d5b24       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_kill)
+810d5b24 810d5b24       38     1                 fx_kill
+810d5b5c 810d5b5c       54     4 .text.fx_follow
+810d5b5c 810d5b5c       54     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_follow)
+810d5b5c 810d5b5c       54     1                 fx_follow
+810d5bb0 810d5bb0      148     4 .text.fx_burst
+810d5bb0 810d5bb0      148     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_burst)
+810d5bb0 810d5bb0      148     1                 fx_burst
+810d5cf8 810d5cf8       1c     4 .text.fx_reset
+810d5cf8 810d5cf8       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_reset)
+810d5cf8 810d5cf8       1c     1                 fx_reset
+810d5d14 810d5d14      528     4 .text.fx_update
+810d5d14 810d5d14      528     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.text.fx_update)
+810d5d14 810d5d14      528     1                 fx_update
+810d623c 810d623c       30     4 .text.hair_variant_fallback
+810d623c 810d623c       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.hair_variant_fallback)
+810d623c 810d623c       30     1                 hair_variant_fallback
+810d626c 810d626c       2c     4 .text.hair_variant_forget
+810d626c 810d626c       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.hair_variant_forget)
+810d626c 810d626c       2c     1                 hair_variant_forget
+810d6298 810d6298      99c     4 .text.hair_variant_build
+810d6298 810d6298      99c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.hair_variant_build)
+810d6298 810d6298      99c     1                 hair_variant_build
+810d6c34 810d6c34       d0     4 .text.dl_uses_tex
+810d6c34 810d6c34       d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.dl_uses_tex)
+810d6c34 810d6c34       d0     1                 dl_uses_tex
+810d6d04 810d6d04      8d0     4 .text.recolor_tex
+810d6d04 810d6d04      8d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.recolor_tex)
+810d6d04 810d6d04      8d0     1                 recolor_tex
+810d75d4 810d75d4      180     4 .text.is_extra_texel
+810d75d4 810d75d4      180     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.text.is_extra_texel)
+810d75d4 810d75d4      180     1                 is_extra_texel
+810d7754 810d7754       30     4 .text.item_count
+810d7754 810d7754       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.item_count)
+810d7754 810d7754       30     1                 item_count
+810d7784 810d7784       3c     4 .text.item_give
+810d7784 810d7784       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.item_give)
+810d7784 810d7784       3c     1                 item_give
+810d77c0 810d77c0       88     4 .text.item_take
+810d77c0 810d77c0       88     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.item_take)
+810d77c0 810d77c0       88     1                 item_take
+810d7848 810d7848      1fc     4 .text.item_menu_clamp_cursor
+810d7848 810d7848      1fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.item_menu_clamp_cursor)
+810d7848 810d7848      1fc     1                 item_menu_clamp_cursor
+810d7a44 810d7a44      444     4 .text.gold_draw_hud_amount
+810d7a44 810d7a44      444     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.gold_draw_hud_amount)
+810d7a44 810d7a44      444     1                 gold_draw_hud_amount
+810d7e88 810d7e88       34     4 .text.gold_draw_hud
+810d7e88 810d7e88       34     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.gold_draw_hud)
+810d7e88 810d7e88       34     1                 gold_draw_hud
+810d7ebc 810d7ebc       20     4 .text.shop_sell_ui_open
+810d7ebc 810d7ebc       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_open)
+810d7ebc 810d7ebc       20     1                 shop_sell_ui_open
+810d7edc 810d7edc      148     4 .text.shop_ui_begin
+810d7edc 810d7edc      148     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_ui_begin)
+810d7edc 810d7edc      148     1                 shop_ui_begin
+810d8024 810d8024       1c     4 .text.shop_sell_ui_reopen
+810d8024 810d8024       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_reopen)
+810d8024 810d8024       1c     1                 shop_sell_ui_reopen
+810d8040 810d8040      128     4 .text.shop_ui_reopen
+810d8040 810d8040      128     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_ui_reopen)
+810d8040 810d8040      128     1                 shop_ui_reopen
+810d8168 810d8168      128     4 .text.shop_sell_ui_close
+810d8168 810d8168      128     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_close)
+810d8168 810d8168      128     1                 shop_sell_ui_close
+810d8290 810d8290       20     4 .text.shop_sell_ui_active
+810d8290 810d8290       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_active)
+810d8290 810d8290       20     1                 shop_sell_ui_active
+810d82b0 810d82b0       2c     4 .text.shop_sell_ui_browsing
+810d82b0 810d82b0       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_browsing)
+810d82b0 810d82b0       2c     1                 shop_sell_ui_browsing
+810d82dc 810d82dc       40     4 .text.shop_sell_ui_take_offer
+810d82dc 810d82dc       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_take_offer)
+810d82dc 810d82dc       40     1                 shop_sell_ui_take_offer
+810d831c 810d831c       30     4 .text.shop_sell_ui_take_cancel
+810d831c 810d831c       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_take_cancel)
+810d831c 810d831c       30     1                 shop_sell_ui_take_cancel
+810d834c 810d834c       2c     4 .text.shop_buy_ui_open
+810d834c 810d834c       2c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_open)
+810d834c 810d834c       2c     1                 shop_buy_ui_open
+810d8378 810d8378       1c     4 .text.shop_buy_ui_reopen
+810d8378 810d8378       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_reopen)
+810d8378 810d8378       1c     1                 shop_buy_ui_reopen
+810d8394 810d8394       1c     4 .text.shop_buy_ui_active
+810d8394 810d8394       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_active)
+810d8394 810d8394       1c     1                 shop_buy_ui_active
+810d83b0 810d83b0       28     4 .text.shop_buy_ui_browsing
+810d83b0 810d83b0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_browsing)
+810d83b0 810d83b0       28     1                 shop_buy_ui_browsing
+810d83d8 810d83d8       40     4 .text.shop_buy_ui_take_offer
+810d83d8 810d83d8       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_take_offer)
+810d83d8 810d83d8       40     1                 shop_buy_ui_take_offer
+810d8418 810d8418       30     4 .text.shop_buy_ui_take_cancel
+810d8418 810d8418       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_take_cancel)
+810d8418 810d8418       30     1                 shop_buy_ui_take_cancel
+810d8448 810d8448      41c     4 .text.shop_sell_ui_tick
+810d8448 810d8448      41c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_tick)
+810d8448 810d8448      41c     1                 shop_sell_ui_tick
+810d8864 810d8864       bc     4 .text.sell_move_cursor
+810d8864 810d8864       bc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.sell_move_cursor)
+810d8864 810d8864       bc     1                 sell_move_cursor
+810d8920 810d8920       30     4 .text.shop_buy_ui_tick
+810d8920 810d8920       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_buy_ui_tick)
+810d8920 810d8920       30     1                 shop_buy_ui_tick
+810d8950 810d8950      868     4 .text.shop_sell_ui_draw
+810d8950 810d8950      868     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.shop_sell_ui_draw)
+810d8950 810d8950      868     1                 shop_sell_ui_draw
+810d91b8 810d91b8      530     4 .text.sell_draw_sprites
+810d91b8 810d91b8      530     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.sell_draw_sprites)
+810d91b8 810d91b8      530     1                 sell_draw_sprites
+810d96e8 810d96e8       28     4 .recomp_hook.func_800011DC
+810d96e8 810d96e8       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook.func_800011DC)
+810d96e8 810d96e8       28     1                 before_frame_draw
+810d9710 810d9710      5a0     4 .recomp_hook.func_80021524
+810d9710 810d9710      5a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook.func_80021524)
+810d9710 810d9710      5a0     1                 before_item_menu
+810d9cb0 810d9cb0      5b4     4 .recomp_hook_return.func_80021524
+810d9cb0 810d9cb0      5b4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook_return.func_80021524)
+810d9cb0 810d9cb0      5b4     1                 after_item_menu
+810da264 810da264       c8     4 .recomp_hook.func_800086E4
+810da264 810da264       c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.recomp_hook.func_800086E4)
+810da264 810da264       c8     1                 before_npc_talk
+810da32c 810da32c      1dc     4 .text.sell_rebuild
+810da32c 810da32c      1dc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.text.sell_rebuild)
+810da32c 810da32c      1dc     1                 sell_rebuild
+810da508 810da508      6f8     4 .text.q64_text_wrap
+810da508 810da508      6f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.text.q64_text_wrap)
+810da508 810da508      6f8     1                 q64_text_wrap
+810dac00 810dac00       70     4 .text.q64_text_encode
+810dac00 810dac00       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.text.q64_text_encode)
+810dac00 810dac00       70     1                 q64_text_encode
+810dac70 810dac70      348     4 .text.encode
+810dac70 810dac70      348     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.text.encode)
+810dac70 810dac70      348     1                 encode
+810dafb8 810dafb8       38     4 .recomp_hook.func_80103690_ovl_intro
+810dafb8 810dafb8       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.recomp_hook.func_80103690_ovl_intro)
+810dafb8 810dafb8       38     1                 on_boot_license_draw
+810daff0 810daff0      38c     4 .recomp_hook_return.func_80103690_ovl_intro
+810daff0 810daff0      38c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.recomp_hook_return.func_80103690_ovl_intro)
+810daff0 810daff0      38c     1                 after_boot_license_draw
+810db37c 810db37c       78     4 .recomp_hook_return.func_801030E0_ovl_intro
+810db37c 810db37c       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.recomp_hook_return.func_801030E0_ovl_intro)
+810db37c 810db37c       78     1                 after_boot_license_scene
+810db3f4 810db3f4       20     4 .text.dorey_model_build
+810db3f4 810db3f4       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.text.dorey_model_build)
+810db3f4 810db3f4       20     1                 dorey_model_build
+810db414 810db414       20     4 .text.ham_model_build
+810db414 810db414       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.text.ham_model_build)
+810db414 810db414       20     1                 ham_model_build
+810db434 810db434       ac     4 .recomp_hook.func_80031C40
+810db434 810db434       ac     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\main.o:(.recomp_hook.func_80031C40)
+810db434 810db434       ac     1                 on_title_screen_load
+810db4e0 810db4e0      4d0     4 .text.mira_model_build
+810db4e0 810db4e0      4d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.text.mira_model_build)
+810db4e0 810db4e0      4d0     1                 mira_model_build
+810db9b0 810db9b0       5c     4 .text.aileen_model_build
+810db9b0 810db9b0       5c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.text.aileen_model_build)
+810db9b0 810db9b0       5c     1                 aileen_model_build
+810dba0c 810dba0c      220     4 .text.recolor_hair
+810dba0c 810dba0c      220     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.text.recolor_hair)
+810dba0c 810dba0c      220     1                 recolor_hair
+810dbc2c 810dbc2c       6c     4 .recomp_hook.func_8002B510
+810dbc2c 810dbc2c       6c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.recomp_hook.func_8002B510)
+810dbc2c 810dbc2c       6c     1                 on_save_screen_open
+810dbc98 810dbc98       7c     4 .recomp_hook_return.func_800020B4
+810dbc98 810dbc98       7c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.recomp_hook_return.func_800020B4)
+810dbc98 810dbc98       7c     1                 on_menu_closed
+810dbd14 810dbd14      110     4 .text.music_silence
+810dbd14 810dbd14      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.text.music_silence)
+810dbd14 810dbd14      110     1                 music_silence
+810dbe24 810dbe24      1a4     4 .recomp_hook.func_80026658
+810dbe24 810dbe24      1a4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.recomp_hook.func_80026658)
+810dbe24 810dbe24      1a4     1                 music_fade_update
+810dbfc8 810dbfc8      694     4 .recomp_hook_return.func_8000BD10
+810dbfc8 810dbfc8      694     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\room_geometry.o:(.recomp_hook_return.func_8000BD10)
+810dbfc8 810dbfc8      694     1                 after_room_load
+810dc65c 810dc65c      1d4     4 .recomp_hook_return.func_8002E404
+810dc65c 810dc65c      1d4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.recomp_hook_return.func_8002E404)
+810dc65c 810dc65c      1d4     1                 on_save_loaded
+810dc830 810dc830       cc     4 .recomp_hook_return.func_8002D8BC
+810dc830 810dc830       cc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.recomp_hook_return.func_8002D8BC)
+810dc830 810dc830       cc     1                 on_game_saved
+810dc8fc 810dc8fc       48     4 .recomp_hook_return.func_8000B520
+810dc8fc 810dc8fc       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.recomp_hook_return.func_8000B520)
+810dc8fc 810dc8fc       48     1                 on_game_reset
+810dc944 810dc944       98     4 .text.script_ease
+810dc944 810dc944       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_ease)
+810dc944 810dc944       98     1                 script_ease
+810dc9dc 810dc9dc       fc     4 .recomp_hook_return.func_80013008
+810dc9dc 810dc9dc       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_80013008)
+810dc9dc 810dc9dc       fc     1                 after_camera_mode_follow
+810dcad8 810dcad8       fc     4 .recomp_hook_return.func_80013698
+810dcad8 810dcad8       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_80013698)
+810dcad8 810dcad8       fc     1                 after_camera_mode_1
+810dcbd4 810dcbd4       fc     4 .recomp_hook_return.func_80013A14
+810dcbd4 810dcbd4       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_80013A14)
+810dcbd4 810dcbd4       fc     1                 after_camera_mode_still
+810dccd0 810dccd0       fc     4 .recomp_hook_return.func_80013A20
+810dccd0 810dccd0       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_80013A20)
+810dccd0 810dccd0       fc     1                 after_camera_mode_4
+810dcdcc 810dcdcc       fc     4 .recomp_hook_return.func_80013C80
+810dcdcc 810dcdcc       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_80013C80)
+810dcdcc 810dcdcc       fc     1                 after_camera_mode_5
+810dcec8 810dcec8       5c     4 .recomp_hook_return.func_8002684C
+810dcec8 810dcec8       5c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.recomp_hook_return.func_8002684C)
+810dcec8 810dcec8       5c     1                 after_room_music
+810dcf24 810dcf24       68     4 .text.script_start
+810dcf24 810dcf24       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_start)
+810dcf24 810dcf24       68     1                 script_start
+810dcf8c 810dcf8c       70     4 .text.script_start_trigger
+810dcf8c 810dcf8c       70     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_start_trigger)
+810dcf8c 810dcf8c       70     1                 script_start_trigger
+810dcffc 810dcffc       78     4 .text.script_start_message
+810dcffc 810dcffc       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_start_message)
+810dcffc 810dcffc       78     1                 script_start_message
+810dd074 810dd074       1c     4 .text.script_busy
+810dd074 810dd074       1c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_busy)
+810dd074 810dd074       1c     1                 script_busy
+810dd090 810dd090     31c0     4 .text.script_update
+810dd090 810dd090     31c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_update)
+810dd090 810dd090     31c0     1                 script_update
+810e0250 810e0250      130     4 .text.camera_update
+810e0250 810e0250      130     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_update)
+810e0250 810e0250      130     1                 camera_update
+810e0380 810e0380       e4     4 .text.script_after_player_update
+810e0380 810e0380       e4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_after_player_update)
+810e0380 810e0380       e4     1                 script_after_player_update
+810e0464 810e0464      2c4     4 .text.script_room_loading
+810e0464 810e0464      2c4     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_room_loading)
+810e0464 810e0464      2c4     1                 script_room_loading
+810e0728 810e0728      258     4 .text.restore_time
+810e0728 810e0728      258     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.restore_time)
+810e0728 810e0728      258     1                 restore_time
+810e0980 810e0980      128     4 .text.stop_all_walks
+810e0980 810e0980      128     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.stop_all_walks)
+810e0980 810e0980      128     1                 stop_all_walks
+810e0aa8 810e0aa8      14c     4 .text.script_reset
+810e0aa8 810e0aa8      14c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_reset)
+810e0aa8 810e0aa8      14c     1                 script_reset
+810e0bf4 810e0bf4      25c     4 .text.script_check_time
+810e0bf4 810e0bf4      25c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.script_check_time)
+810e0bf4 810e0bf4      25c     1                 script_check_time
+810e0e50 810e0e50      234     4 .text.camera_release
+810e0e50 810e0e50      234     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_release)
+810e0e50 810e0e50      234     1                 camera_release
+810e1084 810e1084      18c     4 .text.frame_speaker
+810e1084 810e1084      18c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.frame_speaker)
+810e1084 810e1084      18c     1                 frame_speaker
+810e1210 810e1210      25c     4 .text.place_text_box
+810e1210 810e1210      25c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.place_text_box)
+810e1210 810e1210      25c     1                 place_text_box
+810e146c 810e146c      23c     4 .text.walk_step
+810e146c 810e146c      23c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.walk_step)
+810e146c 810e146c      23c     1                 walk_step
+810e16a8 810e16a8      228     4 .text.turn_to
+810e16a8 810e16a8      228     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.turn_to)
+810e16a8 810e16a8      228     1                 turn_to
+810e18d0 810e18d0      1f0     4 .text.camera_set_shot
+810e18d0 810e18d0      1f0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_set_shot)
+810e18d0 810e18d0      1f0     1                 camera_set_shot
+810e1ac0 810e1ac0      248     4 .text.camera_take
+810e1ac0 810e1ac0      248     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_take)
+810e1ac0 810e1ac0      248     1                 camera_take
+810e1d08 810e1d08      298     4 .text.walk_npc
+810e1d08 810e1d08      298     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.walk_npc)
+810e1d08 810e1d08      298     1                 walk_npc
+810e1fa0 810e1fa0      318     4 .text.walk_brian
+810e1fa0 810e1fa0      318     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.walk_brian)
+810e1fa0 810e1fa0      318     1                 walk_brian
+810e22b8 810e22b8      d24     4 .text.camera_solve
+810e22b8 810e22b8      d24     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_solve)
+810e22b8 810e22b8      d24     1                 camera_solve
+810e2fdc 810e2fdc      30c     4 .text.camera_shot
+810e2fdc 810e2fdc      30c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_shot)
+810e2fdc 810e2fdc      30c     1                 camera_shot
+810e32e8 810e32e8      798     4 .text.shot_geometry
+810e32e8 810e32e8      798     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.shot_geometry)
+810e32e8 810e32e8      798     1                 shot_geometry
+810e3a80 810e3a80      1e8     4 .text.walls_crossed
+810e3a80 810e3a80      1e8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.walls_crossed)
+810e3a80 810e3a80      1e8     1                 walls_crossed
+810e3c68 810e3c68      3ac     4 .text.camera_free_step
+810e3c68 810e3c68      3ac     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.text.camera_free_step)
+810e3c68 810e3c68      3ac     1                 camera_free_step
+810e4014 810e4014       20     4 .text.captain_model_build
+810e4014 810e4014       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\shamwood_models.o:(.text.captain_model_build)
+810e4014 810e4014       20     1                 captain_model_build
+810e4034 810e4034       fc     4 .text.sign_read
+810e4034 810e4034       fc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\signs.o:(.text.sign_read)
+810e4034 810e4034       fc     1                 sign_read
+810e4130 810e4130      230     4 .text.sign_in_reach
+810e4130 810e4130      230     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\signs.o:(.text.sign_in_reach)
+810e4130 810e4130      230     1                 sign_in_reach
+810e4360 810e4360       18     4 .recomp_hook.func_801006D8_ovl_title
+810e4360 810e4360       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.recomp_hook.func_801006D8_ovl_title)
+810e4360 810e4360       18     1                 on_title_draw
+810e4378 810e4378       38     4 .recomp_hook_return.func_801006D8_ovl_title
+810e4378 810e4378       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.recomp_hook_return.func_801006D8_ovl_title)
+810e4378 810e4378       38     1                 after_title_draw
+810e43b0 810e43b0      614     4 .text.replace_logo
+810e43b0 810e43b0      614     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.text.replace_logo)
+810e43b0 810e43b0      614     1                 replace_logo
+810e49c4 810e49c4       18     4 .recomp_hook.func_80100B14_ovl_title
+810e49c4 810e49c4       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.recomp_hook.func_80100B14_ovl_title)
+810e49c4 810e49c4       18     1                 on_title_fade_draw
+810e49dc 810e49dc       38     4 .recomp_hook_return.func_80100B14_ovl_title
+810e49dc 810e49dc       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.recomp_hook_return.func_80100B14_ovl_title)
+810e49dc 810e49dc       38     1                 after_title_fade_draw
+810e4a14 810e4a14       60     4 .recomp_hook.func_80003870
+810e4a14 810e4a14       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.recomp_hook.func_80003870)
+810e4a14 810e4a14       60     1                 before_brian_draw
+810e4a74 810e4a74       30     4 .recomp_hook_return.func_80003870
+810e4a74 810e4a74       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.recomp_hook_return.func_80003870)
+810e4a74 810e4a74       30     1                 after_brian_draw
+810e4aa4 810e4aa4       b0     4 .text.finale_guilty_intro
+810e4aa4 810e4aa4       b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.text.finale_guilty_intro)
+810e4aa4 810e4aa4       b0     1                 finale_guilty_intro
+810e4b54 810e4b54       3c     4 .text.finale_beigis_intro
+810e4b54 810e4b54       3c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.text.finale_beigis_intro)
+810e4b54 810e4b54       3c     1                 finale_beigis_intro
+810e4b90 810e4b90       90     4 .text.mod_script_started
+810e4b90 810e4b90       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.text.mod_script_started)
+810e4b90 810e4b90       90     1                 mod_script_started
+810e4c20 810e4c20      2cc     4 .text.fm_tally
+810e4c20 810e4c20      2cc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.text.fm_tally)
+810e4c20 810e4c20      2cc     1                 fm_tally
+810e4eec 810e4eec      110     4 .text.finale_mammon_intro
+810e4eec 810e4eec      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.text.finale_mammon_intro)
+810e4eec 810e4eec      110     1                 finale_mammon_intro
+810e4ffc 810e4ffc      1e0     4 .text.world_actor
+810e4ffc 810e4ffc      1e0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_actor)
+810e4ffc 810e4ffc      1e0     1                 world_actor
+810e51dc 810e51dc       58     4 .text.world_actor_large
+810e51dc 810e51dc       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_actor_large)
+810e51dc 810e51dc       58     1                 world_actor_large
+810e5234 810e5234      38c     4 .text.actor_placement
+810e5234 810e5234      38c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.actor_placement)
+810e5234 810e5234      38c     1                 actor_placement
+810e55c0 810e55c0       84     4 .text.world_actor_lift
+810e55c0 810e55c0       84     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_actor_lift)
+810e55c0 810e55c0       84     1                 world_actor_lift
+810e5644 810e5644      52c     4 .text.world_spawn_actor
+810e5644 810e5644      52c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_spawn_actor)
+810e5644 810e5644      52c     1                 world_spawn_actor
+810e5b70 810e5b70      280     4 .text.model_ready
+810e5b70 810e5b70      280     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.model_ready)
+810e5b70 810e5b70      280     1                 model_ready
+810e5df0 810e5df0      4ec     4 .text.spawn
+810e5df0 810e5df0      4ec     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.spawn)
+810e5df0 810e5df0      4ec     1                 spawn
+810e62dc 810e62dc      260     4 .text.world_despawn_actor
+810e62dc 810e62dc      260     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_despawn_actor)
+810e62dc 810e62dc      260     1                 world_despawn_actor
+810e653c 810e653c       78     4 .text.world_battle_hide_npcs
+810e653c 810e653c       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_battle_hide_npcs)
+810e653c 810e653c       78     1                 world_battle_hide_npcs
+810e65b4 810e65b4      160     4 .text.world_battle_restore
+810e65b4 810e65b4      160     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_battle_restore)
+810e65b4 810e65b4      160     1                 world_battle_restore
+810e6714 810e6714        c     4 .text.world_battle_forget
+810e6714 810e6714        c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_battle_forget)
+810e6714 810e6714        c     1                 world_battle_forget
+810e6720 810e6720       10     4 .text.world_npc_name
+810e6720 810e6720       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.world_npc_name)
+810e6720 810e6720       10     1                 world_npc_name
+810e6730 810e6730      414     4 .recomp_hook.func_80007A50
+810e6730 810e6730      414     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook.func_80007A50)
+810e6730 810e6730      414     1                 before_room_npcs
+810e6b44 810e6b44      644     4 .recomp_hook_return.func_800080E8
+810e6b44 810e6b44      644     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook_return.func_800080E8)
+810e6b44 810e6b44      644     1                 on_npcs_spawned
+810e7188 810e7188      73c     4 .recomp_hook_return.func_80007A50
+810e7188 810e7188      73c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook_return.func_80007A50)
+810e7188 810e7188      73c     1                 after_room_npcs
+810e78c4 810e78c4       30     4 .recomp_hook.func_8000BA0C
+810e78c4 810e78c4       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.recomp_hook.func_8000BA0C)
+810e78c4 810e78c4       30     1                 on_boss_defeated
+810e78f4 810e78f4      15c     4 .text.run_boss_triggers
+810e78f4 810e78f4      15c     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.run_boss_triggers)
+810e78f4 810e78f4      15c     1                 run_boss_triggers
+810e7a50 810e7a50      188     4 .text.run_room_triggers
+810e7a50 810e7a50      188     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.run_room_triggers)
+810e7a50 810e7a50      188     1                 run_room_triggers
+810e7bd8 810e7bd8      184     4 .text.run_zone_triggers
+810e7bd8 810e7bd8      184     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.run_zone_triggers)
+810e7bd8 810e7bd8      184     1                 run_zone_triggers
+810e7d5c 810e7d5c       dc     4 .text.end_calm
+810e7d5c 810e7d5c       dc     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.text.end_calm)
+810e7d5c 810e7d5c       dc     1                 end_calm
+810e7e40 810e7e40       e8    16 .data
+810e7e40 810e7e40        4    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.data)
+810e7e40 810e7e40        4     1                 sIntroBoss
+810e7e50 810e7e50        4    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.data)
+810e7e50 810e7e50        4     1                 sLast
+810e7e60 810e7e60        e    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.data)
+810e7e60 810e7e60        4     1                 sLastChoice
+810e7e64 810e7e64        1     1                 sNoticeItem
+810e7e68 810e7e68        2     1                 sNextMsg
+810e7e6c 810e7e6c        2     1                 sShopReturnMsg
+810e7e70 810e7e70       88    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.data)
+810e7e70 810e7e70       68     1                 sObj
+810e7ed8 810e7ed8       20     1                 sObjSizes
+810e7f00 810e7f00        8    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.data)
+810e7f00 810e7f00        4     1                 sBuyShop
+810e7f04 810e7f04        4     1                 sSellNpcIndex
+810e7f10 810e7f10        4    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.data)
+810e7f10 810e7f10        4     1                 sShakeSeed
+810e7f20 810e7f20        8    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.data)
+810e7f20 810e7f20        4     1                 sLoadedSet
+810e7f24 810e7f24        4     1                 sLoadedBoss
+810e7f30 810e7f30    173a4    16 .bss
+810e7f30 810e7f30     8010    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.bss)
+810e7f30 810e7f30        4     1                 sDrawStart
+810e7f34 810e7f34        1     1                 sLogged
+810e7f38 810e7f38        4     1                 sPoolPos
+810e7f40 810e7f40     8000     1                 sPool
+810eff40 810eff40     2840    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.bss)
+810eff40 810eff40       24     1                 sAnims
+810eff64 810eff64      220     1                 sParts
+810f0184 810f0184     25fc     1                 sKeys
+810f2780 810f2780      4d4    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.bss)
+810f2780 810f2780        1     1                 sDinaldoOn
+810f2784 810f2784        4     1                 sState
+810f2788 810f2788        4     1                 sResult
+810f278c 810f278c        1     1                 sMap
+810f2790 810f2790        1     1                 sRoom
+810f2794 810f2794        1     1                 sIndex
+810f2798 810f2798        4     1                 sX
+810f279c 810f279c        4     1                 sZ
+810f27a0 810f27a0        4     1                 sOptions
+810f27a4 810f27a4        4     1                 sFloorY
+810f27a8 810f27a8        4     1                 sFrames
+810f27ac 810f27ac        2     1                 sLoggedBattleState
+810f27b0 810f27b0        1     1                 sIntroSeen
+810f27b4 810f27b4        1     1                 sCameraTurned
+810f27b8 810f27b8        4     1                 sEyeX
+810f27bc 810f27bc        4     1                 sEyeZ
+810f27c0 810f27c0        4     1                 sMoverBoss
+810f27c4 810f27c4       18     1                 sZone
+810f27dc 810f27dc        8     1                 sZoneList
+810f27e4 810f27e4        4     1                 sPoint
+810f27e8 810f27e8      1f8     1                 sPositions
+810f29e0 810f29e0        4     1                 sPositionTable
+810f29e4 810f29e4       10     1                 sSite
+810f29f4 810f29f4       38     1                 sFormations
+810f2a2c 810f2a2c        2     1                 sSavedAllow
+810f2a30 810f2a30        4     1                 sSavedZones
+810f2a34 810f2a34        4     1                 sSavedSite
+810f2a38 810f2a38       18     1                 sFakeRoom
+810f2a50 810f2a50        4     1                 sRomStart
+810f2a54 810f2a54        4     1                 sRomSize
+810f2a58 810f2a58        4     1                 sVram
+810f2a5c 810f2a5c      1f8     1                 sGroups
+810f2c60 810f2c60      401    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.bss)
+810f2c60 810f2c60      400     1                 sIntroWrapped
+810f3060 810f3060        1     1                 apply_boss_tuning.sWarned
+810f3070 810f3070     281c    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.bss)
+810f3070 810f3070       18     1                 sSlots
+810f3088 810f3088     2800     1                 sDL
+810f5888 810f5888        4     1                 sDLIndex
+810f5890 810f5890      384    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.bss)
+810f5890 810f5890      12c     1                 sUsed
+810f59bc 810f59bc      12c     1                 sLoaded
+810f5ae8 810f5ae8      12c     1                 sFailed
+810f5c20 810f5c20       14    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.bss)
+810f5c20 810f5c20        4     1                 sTimeBefore
+810f5c24 810f5c24        4     1                 sBlocked
+810f5c28 810f5c28        4     1                 sTicks
+810f5c2c 810f5c2c        4     1                 sFrames
+810f5c30 810f5c30        4     1                 sSince
+810f5c40 810f5c40        1    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.bss)
+810f5c40 810f5c40        1     1                 sDone
+810f5c50 810f5c50      885    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.bss)
+810f5c50 810f5c50        1     1                 sSellMode
+810f5c54 810f5c54        1     1                 sBuyMode
+810f5c58 810f5c58        4     1                 sShown
+810f5c5c 810f5c5c        4     1                 sSpeaker
+810f5c60 810f5c60        4     1                 sShopGoldHud
+810f5c64 810f5c64      400     1                 sWrapped
+810f6064 810f6064      400     1                 control_names.buf
+810f6464 810f6464       60     1                 sChoiceLabels
+810f64c4 810f64c4        1     1                 sSellConfirm
+810f64c8 810f64c8        1     1                 sSellConfirmItem
+810f64cc 810f64cc        1     1                 sBuyConfirm
+810f64d0 810f64d0        1     1                 sBuyConfirmItem
+810f64d4 810f64d4        1     1                 sBuyNotice
+810f64e0 810f64e0       2c    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.bss)
+810f64e0 810f64e0        4     1                 sPendingGold
+810f64e4 810f64e4        1     1                 sGoldPaidThisBattle
+810f64e8 810f64e8        4     1                 sRollPhase
+810f64ec 810f64ec        1     1                 sRewardThisCall
+810f64f0 810f64f0        4     1                 sDefeatData
+810f64f4 810f64f4        1     1                 sHoldExp
+810f64f8 810f64f8        4     1                 sHeldExp
+810f64fc 810f64fc        4     1                 sRollShown
+810f6500 810f6500        4     1                 sRollTo
+810f6504 810f6504        4     1                 sRollStep
+810f6508 810f6508        4     1                 sRollHold
+810f6510 810f6510        1    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.bss)
+810f6510 810f6510        1     1                 sToTitle
+810f6520 810f6520      130    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.bss)
+810f6520 810f6520      130     1                 sFx
+810f6650 810f6650      100    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.bss)
+810f6650 810f6650        4     1                 sNext
+810f6654 810f6654       fc     1                 sBase
+810f6750 810f6750      cfc    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.bss)
+810f6750 810f6750        4     1                 sRealCursor
+810f6754 810f6754       20     1                 gold_draw_hud_amount.encoded
+810f6774 810f6774        1     1                 sSellActive
+810f6778 810f6778        1     1                 sShopKind
+810f677c 810f677c        1     1                 sSellBrowsing
+810f6780 810f6780        1     1                 sSellCancelReady
+810f6784 810f6784        4     1                 sSellHoldDir
+810f6788 810f6788        4     1                 sSellHoldTimer
+810f678c 810f678c        4     1                 sSellCount
+810f6790 810f6790        4     1                 sSellCursor
+810f6794 810f6794       96     1                 sSellList
+810f682c 810f682c        1     1                 sSellOfferItem
+810f6830 810f6830        1     1                 sSellOfferReady
+810f6831 810f6831       28     1                 shop_sell_ui_draw.encoded
+810f685c 810f685c        4     1                 sSellTop
+810f6860 810f6860        1     1                 sMenuOpen
+810f6864 810f6864        2     1                 sPadPressed
+810f6868 810f6868        4     1                 sFilter
+810f686c 810f686c        4     1                 sViewCount
+810f6870 810f6870       96     1                 sFull
+810f6906 810f6906       96     1                 sView
+810f699c 810f699c       96     1                 sViewSlot
+810f6a34 810f6a34        4     1                 sTopBefore
+810f6a38 810f6a38        4     1                 sRowBefore
+810f6a3c 810f6a3c        1     1                 sSellNpcFrozen
+810f6a40 810f6a40        4     1                 sSellNpcFrozenRot
+810f6a48 810f6a48      a00     1                 sSellSpriteDL
+810f7448 810f7448        4     1                 sSellSpriteDLIndex
+810f7450 810f7450     3800    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.bss)
+810f7450 810f7450     3000     1                 q64_text_wrap.toks
+810fa450 810fa450      800     1                 q64_text_wrap.endAt
+810fac50 810fac50      760    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.bss)
+810fac50 810fac50        4     1                 sDrawStart
+810fac54 810fac54        1     1                 sLogged
+810fac58 810fac58        1     1                 sHoldExtended
+810fac5c 810fac5c        1     1                 sDLBuilt
+810fac60 810fac60      750     1                 sNoticeDL
+810fb3b0 810fb3b0      400    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\main.o:(.bss)
+810fb3b0 810fb3b0      400     1                 sWrapBuffer
+810fb7b0 810fb7b0        5    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.bss)
+810fb7b0 810fb7b0        1     1                 sMusicChanged
+810fb7b4 810fb7b4        1     1                 sMusicBefore
+810fb7c0 810fb7c0        e    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.bss)
+810fb7c0 810fb7c0        1     1                 sFading
+810fb7c4 810fb7c4        1     1                 sFadeTrack
+810fb7c8 810fb7c8        2     1                 sFadeFrames
+810fb7cc 810fb7cc        2     1                 sFadeLeft
+810fb7d0 810fb7d0     1a34    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\room_geometry.o:(.bss)
+810fb7d0 810fb7d0      550     1                 sTris
+810fbd20 810fbd20        1     1                 sCourtCopied
+810fbd22 810fbd22      360     1                 sVerts
+810fc084 810fc084      600     1                 sMoorVerts
+810fc684 810fc684      500     1                 sMoorIndex
+810fcb84 810fcb84      500     1                 sMoorGroups
+810fd084 810fd084      180     1                 sMoorPrims
+810fd210 810fd210      140    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.bss)
+810fd210 810fd210       a0     1                 on_save_loaded.loaded
+810fd2b0 810fd2b0       a0     1                 gModSave
+810fd350 810fd350      728    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.bss)
+810fd350 810fd350        4     1                 sScript
+810fd354 810fd354        1     1                 sMusicSaved
+810fd358 810fd358        1     1                 sMusicBefore
+810fd35c 810fd35c        1     1                 sMusicPlaying
+810fd360 810fd360        4     1                 sQueued
+810fd364 810fd364        2     1                 sQueuedOnce
+810fd368 810fd368       48     1                 sMessageScript
+810fd3b0 810fd3b0        2     1                 sOnceFlag
+810fd3b4 810fd3b4        2     1                 sDefeatFlag
+810fd3b8 810fd3b8        4     1                 sBattleScript
+810fd3bc 810fd3bc        4     1                 sPc
+810fd3c0 810fd3c0        4     1                 sTimer
+810fd3c4 810fd3c4        4     1                 sRoomLoads
+810fd3c8 810fd3c8        1     1                 sWarping
+810fd3cc 810fd3cc        4     1                 sCamAuto
+810fd3d0 810fd3d0        1     1                 sCamTaken
+810fd3d4 810fd3d4       88     1                 sCamBackup
+810fd45c 810fd45c        1     1                 sFaded
+810fd460 810fd460        1     1                 sTimeHeld
+810fd464 810fd464        1     1                 sTimeSaved
+810fd468 810fd468        c     1                 sCamEye
+810fd474 810fd474        4     1                 sShake.0
+810fd478 810fd478        4     1                 sShake.1
+810fd47c 810fd47c        4     1                 sShake.2
+810fd480 810fd480        c     1                 sCamAt
+810fd48c 810fd48c        1     1                 sViaSet
+810fd490 810fd490        4     1                 sCamTakeLoads
+810fd494 810fd494        4     1                 sFadeRgb
+810fd498 810fd498       f4     1                 sFadeColors
+810fd58c 810fd58c        4     1                 sFadeFrames
+810fd590 810fd590       2c     1                 sWalk
+810fd5bc 810fd5bc        4     1                 sCamToX
+810fd5c0 810fd5c0        4     1                 sCamToZ
+810fd5c4 810fd5c4        4     1                 sShakeFrames
+810fd5c8 810fd5c8        4     1                 sShakeLeft
+810fd5cc 810fd5cc        4     1                 sShakeSize
+810fd5d0 810fd5d0        4     1                 sTimeBefore
+810fd5d4 810fd5d4      238     1                 sSkyBefore
+810fd80c 810fd80c        4     1                 sSkyBeforeLoads
+810fd810 810fd810        4     1                 sTimeHold
+810fd814 810fd814       20     1                 sSpeakerName
+810fd834 810fd834       60     1                 sTurns
+810fd894 810fd894      108     1                 sWalks
+810fd99c 810fd99c        4     1                 sCamShot
+810fd9a0 810fd9a0        1     1                 sCamActor
+810fd9a4 810fd9a4        1     1                 sCamOther
+810fd9a8 810fd9a8        4     1                 sCamX
+810fd9ac 810fd9ac        4     1                 sCamZ
+810fd9b0 810fd9b0        4     1                 sCamBlend
+810fd9b4 810fd9b4        4     1                 sCamFixed
+810fd9b8 810fd9b8        4     1                 sCamYaw
+810fd9bc 810fd9bc        4     1                 sCamDistScale
+810fd9c0 810fd9c0        4     1                 sCamSolvedX
+810fd9c4 810fd9c4        4     1                 sCamSolvedZ
+810fd9c8 810fd9c8        4     1                 sCamDist
+810fd9cc 810fd9cc        4     1                 sCamRise
+810fd9d0 810fd9d0        c     1                 sFixedEye
+810fd9dc 810fd9dc        4     1                 sEyeOffset.0
+810fd9e0 810fd9e0        4     1                 sEyeOffset.1
+810fd9e4 810fd9e4        4     1                 sEyeOffset.2
+810fd9e8 810fd9e8        4     1                 sAtOffset.0
+810fd9ec 810fd9ec        4     1                 sAtOffset.1
+810fd9f0 810fd9f0        4     1                 sAtOffset.2
+810fd9f4 810fd9f4        4     1                 sViaEye.0
+810fd9f8 810fd9f8        4     1                 sViaEye.1
+810fd9fc 810fd9fc        4     1                 sViaEye.2
+810fda00 810fda00        4     1                 sViaAt.0
+810fda04 810fda04        4     1                 sViaAt.1
+810fda08 810fda08        4     1                 sViaAt.2
+810fda0c 810fda0c        c     1                 sFreeFromEye
+810fda18 810fda18        c     1                 sFreeFromAt
+810fda24 810fda24        4     1                 sFreeToEye.0
+810fda28 810fda28        4     1                 sFreeToEye.1
+810fda2c 810fda2c        4     1                 sFreeToEye.2
+810fda30 810fda30        4     1                 sFreeToAt.0
+810fda34 810fda34        4     1                 sFreeToAt.1
+810fda38 810fda38        4     1                 sFreeToAt.2
+810fda3c 810fda3c        4     1                 sFreeFrames
+810fda40 810fda40        4     1                 sFreeTime
+810fda44 810fda44        4     1                 sFreeEase
+810fda48 810fda48        4     1                 sFreeCurved
+810fda4c 810fda4c        4     1                 sFreeCtrlEye.0
+810fda50 810fda50        4     1                 sFreeCtrlEye.1
+810fda54 810fda54        4     1                 sFreeCtrlEye.2
+810fda58 810fda58        4     1                 sFreeCtrlAt.0
+810fda5c 810fda5c        4     1                 sFreeCtrlAt.1
+810fda60 810fda60        4     1                 sFreeCtrlAt.2
+810fda64 810fda64        1     1                 sBattleStarted
+810fda68 810fda68        1     1                 sBattleDelay
+810fda6c 810fda6c        1     1                 sWarpDelay
+810fda70 810fda70        4     1                 sWarpLoads
+810fda74 810fda74        4     1                 sWarpSettle
+810fda80 810fda80      358    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.bss)
+810fda80 810fda80        4     1                 sDrawStart
+810fda84 810fda84        1     1                 sDLBuilt
+810fda88 810fda88      350     1                 sLogoDL
+810fdde0 810fdde0        5    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.bss)
+810fdde0 810fdde0        4     1                 sBrianScale
+810fdde4 810fdde4        1     1                 sBrianShrunk
+810fddf0 810fddf0     14e4    16         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.bss)
+810fddf0 810fddf0       40     1                 sDefPlacement
+810fde30 810fde30        4     1                 sRoomHasBattles
+810fde34 810fde34        1     1                 sBattleNpcsHidden
+810fde38 810fde38        4     1                 sBattleNpcCount
+810fde3c 810fde3c      840     1                 sBattleNpcs
+810fe67c 810fe67c        4     1                 sOverriddenRoom
+810fe680 810fe680        2     1                 sOverriddenSet
+810fe684 810fe684        1     1                 sTriggersPending
+810fe688 810fe688        4     1                 sNextTrigger
+810fe68c 810fe68c        1     1                 sBossesBeaten
+810fe690 810fe690        4     1                 sFreeFrames
+810fe694 810fe694      2c0     1                 sDefs
+810fe954 810fe954      200     1                 sNames
+810feb54 810feb54       c0     1                 sWarpBackedUp
+810fec14 810fec14      6c0     1                 sWarpBackup
+       0        0        0     1 .mdebug.abi32
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\brannoch_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\enemy_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\main.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\room_geometry.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\shamwood_models.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\signs.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\text\npc_dialogue.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act1_scripts.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_boat.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_larapool.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_normoon.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_skye.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_valley.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_desert.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_limelin.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_brannoch.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_ending.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_gather.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_melrode.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\placements.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\scripts.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\signs.o:(.mdebug.abi32)
+       0        0        0     1         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.mdebug.abi32)
+       0        0       10     4 .rel.recomp_hook.func_80102074_ovl_intro
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.rel.recomp_hook.func_80102074_ovl_intro)
+       0        0      150     4 .rel.recomp_hook_return.func_80102074_ovl_intro
+       0        0      150     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\attract_logo.o:(.rel.recomp_hook_return.func_80102074_ovl_intro)
+       0        0      268     4 .rel.text.bart_model_build
+       0        0      268     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.rel.text.bart_model_build)
+       0        0       78     4 .rel.rodata.bart_model_build
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.rel.rodata.bart_model_build)
+       0        0     6db8     4 .rel.rodata
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bart_model.o:(.rel.rodata)
+       8        8        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\brannoch_models.o:(.rel.rodata)
+      10       10       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.rel.rodata)
+      68       68       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.rodata)
+      88       88        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\enemy_models.o:(.rel.rodata)
+      90       90       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rel.rodata)
+      b0       b0      3b8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.rodata)
+     468      468       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.rodata)
+     4f8      4f8       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.rel.rodata)
+     508      508       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.rel.rodata)
+     518      518        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\shamwood_models.o:(.rel.rodata)
+     520      520     5230     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\text\npc_dialogue.o:(.rel.rodata)
+    5750     5750        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.rodata)
+    5758     5758      180     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act1_scripts.o:(.rel.rodata)
+    58d8     58d8       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_boat.o:(.rel.rodata)
+    58f0     58f0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_larapool.o:(.rel.rodata)
+    5900     5900       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act2_normoon.o:(.rel.rodata)
+    5950     5950       b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_skye.o:(.rel.rodata)
+    5a00     5a00       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act3_valley.o:(.rel.rodata)
+    5a98     5a98       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_desert.o:(.rel.rodata)
+    5b00     5b00       a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act4_limelin.o:(.rel.rodata)
+    5ba0     5ba0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_brannoch.o:(.rel.rodata)
+    5bc0     5bc0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.rel.rodata)
+    5c50     5c50       e8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_ending.o:(.rel.rodata)
+    5d38     5d38      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_gather.o:(.rel.rodata)
+    5e48     5e48       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.rodata)
+    5e78     5e78      f30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\placements.o:(.rel.rodata)
+    6da8     6da8       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\scripts.o:(.rel.rodata)
+       0        0       10     4 .rel.text.battle_dinaldo
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_dinaldo)
+       0        0      130     4 .rel.text.battle_start
+       0        0      130     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_start)
+       0        0       20     4 .rel.text.battle_set_eye
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_set_eye)
+       0        0       b8     4 .rel.text.battle_camera_apply
+       0        0       b8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_camera_apply)
+       0        0      980     4 .rel.text.battle_update
+       0        0      980     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_update)
+       0        0       30     4 .rel.rodata.battle_update
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.rodata.battle_update)
+       0        0       10     4 .rel.text.battle_busy
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_busy)
+       0        0       10     4 .rel.text.battle_fighting
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_fighting)
+       0        0       10     4 .rel.text.battle_collecting_rewards
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_collecting_rewards)
+       0        0       10     4 .rel.text.battle_after_player_update
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_after_player_update)
+       0        0       40     4 .rel.recomp_hook.func_80005748
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.recomp_hook.func_80005748)
+       0        0       18     4 .rel.recomp_hook_return.func_80005748
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.recomp_hook_return.func_80005748)
+       0        0       20     4 .rel.recomp_hook.func_8001CFE8
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.recomp_hook.func_8001CFE8)
+       0        0       60     4 .rel.recomp_hook.func_80014A98
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.recomp_hook.func_80014A98)
+       0        0       10     4 .rel.text.battle_result
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_result)
+       0        0       78     4 .rel.text.battle_reset
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.battle_reset)
+       0        0       58     4 .rel.text.rom_read
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\battle.o:(.rel.text.rom_read)
+       0        0       50     4 .rel.recomp_hook.func_8000B7DC
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rel.recomp_hook.func_8000B7DC)
+       0        0       10     4 .rel.recomp_hook.func_8000BA4C
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rel.recomp_hook.func_8000BA4C)
+       0        0      138     4 .rel.recomp_hook_return.func_8000BA4C
+       0        0      138     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rel.recomp_hook_return.func_8000BA4C)
+       0        0       40     4 .rel.rodata.after_boss_intro
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\bosses.o:(.rel.rodata.after_boss_intro)
+       0        0       18     4 .rel.text.lavaar_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\brannoch_models.o:(.rel.text.lavaar_model_build)
+       0        0       a8     4 .rel.text.credits_start
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rel.text.credits_start)
+       0        0       30     4 .rel.text.credits_next_ready
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rel.text.credits_next_ready)
+       0        0       10     4 .rel.text.credits_idle
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rel.text.credits_idle)
+       0        0       20     4 .rel.text.credits_clear
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rel.text.credits_clear)
+       0        0      160     4 .rel.recomp_hook_return.func_800228F8
+       0        0       f0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\credits.o:(.rel.recomp_hook_return.func_800228F8)
+      f0       f0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook_return.func_800228F8)
+     128      128       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook_return.func_800228F8)
+       0        0        8     4 .rel.text.chunk_translate
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.chunk_translate)
+       0        0       18     4 .rel.text.chunk_copy
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.chunk_copy)
+       0        0       20     4 .rel.text.chunk_relocate_dl
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.chunk_relocate_dl)
+       0        0       18     4 .rel.text.color_swap_dl
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.color_swap_dl)
+       0        0       c8     4 .rel.text.recolored_model_build
+       0        0       c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.recolored_model_build)
+       0        0      168     4 .rel.text.custom_model_load
+       0        0      168     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.custom_model_load)
+       0        0       60     4 .rel.rodata.custom_model_load
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.rodata.custom_model_load)
+       0        0       18     4 .rel.text.custom_model_fallback
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.custom_model_fallback)
+       0        0       10     4 .rel.text.custom_model_finale_busy
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.custom_model_finale_busy)
+       0        0       38     4 .rel.text.custom_model_forget
+       0        0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.custom_model_forget)
+       0        0       48     4 .rel.text.custom_model_reload
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\custom_model.o:(.rel.text.custom_model_reload)
+       0        0       28     4 .rel.recomp_hook.func_800102D0
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.rel.recomp_hook.func_800102D0)
+       0        0      190     4 .rel.recomp_hook_return.func_800102D0
+       0        0      190     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\daylight.o:(.rel.recomp_hook_return.func_800102D0)
+       0        0       60     4 .rel.text.dev_update
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.rel.text.dev_update)
+       0        0       10     4 .rel.text.dev_reset
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dev.o:(.rel.text.dev_reset)
+       0        0        8     4 .rel.recomp_hook_return.func_80030668
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.recomp_hook_return.func_80030668)
+       0        0        8     4 .rel.recomp_patch
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.recomp_patch)
+       0        0      3a8     4 .rel.text.show_message
+       0        0      3a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.show_message)
+       0        0       10     4 .rel.text.dialogue_start
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.dialogue_start)
+       0        0       48     4 .rel.text.dialogue_give_item
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.dialogue_give_item)
+       0        0       10     4 .rel.text.dialogue_last_choice
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.dialogue_last_choice)
+       0        0      958     4 .rel.text.dialogue_update
+       0        0      958     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.dialogue_update)
+       0        0       90     4 .rel.recomp_hook.func_80004260
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.recomp_hook.func_80004260)
+       0        0       78     4 .rel.recomp_hook_return.func_80004260
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.recomp_hook_return.func_80004260)
+      10       10       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook_return.func_80004260)
+       0        0       28     4 .rel.recomp_hook_return.func_8002EAA0
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.recomp_hook_return.func_8002EAA0)
+       0        0       10     4 .rel.text.is_shop_message
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.is_shop_message)
+       0        0       48     4 .rel.text.encode_choice_label
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.encode_choice_label)
+       0        0       d0     4 .rel.text.sell_return_to_shop
+       0        0       d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.sell_return_to_shop)
+       0        0      100     4 .rel.text.open_trade_confirm
+       0        0      100     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\dialogue.o:(.rel.text.open_trade_confirm)
+       0        0       10     4 .rel.text.item_buy_price
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.text.item_buy_price)
+       0        0       10     4 .rel.text.item_sell_price
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.text.item_sell_price)
+       0        0       10     4 .rel.text.item_is_sellable
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.text.item_is_sellable)
+       0        0       10     4 .rel.text.shop_stock_count
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.text.shop_stock_count)
+       0        0       20     4 .rel.text.shop_stock_item
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.text.shop_stock_item)
+       0        0       30     4 .rel.recomp_hook.func_80003A1C
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook.func_80003A1C)
+       0        0       40     4 .rel.recomp_hook.func_80009818
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook.func_80009818)
+       0        0       a0     4 .rel.recomp_hook_return.func_80009818
+       0        0       a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook_return.func_80009818)
+       0        0       40     4 .rel.recomp_hook.func_800074A0
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook.func_800074A0)
+       0        0       28     4 .rel.recomp_hook_return.func_800074A0
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook_return.func_800074A0)
+       0        0      220     4 .rel.recomp_hook.func_80002F60
+       0        0      158     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook.func_80002F60)
+     158      158       c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook.func_80002F60)
+       0        0       28     4 .rel.recomp_hook_return.func_80002F60
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\economy.o:(.rel.recomp_hook_return.func_80002F60)
+      20       20        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook_return.func_80002F60)
+       0        0       20     4 .rel.recomp_hook_return.func_8000BB68
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.rel.recomp_hook_return.func_8000BB68)
+       0        0       10     4 .rel.text.ending_to_title
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.rel.text.ending_to_title)
+       0        0       40     4 .rel.recomp_hook_return.func_800011DC
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\ending.o:(.rel.recomp_hook_return.func_800011DC)
+       0        0       28     4 .rel.text.hell_hound_model_build
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\enemy_models.o:(.rel.text.hell_hound_model_build)
+       0        0       18     4 .rel.text.flora_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rel.text.flora_model_build)
+       0        0       18     4 .rel.text.leonardo_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rel.text.leonardo_model_build)
+       0        0       18     4 .rel.text.kiliac_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rel.text.kiliac_model_build)
+       0        0       18     4 .rel.text.leila_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\finale_models.o:(.rel.text.leila_model_build)
+       0        0       18     4 .rel.text.flag_get
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.rel.text.flag_get)
+       0        0       18     4 .rel.text.flag_set
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.rel.text.flag_set)
+       0        0       18     4 .rel.text.flag_clear
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\flags.o:(.rel.text.flag_clear)
+       0        0       20     4 .rel.text.fx_spawn
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_spawn)
+       0        0       28     4 .rel.text.fx_move
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_move)
+       0        0       10     4 .rel.text.fx_kill
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_kill)
+       0        0       10     4 .rel.text.fx_follow
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_follow)
+       0        0       40     4 .rel.text.fx_burst
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_burst)
+       0        0       18     4 .rel.text.fx_reset
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_reset)
+       0        0       c0     4 .rel.text.fx_update
+       0        0       c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.text.fx_update)
+       0        0        8     4 .rel.data
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\fx.o:(.rel.data)
+       0        0       10     4 .rel.text.hair_variant_fallback
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.text.hair_variant_fallback)
+       0        0       20     4 .rel.text.hair_variant_forget
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.text.hair_variant_forget)
+       0        0      180     4 .rel.text.hair_variant_build
+       0        0      180     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.text.hair_variant_build)
+       0        0       18     4 .rel.text.dl_uses_tex
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.text.dl_uses_tex)
+       0        0       68     4 .rel.text.recolor_tex
+       0        0       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\hair_models.o:(.rel.text.recolor_tex)
+       0        0       10     4 .rel.text.item_take
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.item_take)
+       0        0       50     4 .rel.text.item_menu_clamp_cursor
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.item_menu_clamp_cursor)
+       0        0       40     4 .rel.text.gold_draw_hud_amount
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.gold_draw_hud_amount)
+       0        0       10     4 .rel.text.gold_draw_hud
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.gold_draw_hud)
+       0        0       18     4 .rel.text.shop_sell_ui_open
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_open)
+       0        0       f8     4 .rel.text.shop_ui_begin
+       0        0       f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_ui_begin)
+       0        0        8     4 .rel.text.shop_sell_ui_reopen
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_reopen)
+       0        0       c0     4 .rel.text.shop_ui_reopen
+       0        0       c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_ui_reopen)
+       0        0      100     4 .rel.text.shop_sell_ui_close
+       0        0      100     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_close)
+       0        0       20     4 .rel.text.shop_sell_ui_active
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_active)
+       0        0       30     4 .rel.text.shop_sell_ui_browsing
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_browsing)
+       0        0       38     4 .rel.text.shop_sell_ui_take_offer
+       0        0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_take_offer)
+       0        0       28     4 .rel.text.shop_sell_ui_take_cancel
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_take_cancel)
+       0        0       28     4 .rel.text.shop_buy_ui_open
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_open)
+       0        0        8     4 .rel.text.shop_buy_ui_reopen
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_reopen)
+       0        0       20     4 .rel.text.shop_buy_ui_active
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_active)
+       0        0       30     4 .rel.text.shop_buy_ui_browsing
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_browsing)
+       0        0       38     4 .rel.text.shop_buy_ui_take_offer
+       0        0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_take_offer)
+       0        0       28     4 .rel.text.shop_buy_ui_take_cancel
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_take_cancel)
+       0        0      290     4 .rel.text.shop_sell_ui_tick
+       0        0      290     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_tick)
+       0        0       58     4 .rel.text.sell_move_cursor
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.sell_move_cursor)
+       0        0       18     4 .rel.text.shop_buy_ui_tick
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_buy_ui_tick)
+       0        0      298     4 .rel.text.shop_sell_ui_draw
+       0        0      298     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.shop_sell_ui_draw)
+       0        0       90     4 .rel.text.sell_draw_sprites
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.sell_draw_sprites)
+       0        0       10     4 .rel.recomp_hook.func_800011DC
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook.func_800011DC)
+       0        0      210     4 .rel.recomp_hook.func_80021524
+       0        0      210     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook.func_80021524)
+       0        0      158     4 .rel.recomp_hook_return.func_80021524
+       0        0      158     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook_return.func_80021524)
+       0        0       20     4 .rel.recomp_hook.func_800086E4
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.recomp_hook.func_800086E4)
+       0        0      130     4 .rel.text.sell_rebuild
+       0        0      130     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\items.o:(.rel.text.sell_rebuild)
+       0        0      120     4 .rel.text.q64_text_wrap
+       0        0      120     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rel.text.q64_text_wrap)
+       0        0      160     4 .rel.rodata.q64_text_wrap
+       0        0      160     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rel.rodata.q64_text_wrap)
+       0        0       10     4 .rel.text.q64_text_encode
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rel.text.q64_text_encode)
+       0        0       78     4 .rel.text.encode
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rel.text.encode)
+       0        0       f8     4 .rel.rodata.encode
+       0        0       f8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\lib\text.o:(.rel.rodata.encode)
+       0        0       18     4 .rel.recomp_hook.func_80103690_ovl_intro
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.rel.recomp_hook.func_80103690_ovl_intro)
+       0        0       d8     4 .rel.recomp_hook_return.func_80103690_ovl_intro
+       0        0       d8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.rel.recomp_hook_return.func_80103690_ovl_intro)
+       0        0       30     4 .rel.recomp_hook_return.func_801030E0_ovl_intro
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\license_notice.o:(.rel.recomp_hook_return.func_801030E0_ovl_intro)
+       0        0       18     4 .rel.text.dorey_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.rel.text.dorey_model_build)
+       0        0       18     4 .rel.text.ham_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\limelin_models.o:(.rel.text.ham_model_build)
+       0        0       90     4 .rel.recomp_hook.func_80031C40
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\main.o:(.rel.recomp_hook.func_80031C40)
+       0        0      1b8     4 .rel.text.mira_model_build
+       0        0      1b8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.rel.text.mira_model_build)
+       0        0       28     4 .rel.text.aileen_model_build
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.rel.text.aileen_model_build)
+       0        0       28     4 .rel.text.recolor_hair
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\monastery_models.o:(.rel.text.recolor_hair)
+       0        0       60     4 .rel.recomp_hook.func_8002B510
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.rel.recomp_hook.func_8002B510)
+       0        0       58     4 .rel.recomp_hook_return.func_800020B4
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music.o:(.rel.recomp_hook_return.func_800020B4)
+       0        0       88     4 .rel.text.music_silence
+       0        0       88     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.rel.text.music_silence)
+       0        0       90     4 .rel.recomp_hook.func_80026658
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\music_fade.o:(.rel.recomp_hook.func_80026658)
+       0        0      1c0     4 .rel.recomp_hook_return.func_8000BD10
+       0        0      1c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\room_geometry.o:(.rel.recomp_hook_return.func_8000BD10)
+       0        0       c0     4 .rel.recomp_hook_return.func_8002E404
+       0        0       c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.rel.recomp_hook_return.func_8002E404)
+       0        0       48     4 .rel.recomp_hook_return.func_8002D8BC
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.rel.recomp_hook_return.func_8002D8BC)
+       0        0       20     4 .rel.recomp_hook_return.func_8000B520
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\save.o:(.rel.recomp_hook_return.func_8000B520)
+       0        0       30     4 .rel.text.script_ease
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_ease)
+       0        0       a8     4 .rel.recomp_hook_return.func_80013008
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_80013008)
+       0        0       a8     4 .rel.recomp_hook_return.func_80013698
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_80013698)
+       0        0       a8     4 .rel.recomp_hook_return.func_80013A14
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_80013A14)
+       0        0       a8     4 .rel.recomp_hook_return.func_80013A20
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_80013A20)
+       0        0       a8     4 .rel.recomp_hook_return.func_80013C80
+       0        0       a8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_80013C80)
+       0        0       48     4 .rel.recomp_hook_return.func_8002684C
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.recomp_hook_return.func_8002684C)
+       0        0       48     4 .rel.text.script_start
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_start)
+       0        0       48     4 .rel.text.script_start_trigger
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_start_trigger)
+       0        0       58     4 .rel.text.script_start_message
+       0        0       58     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_start_message)
+       0        0       20     4 .rel.text.script_busy
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_busy)
+       0        0     1a08     4 .rel.text.script_update
+       0        0     1a08     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_update)
+       0        0      1d8     4 .rel.rodata.script_update
+       0        0      1d8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.rodata.script_update)
+       0        0       a0     4 .rel.text.camera_update
+       0        0       a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_update)
+       0        0       50     4 .rel.text.script_after_player_update
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_after_player_update)
+       0        0      278     4 .rel.text.script_room_loading
+       0        0      278     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_room_loading)
+       0        0       b8     4 .rel.text.restore_time
+       0        0       b8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.restore_time)
+       0        0       38     4 .rel.text.stop_all_walks
+       0        0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.stop_all_walks)
+       0        0      168     4 .rel.text.script_reset
+       0        0      168     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_reset)
+       0        0      160     4 .rel.text.script_check_time
+       0        0      160     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.script_check_time)
+       0        0      110     4 .rel.text.camera_release
+       0        0      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_release)
+       0        0       68     4 .rel.text.frame_speaker
+       0        0       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.frame_speaker)
+       0        0       b0     4 .rel.text.place_text_box
+       0        0       b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.place_text_box)
+       0        0       78     4 .rel.text.walk_step
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.walk_step)
+       0        0       60     4 .rel.text.turn_to
+       0        0       60     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.turn_to)
+       0        0      148     4 .rel.text.camera_set_shot
+       0        0      148     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_set_shot)
+       0        0      1c0     4 .rel.text.camera_take
+       0        0      1c0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_take)
+       0        0      110     4 .rel.text.walk_npc
+       0        0      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.walk_npc)
+       0        0      128     4 .rel.text.walk_brian
+       0        0      128     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.walk_brian)
+       0        0      548     4 .rel.text.camera_solve
+       0        0      548     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_solve)
+       0        0       20     4 .rel.rodata.camera_solve
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.rodata.camera_solve)
+       0        0      1d0     4 .rel.text.camera_shot
+       0        0      1d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_shot)
+       0        0       28     4 .rel.rodata.camera_shot
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.rodata.camera_shot)
+       0        0      3d0     4 .rel.text.shot_geometry
+       0        0      3d0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.shot_geometry)
+       0        0       28     4 .rel.rodata.shot_geometry
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.rodata.shot_geometry)
+       0        0       38     4 .rel.text.walls_crossed
+       0        0       38     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.walls_crossed)
+       0        0      298     4 .rel.text.camera_free_step
+       0        0      298     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\script.o:(.rel.text.camera_free_step)
+       0        0       18     4 .rel.text.captain_model_build
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\shamwood_models.o:(.rel.text.captain_model_build)
+       0        0       40     4 .rel.text.sign_read
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\signs.o:(.rel.text.sign_read)
+       0        0       98     4 .rel.text.sign_in_reach
+       0        0       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\signs.o:(.rel.text.sign_in_reach)
+       0        0       10     4 .rel.recomp_hook.func_801006D8_ovl_title
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.recomp_hook.func_801006D8_ovl_title)
+       0        0       20     4 .rel.recomp_hook_return.func_801006D8_ovl_title
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.recomp_hook_return.func_801006D8_ovl_title)
+       0        0       68     4 .rel.text.replace_logo
+       0        0       68     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.text.replace_logo)
+       0        0       10     4 .rel.recomp_hook.func_80100B14_ovl_title
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.recomp_hook.func_80100B14_ovl_title)
+       0        0       20     4 .rel.recomp_hook_return.func_80100B14_ovl_title
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\title.o:(.rel.recomp_hook_return.func_80100B14_ovl_title)
+       0        0       30     4 .rel.recomp_hook.func_80003870
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.rel.recomp_hook.func_80003870)
+       0        0       28     4 .rel.recomp_hook_return.func_80003870
+       0        0       28     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\act5_castle.o:(.rel.recomp_hook_return.func_80003870)
+       0        0       a0     4 .rel.text.finale_guilty_intro
+       0        0       a0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.rel.text.finale_guilty_intro)
+       0        0       30     4 .rel.text.finale_beigis_intro
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_castle.o:(.rel.text.finale_beigis_intro)
+       0        0       50     4 .rel.text.mod_script_started
+       0        0       50     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.text.mod_script_started)
+       0        0       20     4 .rel.rodata.mod_script_started
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.rodata.mod_script_started)
+       0        0      100     4 .rel.text.fm_tally
+       0        0      100     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.text.fm_tally)
+       0        0      110     4 .rel.text.finale_mammon_intro
+       0        0      110     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.text.finale_mammon_intro)
+       0        0       20     4 .rel.rodata.finale_mammon_intro
+       0        0       20     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world\finale_mammon.o:(.rel.rodata.finale_mammon_intro)
+       0        0       90     4 .rel.text.world_actor
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_actor)
+       0        0        8     4 .rel.text.world_actor_large
+       0        0        8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_actor_large)
+       0        0      1b0     4 .rel.text.actor_placement
+       0        0      1b0     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.actor_placement)
+       0        0       30     4 .rel.text.world_actor_lift
+       0        0       30     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_actor_lift)
+       0        0      198     4 .rel.text.world_spawn_actor
+       0        0      198     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_spawn_actor)
+       0        0      100     4 .rel.text.model_ready
+       0        0      100     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.model_ready)
+       0        0      120     4 .rel.text.spawn
+       0        0      120     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.spawn)
+       0        0       98     4 .rel.text.world_despawn_actor
+       0        0       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_despawn_actor)
+       0        0       40     4 .rel.text.world_battle_hide_npcs
+       0        0       40     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_battle_hide_npcs)
+       0        0       98     4 .rel.text.world_battle_restore
+       0        0       98     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_battle_restore)
+       0        0       10     4 .rel.text.world_battle_forget
+       0        0       10     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.world_battle_forget)
+       0        0      178     4 .rel.recomp_hook.func_80007A50
+       0        0      178     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook.func_80007A50)
+       0        0      140     4 .rel.recomp_hook_return.func_800080E8
+       0        0      140     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook_return.func_800080E8)
+       0        0      2c8     4 .rel.recomp_hook_return.func_80007A50
+       0        0      2c8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook_return.func_80007A50)
+       0        0       e8     4 .rel.rodata.after_room_npcs
+       0        0       e8     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.rodata.after_room_npcs)
+       0        0       18     4 .rel.recomp_hook.func_8000BA0C
+       0        0       18     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.recomp_hook.func_8000BA0C)
+       0        0       78     4 .rel.text.run_boss_triggers
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.run_boss_triggers)
+       0        0       90     4 .rel.text.run_room_triggers
+       0        0       90     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.run_room_triggers)
+       0        0       48     4 .rel.text.run_zone_triggers
+       0        0       48     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.run_zone_triggers)
+       0        0       78     4 .rel.text.end_calm
+       0        0       78     4         C:\Users\willi\Documents\GitHub\Quest64-DC-Port\eltale\build\src\world.o:(.rel.text.end_calm)
+       0        0    109b0     4 .symtab
+       0        0    109b0     4         <internal>:(.symtab)
+       0        0     2fa4     1 .shstrtab
+       0        0     2fa4     1         <internal>:(.shstrtab)
+       0        0     b69c     1 .strtab
+       0        0     b69c     1         <internal>:(.strtab)
