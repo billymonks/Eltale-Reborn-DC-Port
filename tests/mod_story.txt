@@ -8,8 +8,10 @@
 
 wait 14000
 shot ms_intro              # the mod's logo
+wait 8000                  # the intro ignores Start for about 20 s, then loops until it's pressed
 tap S                      # skip the intro
-wait 5000
+wait16 8007B2E0 FFFF 3 10000   # the title (game mode 3)
+wait 4000                  # the title fades in
 shot ms_title
 tap S                      # title: PUSH START
 wait 4000

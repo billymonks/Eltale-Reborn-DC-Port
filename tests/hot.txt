@@ -1,0 +1,25 @@
+# Melrode and a Holy Plain battle, profiled, for the hot-function list.
+wait 8000
+tap S
+wait 3000
+tap S
+wait 3000
+tap A
+talk 160000
+warp 0 0 0
+wait 4000
+log HOT melrode
+profile_start
+stick 0 70 4000
+stick 0 -70 4000
+stick 0 0 0
+profile_dump
+warp 2 0 0
+wait 3000
+to_battle
+wait 2000
+log HOT battle
+profile_start
+wait 8000
+profile_dump
+log HOT done

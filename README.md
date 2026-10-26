@@ -25,8 +25,6 @@ docker build -t q64dc-toolchain docker
 2. Eltale Reborn, both mods (story and gameplay). Hold X to sprint, the triggers switch item filter, Start opens the map. Windows: `scripts\mod.ps1`. Linux and macOS: `scripts/mod.sh`. Writes `build/eltale-reborn.cdi`.
 3. Quest 64, no mods. Windows: `scripts\dc.ps1 make -j16 cdi`. Linux and macOS: `scripts/dc.sh make -j16 cdi`. Writes `build/quest64-dc.cdi`.
 
-`build/quest64-dc.cdi` is about 740 MB, fits an 80-minute CD-R, and the build pads it to the outer edge so a real drive reads it quickly. A GDEMU can use the CDI as-is.
-
 A 512x512 PNG at `assets/cover-eltale.png` is packed onto the disc as `0GDTEX.PVR`. `assets/cover.png` is the fallback. Neither file is committed.
 
 ## Button Mapping

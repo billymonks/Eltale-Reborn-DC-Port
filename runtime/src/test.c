@@ -30,6 +30,14 @@
 //   pacing 0|1                        hand frames to the PowerVR as soon as they are built / on the frame cadence
 //   romtrace [0|1]                    print every ROM cache miss (rom.c)
 //   mem                               print the heap's size and use, and the largest block malloc can still give
+//   timebase frames|ms                count script times in controller polls (1000/30 ms each) instead of real time,
+//                                     so a build that runs slower or faster gets the same input on the same game frame
+//                                     (LOCKSTEP builds always count in their virtual time; see ultra.h)
+//   hash <label>                      print a hash of each 64 KB block of RDRAM (scripts/compare_runs.py)
+//   hashsub <block>                   print a hash of each 1 KB of one 64 KB block
+//   dump <addr> <words>               print words of RDRAM (hex address)
+//   scan <hi16>                       print the first 64 words of RDRAM whose top halfword is hi16 (hex), e.g.
+//                                     DEAD or BEEF for codegen.abi_poison's junk
 //   loop                              start over
 
 #include <kos.h>
@@ -42,6 +50,7 @@
 #include "ultra.h"
 #include "test.h"
 #include "profile.h"
+#include "gfx.h"
 
 // Game globals (the Eltale Reborn mod's include/q64/game.h).
 #define GAME_STATE      0x8007B2E4u
@@ -91,6 +100,17 @@ static uint16_t held_buttons;
 static int8_t held_x, held_y;
 static bool stick_latched;
 static int8_t latched_x, latched_y;
+static bool frame_time;
+static uint32_t polls;
+
+// FNV-1a over words: an RDRAM block's contents, compared between runs.
+static uint32_t hash_words(uint32_t addr, uint32_t words) {
+    uint32_t h = 2166136261u;
+    for (uint32_t i = 0; i < words; i++) {
+        h = (h ^ (uint32_t)MEM_W(i * 4, addr)) * 16777619u;
+    }
+    return h;
+}
 
 static const struct {
     const char* name;
@@ -423,7 +443,19 @@ static bool step(uint64_t now) {
             args++;
         }
         if (cmd[0] == 's') {
+#ifdef LOCKSTEP
+            // The game stands still in virtual time while the RSP thread draws the tasks it was
+            // sent and the host takes the picture, so two builds' shots show the same game frame
+            // whatever their speed.
+            for (int i = 0; i < 400 && rsp_busy(); i++) {
+                thd_sleep(5);
+            }
+            thd_sleep(250);
+#endif
             printf("[q64dc] SHOT %s\n", args);
+#ifdef LOCKSTEP
+            thd_sleep(1500);
+#endif
         } else {
             printf("[q64dc] test: %s\n", args);
         }
@@ -474,6 +506,20 @@ static bool step(uint64_t now) {
         sscanf(args, "%u", &burn_ms);
         return true;
     }
+    if (strcmp(cmd, "frameskip") == 0) {
+        gfx_skip_set(atoi(args));
+        return true;
+    }
+#if defined(GFX_DIAG) && defined(GFX_OPT)
+    if (strcmp(cmd, "gfxopt") == 0) {
+        gfx_diag_select(atoi(args), -1);
+        return true;
+    }
+    if (strcmp(cmd, "gfxdiag") == 0) {
+        gfx_diag_select(-1, atoi(args));
+        return true;
+    }
+#endif
     if (strcmp(cmd, "profile_start") == 0) {
         profile_start();
         return true;
@@ -495,6 +541,58 @@ static bool step(uint64_t now) {
     }
     if (strcmp(cmd, "pacing") == 0) {
         events_set_paced(atoi(args) != 0);
+        return true;
+    }
+    if (strcmp(cmd, "timebase") == 0) {
+        char base[16] = "";
+        sscanf(args, "%15s", base);
+        frame_time = strcmp(base, "frames") == 0;
+        return true;
+    }
+    if (strcmp(cmd, "hash") == 0) {
+        while (*args == ' ') {
+            args++;
+        }
+        printf("[q64dc] HASH %s poll %u vi %u", args, (unsigned)polls, (unsigned)stat_vi_count);
+        for (uint32_t block = 0; block < RDRAM_SIZE / 0x10000; block++) {
+            printf(" %08X", (unsigned)hash_words(0x80000000u + block * 0x10000, 0x10000 / 4));
+        }
+        printf("\n");
+        return true;
+    }
+    if (strcmp(cmd, "hashsub") == 0) {
+        unsigned block = 0;
+        sscanf(args, "%x", &block);
+        printf("[q64dc] HASHSUB %02X poll %u", block, (unsigned)polls);
+        for (uint32_t sub = 0; sub < 64; sub++) {
+            printf(" %08X", (unsigned)hash_words(0x80000000u + block * 0x10000 + sub * 0x400, 0x400 / 4));
+        }
+        printf("\n");
+        return true;
+    }
+    if (strcmp(cmd, "dump") == 0) {
+        unsigned addr = 0, words = 0;
+        sscanf(args, "%x %u", &addr, &words);
+        for (unsigned i = 0; i < words; i += 8) {
+            printf("[q64dc] DUMP %08X", addr + i * 4);
+            for (unsigned j = i; j < words && j < i + 8; j++) {
+                printf(" %08X", (unsigned)MEM_W(0, addr + j * 4));
+            }
+            printf("\n");
+        }
+        return true;
+    }
+    if (strcmp(cmd, "scan") == 0) {
+        unsigned hi = 0, found = 0;
+        sscanf(args, "%x", &hi);
+        for (uint32_t addr = 0x80000000u; addr < 0x80000000u + RDRAM_SIZE && found < 64; addr += 4) {
+            uint32_t v = (uint32_t)MEM_W(0, addr);
+            if (v >> 16 == hi) {
+                printf("[q64dc] SCAN %08X %08X\n", (unsigned)addr, (unsigned)v);
+                found++;
+            }
+        }
+        printf("[q64dc] SCAN %04X: %u found\n", hi, found);
         return true;
     }
     if (strcmp(cmd, "loop") == 0) {
@@ -522,7 +620,13 @@ void test_input(uint16_t* buttons, int8_t* stick_x, int8_t* stick_y) {
         while (timer_ms_gettime64() < until) {
         }
     }
-    uint64_t now = timer_ms_gettime64();
+    polls++;
+#ifdef LOCKSTEP
+    // The virtual clock, which follows the retraces the game saw.
+    uint64_t now = events_now_us() / 1000;
+#else
+    uint64_t now = frame_time ? (uint64_t)polls * 1000 / 30 : timer_ms_gettime64();
+#endif
     // A few commands can finish in one poll; the rest wait for later polls.
     for (int guard = 0; guard < 16 && pc < line_count; guard++) {
         if (!step_started) {

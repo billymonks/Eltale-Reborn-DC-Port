@@ -3,8 +3,11 @@
 #include <kos.h>
 #include <math.h>
 
+#include "audio_hle.h"
+#include "profile.h"
 #include "test.h"
 #include "ultra.h"
+#include "gfx.h"
 
 #define MAXCONTROLLERS 4
 
@@ -110,6 +113,89 @@ void cont_poll(void) {
         pads[0].stick_y = 0;
     }
     test_input(&pads[0].buttons, &pads[0].stick_x, &pads[0].stick_y);
+#ifdef PERF_HUD
+    // Both triggers and X. Quest 64 never reads X, and the three are swallowed so L and the
+    // right trigger do not reach the game while the chord is held.
+    {
+        static int chord_was;
+        int l = (pads[0].buttons & N64_L) != 0;
+        int r = (pads[0].buttons & N64_Z) != 0;
+        int x = (pads[0].buttons & N64_X) != 0;
+        if (l && r && x) {
+            if (!chord_was) {
+                profile_chord();
+            }
+            pads[0].buttons &= (uint16_t)~(N64_L | N64_Z | N64_X);
+        }
+        chord_was = l && r && x;
+    }
+    // Both triggers and Y cycle the audio fast path. Y is the N64 R button (item menu), so the
+    // chord is swallowed and does not open the menu. X stays the profiler.
+    {
+        static int audio_was;
+        int l = (pads[0].buttons & N64_L) != 0;
+        int r = (pads[0].buttons & N64_Z) != 0;
+        int y = (pads[0].buttons & N64_R) != 0;
+        int x = (pads[0].buttons & N64_X) != 0;
+        if (l && r && y && !x) {
+            if (!audio_was) {
+                audio_hle_cycle_mode();
+            }
+            pads[0].buttons &= (uint16_t)~(N64_L | N64_Z | N64_R);
+        }
+        audio_was = l && r && y && !x;
+    }
+    // Both triggers and A cycle frame skip. A is swallowed so the chord does not also confirm.
+    {
+        static int skip_was;
+        int l = (pads[0].buttons & N64_L) != 0;
+        int r = (pads[0].buttons & N64_Z) != 0;
+        int a = (pads[0].buttons & N64_A) != 0;
+        int x = (pads[0].buttons & N64_X) != 0;
+        int y = (pads[0].buttons & N64_R) != 0;
+        if (l && r && a && !x && !y) {
+            if (!skip_was) {
+                gfx_skip_cycle();
+            }
+            pads[0].buttons &= (uint16_t)~(N64_L | N64_Z | N64_A);
+        }
+        skip_was = l && r && a && !x && !y;
+    }
+#endif
+#ifdef GFX_DIAG
+    // Both triggers and B cycle the renderer diagnostic mode, or in GFX_OPT builds the set of
+    // optimizations. B is swallowed so it does not cancel.
+    {
+        static int diag_was;
+        int l = (pads[0].buttons & N64_L) != 0;
+        int r = (pads[0].buttons & N64_Z) != 0;
+        int b = (pads[0].buttons & N64_B) != 0;
+        int other = (pads[0].buttons & (N64_A | N64_X | N64_R)) != 0;
+        if (l && r && b && !other) {
+            if (!diag_was) {
+                gfx_diag_cycle();
+            }
+            pads[0].buttons &= (uint16_t)~(N64_L | N64_Z | N64_B);
+        }
+        diag_was = l && r && b && !other;
+    }
+#ifdef GFX_OPT
+    // Both triggers and D-pad down (the N64's C-down) cycle the diagnostic modes there.
+    {
+        static int mode_was;
+        int l = (pads[0].buttons & N64_L) != 0;
+        int r = (pads[0].buttons & N64_Z) != 0;
+        int cd = (pads[0].buttons & N64_C_DOWN) != 0;
+        if (l && r && cd) {
+            if (!mode_was) {
+                gfx_diag_mode_cycle();
+            }
+            pads[0].buttons &= (uint16_t)~(N64_L | N64_Z | N64_C_DOWN);
+        }
+        mode_was = l && r && cd;
+    }
+#endif
+#endif
     pak_flush_idle();
 }
 

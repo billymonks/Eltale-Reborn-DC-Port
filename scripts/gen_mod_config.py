@@ -37,6 +37,11 @@ def main():
         rel = os.path.relpath(os.path.normpath(target), out_path.parent)
         return f'{key} = "{Path(rel).as_posix()}"'
     text = re.sub(r'^(rom_file_path|symbols_file_path|output_func_path)\s*=\s*"([^"]*)"', rebase, base_text, flags=re.M)
+    # Mod hooks run arbitrary code against the context, so modded builds keep every register in it.
+    text = re.sub(r'^(regcache\s*=\s*)"[^"]*"', r'\1"off"', text, flags=re.M)
+    text = re.sub(r'^(abi_poison\s*=\s*)\w+', r'\1false', text, flags=re.M)
+    text = re.sub(r'^(abi_trace\s*=\s*)\w+', r'\1false', text, flags=re.M)
+    text = re.sub(r'^abi_report\s*=.*\n', '', text, flags=re.M)
 
     patches = base.get("patches", {})
     blocked = set(patches.get("stubs", [])) | set(patches.get("ignored", []))

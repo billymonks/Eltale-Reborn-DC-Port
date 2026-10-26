@@ -1,0 +1,69 @@
+# Code generation A/B run: the same input on the same game frames, and a hash of RDRAM at fixed
+# points, so two builds can be compared block by block (scripts/compare_runs.py). A new game, the
+# monastery, Melrode, a seeded battle on the Holy Plain and a save at the Melrode Inn.
+# make test-cdi TEST_SCRIPT=tests/cg_ab.txt RT_DEFINES="-DLOCKSTEP -DROM_SYNC", then
+# scripts\flycast.ps1 420 -Test -ResetVmu. Without LOCKSTEP a faster or slower build changes the
+# game's timing, and with it RDRAM.
+
+timebase frames
+wait 14000
+tap S                      # skip the intro
+wait 5000
+hash title
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+pos
+hash monastery
+
+warp 0 0 0                 # Melrode village
+wait 1500
+hash melrode
+stick 0 70 2500            # walk up the street
+stick 0 0 0
+wait 500
+pos
+hash melrode_walk
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+to_battle
+battle_walk 30000 1234     # pinned random numbers: the same formation every run
+wait 3000
+pos
+hash battle_start
+tap A 4 900                # swing the staff
+tap CU                     # pick a spirit
+wait 800
+tap A 2 900
+wait 2500
+hash battle_mid
+stick 0 -75 8000           # run out of the battle circle
+wait16 8008C592 1 0 90000
+wait 2000
+pos
+hash after_battle
+
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A                      # talk
+wait 1500
+tap A                      # next page
+wait 1500
+tap A                      # "Will you stay?" Yes
+wait 3000
+tap A                      # save screen
+wait 2500
+tap A                      # NEW DATA in the first slot
+wait 2500
+hash saved
+stick 0 -70 300            # "Continue save?" No
+tap A
+wait 3000
+pos
+hash end
+log cg_ab finished

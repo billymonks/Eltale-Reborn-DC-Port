@@ -45,6 +45,16 @@ void sched_init(void);
 // Sends a message without blocking, from a game thread or from the runtime's own threads.
 // A game thread caller switches to a woken thread that has a higher priority.
 int32_t mq_send_nonblock(uint32_t mq, uint32_t msg);
+#ifdef LOCKSTEP
+// LOCKSTEP test builds, for comparing two builds' RDRAM at the same game frames: messages from the
+// runtime's own threads wait until no game thread runs or is ready (sched_lockstep_idle), and then
+// go one at a time (sched_lockstep_deliver), so the game sees them at the same points whatever its
+// code's speed.
+bool sched_lockstep_idle(void);
+bool sched_lockstep_deliver(void);
+// Sends at once, for the events thread's retraces and timers.
+void sched_lockstep_send(uint32_t mq, uint32_t msg);
+#endif
 // Called by runtime functions on game threads: switches to a higher-priority thread made ready
 // by an event since the last switch.
 void sched_check_yield(void);
@@ -53,6 +63,13 @@ void sched_lock(void);
 void sched_unlock(void);
 // Prints and resets the time no game thread could run.
 void sched_print_stats(void);
+// Returns and resets that time, in microseconds, since the previous take.
+void sched_take_idle(uint32_t* idle_us, uint32_t* with_gfx_us);
+// PERF_HUD: returns and resets the CPU cycles game threads stalled on instruction cache misses.
+uint64_t sched_take_icache_stall(void);
+// Leaves code run on a game thread (audio tasks) out of that count.
+bool sched_icache_pause(void);
+void sched_icache_resume(bool was_counting);
 
 // Events: VI, timers, RSP tasks (events.c).
 void events_init(void);
@@ -81,6 +98,19 @@ extern volatile uint32_t stat_dma_bytes;
 void audio_init(void);
 void audio_run_task(uint32_t task);
 void audio_print_stats(void);
+// Returns and resets the microseconds spent in audio tasks since the previous take.
+// *ntasks receives how many tasks that was (one per audio frame).
+uint32_t audio_take_task_us(uint32_t* ntasks);
+// True when the voices play on the AICA's channels rather than the SH-4's mixer.
+bool audio_aica(void);
+
+// Frame skip on the RSP thread. 0 off, 1 skip every other task, 2 skip when the
+// previous task gap was longer than two vblanks. Off unless a perf chord or a test sets it.
+void gfx_skip_cycle(void);
+void gfx_skip_set(int mode);
+int gfx_skip_mode(void);
+// Graphics tasks since the previous take, including ones that were not drawn.
+uint32_t gfx_take_frames(void);
 
 // Controllers (cont.c).
 void cont_poll(void);
@@ -104,6 +134,8 @@ void rom_dma_to_rdram(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size);
 // PI DMA: copies at once if the data is cached, otherwise leaves it to the reader thread; either
 // way sends mb to mq (if not 0) once the data is in rdram.
 void rom_start_dma(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size, uint32_t mq, uint32_t mb);
+// Copies ROM bytes as they are on the cartridge (big-endian), on the calling thread.
+void rom_read_bytes(void* dst, uint32_t rom_addr, uint32_t size);
 // Waits until every PI DMA started so far from the audio data has finished.
 void rom_wait_audio(void);
 

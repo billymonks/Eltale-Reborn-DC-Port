@@ -1,0 +1,21 @@
+# Short boot: past the title into a new game, then Melrode, with frame skip on.
+# make test-cdi TEST_SCRIPT=tests/bootchk.txt
+
+wait 12000
+tap S
+wait 4000
+tap S
+wait 3000
+tap A
+wait 2000
+log bootchk new game
+frameskip 1
+warp 0 0 0
+wait 8000
+log bootchk melrode
+pos
+stick 0 70 0
+wait 2000
+pos
+stick 0 0 0
+log bootchk done

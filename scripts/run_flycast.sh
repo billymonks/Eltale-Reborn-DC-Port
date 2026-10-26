@@ -46,6 +46,11 @@ fullscreen = yes
 width = 640
 height = 480
 EOF
+# NO_VMU=1: a controller with nothing in its slots (Flycast's MDT_None is 10).
+if [ "${NO_VMU:-0}" = "1" ]; then
+    printf '\n[input]\ndevice1.1 = 10\ndevice1.2 = 10\n' >> "$XDG_CONFIG_HOME/flycast/emu.cfg"
+    echo "[run_flycast] no VMU"
+fi
 
 export DISPLAY=:99
 Xvfb :99 -screen 0 640x480x24 -nolisten tcp > /dev/null 2>&1 &

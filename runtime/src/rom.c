@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "screen_log.h"
 #include "ultra.h"
 
 // Searched in order: the game disc, the dcload host filesystem, an SD card adapter.
@@ -256,6 +257,33 @@ void rom_read_to_rdram(uint32_t rom_addr, uint32_t ram_addr, uint32_t size) {
     rom_dma_to_rdram(rom_addr, ram_addr, size);
 }
 
+void rom_read_bytes(void* dst, uint32_t rom_addr, uint32_t size) {
+    uint8_t* out = dst;
+    while (size > 0) {
+        uint32_t block = rom_addr >> BLOCK_SHIFT;
+        uint32_t in_block = rom_addr & (BLOCK_SIZE - 1);
+        uint32_t chunk = BLOCK_SIZE - in_block;
+        if (chunk > size) {
+            chunk = size;
+        }
+        for (;;) {
+            mutex_lock(&lock);
+            if (slot_of[block] >= 0) {
+                int s = slot_of[block];
+                slots[s].last_use = ++cache_clock;
+                memcpy(out, slot_data(s) + in_block, chunk);
+                mutex_unlock(&lock);
+                break;
+            }
+            mutex_unlock(&lock);
+            fetch(block);
+        }
+        out += chunk;
+        rom_addr += chunk;
+        size -= chunk;
+    }
+}
+
 // --- PI DMA ---
 //
 // As on the N64, osPiStartDma only starts a transfer, and the message arrives when it's done.
@@ -380,6 +408,7 @@ bool rom_open(void) {
 
 #ifndef ROM_NO_PIN
         if (rom_file_size >= PIN_END) {
+            screen_mark("pin audio");
             uint64_t t0 = timer_us_gettime64();
             disc_read(PIN_FIRST, PIN_BLOCKS, slot_data(LRU_BLOCKS));
             for (uint32_t i = 0; i < PIN_BLOCKS; i++) {

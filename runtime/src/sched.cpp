@@ -7,11 +7,16 @@
 // ready while game code runs; that switch happens at the running thread's next runtime call.
 
 #include <kos.h>
+#ifdef PERF_HUD
+#include <dc/perfctr.h>
+#endif
 
 #include <algorithm>
+#include <deque>
 #include <unordered_map>
 #include <vector>
 
+#include "diag.h"
 #include "ultra.h"
 
 // OSThread fields.
@@ -64,9 +69,61 @@ uint32_t ready_seq_counter;
 bool boot_handed_off;
 volatile bool yield_requested;
 
+#ifdef LOCKSTEP
+// Messages the runtime's own threads sent after the boot code handed off, held for
+// sched_lockstep_deliver.
+std::deque<std::pair<uint32_t, uint32_t>> deferred;
+#endif
+
 // Time with no game thread running, and the part of it with a graphics task to run meanwhile.
 uint64_t idle_since, idle_us, idle_rsp_us;
 bool idle_rsp;
+
+// PERF_HUD: CPU cycles the pipeline stalled on instruction cache misses (performance counter 1)
+// while a game thread held the CPU, audio tasks excluded as in G. Interrupts and higher-priority
+// KOS threads that preempt a game thread are counted with it.
+uint64_t icache_stall, icache_mark;
+bool icache_counting;
+
+void icache_resume() {
+#ifdef PERF_HUD
+    icache_mark = perf_cntr_count(PRFC1);
+    icache_counting = true;
+#endif
+}
+
+void icache_pause() {
+#ifdef PERF_HUD
+    if (icache_counting) {
+        icache_stall += perf_cntr_count(PRFC1) - icache_mark;
+        icache_counting = false;
+    }
+#endif
+}
+
+#ifdef GFX_DIAG
+// The cache miss stalls while a game thread held the CPU, audio work included, for the renderer
+// to leave out of its own.
+uint32_t game_on_pmc0, game_on_pmc1;
+bool game_on;
+
+void diag_game_resume() {
+    game_on_pmc0 = DIAG_PMC0;
+    game_on_pmc1 = DIAG_PMC1;
+    game_on = true;
+}
+
+void diag_game_pause() {
+    if (game_on) {
+        diag_game_pmc0 += DIAG_PMC0 - game_on_pmc0;
+        diag_game_pmc1 += DIAG_PMC1 - game_on_pmc1;
+        game_on = false;
+    }
+}
+#else
+inline void diag_game_resume() {}
+inline void diag_game_pause() {}
+#endif
 
 int32_t priority(const GameThread* t) {
     return MEM_W(OSTHREAD_PRIORITY, t->vram);
@@ -147,10 +204,14 @@ void switch_away_locked(GameThread* me, bool requeue) {
     } else {
         set_state(me, OS_STATE_WAITING);
     }
+    icache_pause();
+    diag_game_pause();
     dispatch_next_locked();
     mutex_unlock(&lock);
     sem_wait(&me->run);
     mutex_lock(&lock);
+    icache_resume();
+    diag_game_resume();
 }
 
 void preempt_if_needed_locked(GameThread* me) {
@@ -184,10 +245,16 @@ void* game_thread_main(void* param) {
 
     t->ctx.r29 = t->sp;
     t->ctx.r4 = t->arg;
+    mutex_lock(&lock);
+    icache_resume();
+    diag_game_resume();
+    mutex_unlock(&lock);
     LOOKUP_FUNC(t->entry)(rdram, &t->ctx);
 
     printf("[q64dc] thread %d returned\n", (int)t->id);
     mutex_lock(&lock);
+    icache_pause();
+    diag_game_pause();
     set_state(t, OS_STATE_STOPPED);
     dispatch_next_locked();
     mutex_unlock(&lock);
@@ -273,14 +340,63 @@ int32_t send_locked(GameThread* me, uint32_t mq, uint32_t msg, int32_t flag, boo
 
 }
 
+#ifdef GFX_DIAG
+volatile uint32_t diag_game_pmc0, diag_game_pmc1;
+#endif
+
 void sched_init(void) {
+#ifdef PERF_HUD
+    // Counter 0 is KOS's clock; counter 1 is free.
+    perf_cntr_start(PRFC1, PMCR_PIPELINE_FREEZE_BY_ICACHE_MISS_MODE, PMCR_COUNT_CPU_CYCLES);
+#endif
+#ifdef GFX_DIAG
+    // Nothing in KallistiOS or the runtime reads the nanosecond clock on counter 0
+    // (perf_cntr_timer_ns falls back to TMU2), so it counts operand cache miss stalls instead.
+    perf_cntr_start(PRFC0, PMCR_PIPELINE_FREEZE_BY_DCACHE_MISS_MODE, PMCR_COUNT_CPU_CYCLES);
+#endif
 }
 
-void sched_print_stats(void) {
+uint64_t sched_take_icache_stall(void) {
+    mutex_lock(&lock);
+    uint64_t cycles = icache_stall;
+    if (icache_counting) {
+        icache_pause();
+        icache_resume();
+        cycles = icache_stall;
+    }
+    icache_stall = 0;
+    mutex_unlock(&lock);
+    return cycles;
+}
+
+bool sched_icache_pause(void) {
+    mutex_lock(&lock);
+    bool was = icache_counting;
+    icache_pause();
+    mutex_unlock(&lock);
+    return was;
+}
+
+void sched_icache_resume(bool was_counting) {
+    if (was_counting) {
+        mutex_lock(&lock);
+        icache_resume();
+        mutex_unlock(&lock);
+    }
+}
+
+void sched_take_idle(uint32_t* idle_out, uint32_t* with_gfx_us) {
     mutex_lock(&lock);
     uint64_t all = idle_us, rsp = idle_rsp_us;
     idle_us = idle_rsp_us = 0;
     mutex_unlock(&lock);
+    *idle_out = (uint32_t)all;
+    *with_gfx_us = (uint32_t)rsp;
+}
+
+void sched_print_stats(void) {
+    uint32_t all, rsp;
+    sched_take_idle(&all, &rsp);
     printf("[q64dc] sched: no game thread running for %u ms, %u ms of it with a graphics task to run\n",
            (unsigned)(all / 1000), (unsigned)(rsp / 1000));
 }
@@ -305,9 +421,43 @@ void sched_check_yield(void) {
     mutex_unlock(&lock);
 }
 
+#ifdef LOCKSTEP
+bool sched_lockstep_idle(void) {
+    mutex_lock(&lock);
+    bool idle = boot_handed_off && running == nullptr && ready.empty();
+    mutex_unlock(&lock);
+    return idle;
+}
+
+bool sched_lockstep_deliver(void) {
+    mutex_lock(&lock);
+    bool any = !deferred.empty();
+    if (any) {
+        std::pair<uint32_t, uint32_t> m = deferred.front();
+        deferred.pop_front();
+        send_locked(nullptr, m.first, m.second, OS_MESG_NOBLOCK, false);
+    }
+    mutex_unlock(&lock);
+    return any;
+}
+
+void sched_lockstep_send(uint32_t mq, uint32_t msg) {
+    mutex_lock(&lock);
+    send_locked(nullptr, mq, msg, OS_MESG_NOBLOCK, false);
+    mutex_unlock(&lock);
+}
+#endif
+
 int32_t mq_send_nonblock(uint32_t mq, uint32_t msg) {
     mutex_lock(&lock);
     GameThread* me = self();
+#ifdef LOCKSTEP
+    if (me == nullptr && boot_handed_off) {
+        deferred.emplace_back(mq, msg);
+        mutex_unlock(&lock);
+        return 0;
+    }
+#endif
     int32_t ret = send_locked(me, mq, msg, OS_MESG_NOBLOCK, false);
     if (me != nullptr) {
         preempt_if_needed_locked(me);

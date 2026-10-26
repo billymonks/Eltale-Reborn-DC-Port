@@ -3,12 +3,12 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "0.4.0"
+version = "0.4.1"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
-faster stat growth and fewer random battles. Works on its own or together with the Eltale Reborn: Holy Magic Century story mod."""
-short_description = "Field sprint, bigger battle area, no early grind, faster growth."
+faster stat growth, fewer random battles, and slower field MP recovery. Works on its own or together with the Eltale Reborn: Holy Magic Century story mod."""
+short_description = "Field sprint, bigger battle area, no early grind, faster growth, slower MP recovery."
 authors = [ "Billy Monks" ]
 
 game_id = "qs64"
@@ -105,7 +105,7 @@ max = 1.5
 step = 0.05
 precision = 2
 percent = false
-default = 0.6
+default = 1
 
 [[manifest.config_options]]
 id = "boss_hp"
@@ -117,7 +117,7 @@ max = 1.5
 step = 0.05
 precision = 2
 percent = false
-default = 0.6
+default = 1
 
 [[manifest.config_options]]
 id = "healing2_power"

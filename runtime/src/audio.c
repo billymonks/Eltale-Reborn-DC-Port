@@ -1,5 +1,6 @@
-// Audio: the game's audio tasks (audio_hle.c) and the N64's audio interface, played through a
-// KOS sound stream on the AICA.
+// Audio: the N64's audio interface. The synthesizer's voices play on the AICA's channels (aica.c);
+// with -DAUDIO_HLE, or when the AICA doesn't answer at boot, the game's audio tasks are mixed on
+// the SH-4 instead (audio_hle.c) and played through a KOS sound stream, as below.
 //
 // Every buffer the game hands to osAiSetNextBuffer is copied into a ring that a high-priority
 // thread feeds to the stream, so the AICA's clock sets the pace. Each retrace the game's audio
@@ -15,8 +16,15 @@
 #include <dc/sound/stream.h>
 #include <stdio.h>
 
+#include "aica.h"
 #include "audio_hle.h"
 #include "ultra.h"
+
+#ifndef AUDIO_HLE
+static bool use_aica;
+#else
+#define use_aica false
+#endif
 
 // Per channel, in bytes. The stream asks for half of it at a time.
 #define STREAM_BUFFER_BYTES 2048
@@ -87,6 +95,13 @@ static void* stream_thread(void* param) {
 }
 
 void audio_init(void) {
+#ifndef AUDIO_HLE
+    if (aica_init()) {
+        use_aica = true;
+        return;
+    }
+    printf("[q64dc] audio: mixing on the SH-4 instead\n");
+#endif
     if (snd_stream_init() < 0) {
         printf("[q64dc] audio: couldn't start the sound stream; the game will be silent\n");
         return;
@@ -120,7 +135,15 @@ static void start_stream(uint32_t freq) {
     mutex_unlock(&stream_lock);
 }
 
+bool audio_aica(void) {
+    return use_aica;
+}
+
 void audio_run_task(uint32_t task) {
+    if (use_aica) {
+        // The command list is empty: the voices went to the AICA in alAudioFrame.
+        return;
+    }
     uint64_t t0 = timer_us_gettime64();
 #ifndef AUDIO_OFF  // for measuring the frame rate without audio
     audio_hle_run(rdram, RDRAM_SIZE, task);
@@ -138,6 +161,11 @@ void audio_run_task(uint32_t task) {
 void osAiSetFrequency_recomp(uint8_t* rdram, recomp_context* ctx) {
     // As libultra rounds it: the DAC divides the VI clock by an integer.
     uint32_t freq = ctx->r4;
+#ifdef AUDIO_RATE
+    // The game stores this return value as the synthesizer output rate (funcs_6, sw $v0, 0x18).
+    // A lower rate shortens every mix. Pitch follows the rate, so tempo stays put.
+    freq = AUDIO_RATE;
+#endif
     uint32_t dac_rate = freq ? (uint32_t)((float)VI_CLOCK / freq + 0.5f) : 0;
     if (dac_rate < 132) {
         ctx->r2 = (gpr)-1;
@@ -146,12 +174,24 @@ void osAiSetFrequency_recomp(uint8_t* rdram, recomp_context* ctx) {
     ai_freq = VI_CLOCK / dac_rate;
     ai_frame_size = (ai_freq / 60 + 15) & ~15u;
     printf("[q64dc] audio: AI at %u Hz (asked for %u)\n", (unsigned)ai_freq, (unsigned)freq);
-    start_stream(ai_freq);
+    if (!use_aica) {
+        start_stream(ai_freq);
+    }
     ctx->r2 = (gpr)ai_freq;
 }
 
 void osAiGetLength_recomp(uint8_t* rdram, recomp_context* ctx) {
+#ifdef LOCKSTEP
+    // The game's buffer sizes can't follow the AICA's clock, the stream's or aica.c's virtual AI;
+    // see ultra.h.
+    int32_t fill = RING_TARGET_FRAMES;
+#else
+    if (use_aica) {
+        ctx->r2 = (gpr)aica_ai_length(ai_frame_size);
+        return;
+    }
     int32_t fill = (int32_t)(ring_write - ring_read);
+#endif
     int32_t want = (int32_t)(ai_freq * 1000u / RETRACE_MHZ) + (RING_TARGET_FRAMES - fill) / CATCH_UP_RETRACES;
     // The game rounds down to 16 samples and won't go below a frame less 16.
     int32_t left = (int32_t)ai_frame_size + 0x60 - (want + 8);
@@ -162,6 +202,11 @@ void osAiSetNextBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
     uint32_t addr = ctx->r4;
     uint32_t frames = ctx->r5 / 4;
     stat_submitted_frames += frames;
+    if (use_aica) {
+        aica_ai_buffer(frames);
+        ctx->r2 = 0;
+        return;
+    }
 
     // rdram's 32-bit words are left:right; the stream wants them the other way round.
     uint32_t w = ring_write;
@@ -178,7 +223,25 @@ void osAiSetNextBuffer_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = 0;
 }
 
+uint32_t audio_take_task_us(uint32_t* ntasks) {
+    if (use_aica) {
+        return aica_take_frame_us(ntasks);
+    }
+    uint32_t u = stat_task_us;
+    if (ntasks) {
+        *ntasks = stat_tasks;
+    }
+    stat_task_us = 0;
+    stat_tasks = 0;
+    stat_task_max_us = 0;
+    return u;
+}
+
 void audio_print_stats(void) {
+    if (use_aica) {
+        aica_print_stats();
+        return;
+    }
     // The stream thread can preempt this one, so its count is only ever read.
     static uint32_t last_streamed;
     uint32_t streamed = stat_streamed_frames;
@@ -202,12 +265,14 @@ void audio_print_stats(void) {
         }
     }
 #endif
+    int16_t wet_max = 0;
+    uint32_t wet = audio_hle_take_wet(&wet_max);
     printf("[q64dc] audio: %u tasks, %u us each (max %u), %u us/s; frames in %u out %u, ring %d; "
-           "underrun %u, dropped %u%s\n",
+           "underrun %u, dropped %u; wet sends %u (max %d)%s\n",
            (unsigned)stat_tasks, (unsigned)(stat_task_us / n), (unsigned)stat_task_max_us,
            (unsigned)stat_task_us, (unsigned)stat_submitted_frames, (unsigned)(streamed - last_streamed),
            (int)(ring_write - ring_read), (unsigned)stat_underrun_frames,
-           (unsigned)stat_dropped_frames, ops);
+           (unsigned)stat_dropped_frames, (unsigned)wet, (int)wet_max, ops);
 #ifdef AUDIO_PROFILE
     extern uint32_t env_blocks_stepped, env_blocks_settled;
     printf("[q64dc] audio: envelope blocks stepped %u settled %u\n", (unsigned)env_blocks_stepped,

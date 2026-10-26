@@ -93,10 +93,32 @@ INCLUDES := -Iruntime/include -I$(RECOMP_DIR)
 # without errno, sqrtf is the FPU's fsqrt, as exact as the N64's sqrt.s.
 COMMON_FLAGS := $(INCLUDES) -fno-strict-aliasing -fwrapv -fbuiltin -fno-math-errno -Wno-unused-label -Wno-unused-variable -Wno-unused-but-set-variable
 RECOMP_OPT   ?= -O2
-CFLAGS_GAME  := $(COMMON_FLAGS) $(RECOMP_OPT) -include $(DECLS_H)
-# Extra runtime defines (run `make clean` when changing them).
-RT_DEFINES   ?=
-CFLAGS_RT    := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES) $(MOD_DEFINES)
+# The SH-4's fmac rounds once; the VR4300 rounds the product and the sum separately, so the
+# generated code must not fuse mul.s and add.s. GCC 14.3's default IRA regions hit an internal
+# compiler error in postreload on some generated functions; one region avoids it and is smaller.
+# rdram's biased base pointer is outside the array as GCC sees it, hence -Wno-array-bounds.
+RECOMP_FP    := -ffp-contract=off -fira-region=one -Wno-array-bounds
+# -ffunction-sections is also in the KOS wrapper flags. Stating it here keeps each
+# recompiled function in its own .text.<name> section so a hot layout can order them.
+CFLAGS_GAME  := $(COMMON_FLAGS) -ffunction-sections $(RECOMP_OPT) $(RECOMP_FP) -include $(DECLS_H)
+# Extra runtime defines. The stamp is rewritten only when RT_DEFINES changes, so
+# the runtime objects rebuild. One stamp per object directory: a SCREEN_LOG
+# build of one variant does not leak into the other.
+# RT_DEFINES=-DSCREEN_LOG prints startup on the TV and leaves the framebuffer up until the first frame.
+RT_DEFINES    ?=
+RT_DEFS_STAMP := $(OBJ_DIR)/rt_defines
+$(shell mkdir -p $(OBJ_DIR) && (echo '$(RT_DEFINES)' | cmp -s - $(RT_DEFS_STAMP) || echo '$(RT_DEFINES)' > $(RT_DEFS_STAMP)))
+RT_DEPS       := $(RT_DEFS_STAMP)
+CFLAGS_RT     := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES) $(MOD_DEFINES)
+
+# On-device profiler: a linker map plus address and name tables packed on the disc.
+ifneq ($(findstring PERF_HUD,$(RT_DEFINES)),)
+PROF_MAP  := $(BUILD)/prof.map
+PROF_BINS := $(BUILD)/profaddr.bin $(BUILD)/profname.bin
+else
+PROF_MAP  :=
+PROF_BINS :=
+endif
 
 .PHONY: all recomp elf cdi test-cdi size clean distclean tools FORCE
 
@@ -105,7 +127,8 @@ all: recomp
 
 tools: $(N64RECOMP)
 
-$(N64RECOMP): scripts/build_n64recomp.sh tools/patches/n64recomp-gpr32.patch tools/patches/n64recomp-return-hooks.patch
+$(N64RECOMP): scripts/build_n64recomp.sh tools/patches/n64recomp-gpr32.patch tools/patches/n64recomp-return-hooks.patch \
+              tools/patches/n64recomp-codegen.patch
 	scripts/build_n64recomp.sh $(TOOLS)/N64Recomp
 
 recomp: $(RECOMP_DIR)/funcs.h
@@ -131,7 +154,7 @@ $(MOD_STAGE)/%/mod_syms.bin $(MOD_STAGE)/%/mod_binary.bin $(MOD_STAGE)/%/mod.tom
 $(shell mkdir -p $(MODGEN) && (echo '$(MOD_RAM_SIZE) $(MOD_CONFIG)' | cmp -s - $(MODGEN)/options || echo '$(MOD_RAM_SIZE) $(MOD_CONFIG)' > $(MODGEN)/options))
 MOD_DEFS_TEXT := $(subst ',,$(MOD_DEFINES))
 $(shell echo '$(MOD_DEFS_TEXT)' | cmp -s - $(MODGEN)/defines || echo '$(MOD_DEFS_TEXT)' > $(MODGEN)/defines)
-RT_DEPS    := $(MODGEN)/defines
+RT_DEPS    += $(MODGEN)/defines
 
 # modrecomp only rewrites outputs whose contents change, so the stamp stands for all of them.
 $(MODGEN)/stamp: $(MODRECOMP) $(MOD_INPUTS) Quest64Syms/dump.toml $(MODGEN)/options
@@ -159,11 +182,46 @@ RT_OBJS    += $(patsubst runtime/mod/%.c,$(OBJ_DIR)/modrt/%.o,$(wildcard runtime
 MOD_OBJS   := $(patsubst $(MODGEN)/%.c,$(OBJ_DIR)/mods/%.o,$(wildcard $(MODGEN)/*.c))
 endif
 
+# RT_DEFINES=-DAICA_FW: the port's own AICA firmware (runtime/aica/) instead of KallistiOS's. Built
+# with the ARM toolchain when the image has it (docker/arm), otherwise the committed binary.
+# GCC's pre-allocation scheduling stays off: Flycast's ARM7 recompiler runs scheduled code wrong.
+ifneq ($(findstring AICA_FW,$(RT_DEFINES)),)
+AICA_FW_DIR := $(BUILD)/aica_fw
+RT_OBJS     += $(OBJ_DIR)/runtime/aica_fw.o
+ifneq ($(wildcard $(DC_ARM_CC)),)
+$(AICA_FW_DIR)/aica_fw.bin: runtime/aica/crt0.s runtime/aica/main.c runtime/aica/shared.h
+	@mkdir -p $(AICA_FW_DIR)
+	$(DC_ARM_AS) $(DC_ARM_AFLAGS) runtime/aica/crt0.s -o $(AICA_FW_DIR)/crt0.o
+	$(DC_ARM_CC) $(DC_ARM_CFLAGS) -fno-schedule-insns -marm -ffreestanding -c runtime/aica/main.c -o $(AICA_FW_DIR)/main.o
+	$(DC_ARM_CC) -mcpu=arm7di -Wl,-Ttext=0x00000000,-Map,$(AICA_FW_DIR)/aica_fw.map,-N -nostartfiles -nostdlib \
+		-e reset -o $(AICA_FW_DIR)/aica_fw.elf $(AICA_FW_DIR)/crt0.o $(AICA_FW_DIR)/main.o -lgcc
+	$(DC_ARM_OBJCOPY) -O binary $(AICA_FW_DIR)/aica_fw.elf $@
+else
+$(AICA_FW_DIR)/aica_fw.bin: runtime/aica/aica_fw.bin
+	@mkdir -p $(AICA_FW_DIR)
+	cp $< $@
+endif
+$(OBJ_DIR)/runtime/aica_fw.o: $(AICA_FW_DIR)/aica_fw.bin
+	@mkdir -p $(dir $@)
+	$(KOS_BASE)/utils/bin2c/bin2c $< $(AICA_FW_DIR)/aica_fw.c aica_fw
+	kos-cc $(CFLAGS_RT) -c $(AICA_FW_DIR)/aica_fw.c -o $@
+endif
+
 elf: $(TARGET)
 
 $(TARGET): $(GAME_OBJS) $(RT_OBJS) $(MOD_OBJS)
-	kos-c++ -o $@ $^ -lm
+	set -e; \
+	if [ -n "$(HOT_LD)" ]; then \
+	  KOS_LDFLAGS=$$(printf '%s' "$$KOS_LDFLAGS" | sed 's|-T[^ ]*shlelf\.xc|-T$(HOT_LD)|'); \
+	  export KOS_LDFLAGS; \
+	fi; \
+	kos-c++ -o $@ $^ -lm $(if $(PROF_MAP),-Wl$(comma)-Map$(comma)$(PROF_MAP))
 	@sh-elf-size $@
+
+ifneq ($(PROF_BINS),)
+$(PROF_BINS) &: $(TARGET) scripts/prof_syms.py
+	python3 scripts/prof_syms.py $(TARGET) $(PROF_MAP) $(BUILD)/profaddr.bin $(BUILD)/profname.bin
+endif
 
 $(STUBS_C) $(DECLS_H) &: $(RECOMP_DIR)/funcs.h $(RUNTIME_C) $(RUNTIME_CXX) scripts/gen_stubs.py $(if $(MOD),$(MODGEN)/stamp $(wildcard runtime/mod/*.c))
 	python3 scripts/gen_stubs.py $(RECOMP_DIR) runtime/src $(STUBS_C) $(DECLS_H) $(STUBS_DIRS)
@@ -175,7 +233,7 @@ $(OBJ_DIR)/modrt/%.o: runtime/mod/%.c runtime/mod/modrt.h runtime/include/recomp
 
 $(OBJ_DIR)/mods/%.o: $(MODGEN)/%.c runtime/mod/mod_recomp.h runtime/mod/modrt.h runtime/include/recomp.h runtime/include/runtime.h
 	@mkdir -p $(dir $@)
-	kos-cc $(COMMON_FLAGS) $(RECOMP_OPT) -Iruntime/mod -c $< -o $@
+	kos-cc $(COMMON_FLAGS) $(RECOMP_OPT) $(RECOMP_FP) -Iruntime/mod -c $< -o $@
 endif
 
 $(OBJ_DIR)/recomp/%.o: $(RECOMP_DIR)/%.c runtime/include/recomp.h $(DECLS_H)
@@ -199,8 +257,10 @@ $(OBJ_DIR)/runtime/runtime_stubs.o: $(STUBS_C) runtime/include/runtime.h
 	@mkdir -p $(dir $@)
 	kos-cc $(CFLAGS_RT) -c $< -o $@
 
-# A self-booting disc with the ELF and the ROM, for emulators and CD-R/ODE testing. It contains
-# the game, so it's for your own use only.
+# A self-booting disc with the ELF and the ROM. It contains the game, so it's for your own use only.
+# -N skips the 74-minute data-track pad. That pad is what made the CDI ~740MB, with the files
+# at the outer edge of a CD-R, and OpenMenu on a GDEMU will not parse it. Flycast will. A
+# burned disc still boots without the pad; a real drive just doesn't get the outer-edge seek.
 
 # Cover art: your own assets/cover.png (never committed) becomes 0GDTEX.PVR in the disc root,
 # which Flycast and GDEMU menus show. Without it the discs have no cover. Modded discs use
@@ -233,11 +293,11 @@ test-cdi:
 	@$(MAKE) --no-print-directory all
 	@$(MAKE) --no-print-directory $(TEST_CDI)
 
-$(CDI): $(TARGET) $(ROM) $(GDTEX)
+$(CDI): $(TARGET) $(ROM) $(GDTEX) $(PROF_BINS)
 	@mkdir -p $(DISC_DIR)
 	cmp -s $(ROM) $(DISC_DIR)/quest64.z64 || cp $(ROM) $(DISC_DIR)/quest64.z64
-	mkdcdisc -e $(TARGET) -f $(DISC_DIR)/quest64.z64 $(addprefix -f ,$(GDTEX)) \
-		-n "$(DISC_TITLE)" -a "Quest64-DC-Port" -s "$(DISC_SERIAL)" -o $@ --allow-overwrite
+	mkdcdisc -e $(TARGET) -f $(DISC_DIR)/quest64.z64 $(addprefix -f ,$(GDTEX) $(PROF_BINS)) \
+		-n "$(DISC_TITLE)" -a "Quest64-DC-Port" -s "$(DISC_SERIAL)" -N -o $@ --allow-overwrite
 
 # Rebuilt every time, so a changed script takes effect. Its own serial keeps its VMU apart in Flycast.
 $(TEST_CDI): $(TARGET) $(ROM) $(GDTEX) FORCE
@@ -245,7 +305,7 @@ $(TEST_CDI): $(TARGET) $(ROM) $(GDTEX) FORCE
 	cmp -s $(ROM) $(TEST_DISC_DIR)/quest64.z64 || cp $(ROM) $(TEST_DISC_DIR)/quest64.z64
 	$(if $(MODS),python3 scripts/test_syms.py $(TEST_SCRIPT) $(MODGEN)/mods_layout.txt $(MOD_STAGE) > $(TEST_DISC_DIR)/q64test.txt,cp $(TEST_SCRIPT) $(TEST_DISC_DIR)/q64test.txt)
 	mkdcdisc -e $(TARGET) -f $(TEST_DISC_DIR)/quest64.z64 -f $(TEST_DISC_DIR)/q64test.txt \
-		$(addprefix -f ,$(GDTEX)) -n "$(TEST_TITLE)" -a "Quest64-DC-Port" -s "$(TEST_SERIAL)" -o $@ --allow-overwrite
+		$(addprefix -f ,$(GDTEX)) -n "$(TEST_TITLE)" -a "Quest64-DC-Port" -s "$(TEST_SERIAL)" -N -o $@ --allow-overwrite
 
 FORCE:
 

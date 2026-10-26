@@ -9,6 +9,12 @@ symbols_file_path = "../Quest64Syms/dump.toml"
 output_func_path = "../build/recomp"
 gpr_32bit = true
 
+# Dreamcast code generation (tools/N64Recomp, this port's fork). Each option can be turned off on its own.
+[codegen]
+rdram_base = true
+sp_subword_fold = true
+regcache = "gpr"
+
 [patches]
 stubs = [
     "func_800471B0", # libleo
@@ -34,6 +40,13 @@ before_vram = 0x80031ACC
 func = "func_8000F238"
 text = "floor_shape_test(rdram, ctx); return;"
 before_vram = 0x8000F238
+
+# libultra's alAudioFrame, once the players' handlers have run ($s1 the synthesizer, $s3 the
+# samples to make): the voices' updates go to the AICA, and $s3 = 0 skips the command list.
+[[patches.hook]]
+func = "func_80036A68"
+text = "aica_audio_frame(rdram, ctx);"
+before_vram = 0x80036C20
 
 [[patches.hook]]
 func = "func_80024690"

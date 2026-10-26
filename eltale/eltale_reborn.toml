@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.13.23"
+version = "0.13.35"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -29,7 +29,7 @@ native_libraries = [
 [[manifest.config_options]]
 id = "button_names"
 name = "Controller names in dialogue"
-description = "Dreamcast uses the port's buttons when dialogue names one: the right trigger opens a chest, Y opens the item menu, the D-pad casts magic, and L and R change the item list. A and B stay the same."
+description = "Dreamcast uses these names when dialogue names a button: the A button opens a chest, Y opens the item menu, and the D-pad casts magic. L and R change the item list. B keeps its name."
 type = "Enum"
 options = [ "Nintendo 64", "Dreamcast" ]
 default = "Dreamcast"

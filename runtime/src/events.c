@@ -52,8 +52,19 @@ volatile uint32_t stat_audio_tasks;
 volatile uint32_t stat_dma_count;
 volatile uint32_t stat_dma_bytes;
 
+#ifdef LOCKSTEP
+// LOCKSTEP (see ultra.h): time is virtual and only moves on while no game thread can run, to the
+// next timer or retrace. Each osGetCount or osGetTime adds a microsecond, so loops on them end.
+static uint64_t vt_us, vt_vi_us;
+static uint32_t vt_count_calls;
+#endif
+
 uint64_t events_now_us(void) {
+#ifdef LOCKSTEP
+    return vt_us;
+#else
     return timer_us_gettime64() - boot_us;
+#endif
 }
 
 bool events_post(int event) {
@@ -241,9 +252,66 @@ static uint32_t bits8(uint8_t v) {
     return (uint32_t)__builtin_popcount(v);
 }
 
+static volatile uint32_t task_gap;
+static int gfx_skip_mode_now;
+static int gfx_skip_flip;
+static int gfx_skipped_last;
+static int gfx_drawn_once;
+static uint32_t gfx_task_frames;
+
+void gfx_skip_set(int mode) {
+    if (mode < 0) {
+        mode = 0;
+    }
+    if (mode > 2) {
+        mode = 2;
+    }
+    gfx_skip_mode_now = mode;
+    gfx_skip_flip = 0;
+    gfx_skipped_last = 0;
+    printf("[q64dc] frameskip %d\n", mode);
+}
+
+void gfx_skip_cycle(void) {
+    gfx_skip_set((gfx_skip_mode_now + 1) % 3);
+}
+
+int gfx_skip_mode(void) {
+    return gfx_skip_mode_now;
+}
+
+uint32_t gfx_take_frames(void) {
+    uint32_t n = gfx_task_frames;
+    gfx_task_frames = 0;
+    return n;
+}
+
+// 1 when this task should not be drawn. The whole display list is one frame and the next
+// drawn task reloads its own segments and textures, so a skipped task leaves no PVR scene
+// and the previous frame stays up.
+static int gfx_want_skip(void) {
+#ifdef LOCKSTEP
+    return 0;
+#endif
+    if (!gfx_drawn_once || gfx_skip_mode_now == 0) {
+        return 0;
+    }
+    if (gfx_skip_mode_now == 1) {
+        gfx_skip_flip ^= 1;
+        return gfx_skip_flip;
+    }
+    if (task_gap > 2 && !gfx_skipped_last) {
+        gfx_skipped_last = 1;
+        return 1;
+    }
+    gfx_skipped_last = 0;
+    return 0;
+}
+
 static void present_note_task(void) {
     uint32_t gap = vbl_seq - task_vbl_last;
     task_vbl_last = vbl_seq;
+    task_gap = gap;
     present_two_gaps = (uint8_t)(present_two_gaps << 1 | (gap == 2));
 }
 
@@ -319,13 +387,51 @@ static void on_vblank(uint32_t code, void* data) {
     sem_signal(&vblank_sem);
     if (present_waiting) {
         genwait_wake_all((void*)&vbl_seq);
+        // The RSP thread is blocked in present_wait and the game thread is
+        // waiting on its message, so the switch has to happen before the IRQ
+        // returns. thd_schedule is the IRQ-safe way to do that.
         thd_schedule(1, 0);
     }
 }
 
+static uint32_t remaining_retraces = 1;
+
+static void retrace(void) {
+    stat_vi_count++;
+    if (vi_next_fb != 0) {
+        vi_current_fb = vi_next_fb;
+    }
+
+    if (--remaining_retraces == 0) {
+        remaining_retraces = vi_retrace_count ? vi_retrace_count : 1;
+        if (vi_target.mq != 0) {
+#ifdef LOCKSTEP
+            sched_lockstep_send(vi_target.mq, vi_target.msg);
+#else
+            mq_send_nonblock(vi_target.mq, vi_target.msg);
+#endif
+        }
+    }
+
+    if (stat_vi_count % 60 == 0 && test_disc() && !profile_running() && !pace_on) {
+        sem_signal(&log_sem);
+    }
+}
+
+#ifdef LOCKSTEP
+static bool lockstep_step(void);
+#endif
+
 static void* events_thread(void* param) {
     (void)param;
-    uint32_t remaining_retraces = 1;
+
+#ifdef LOCKSTEP
+    for (;;) {
+        thd_sleep(1);
+        for (int n = 0; n < 16 && lockstep_step(); n++) {
+        }
+    }
+#endif
 
     for (;;) {
         uint64_t now_us = timer_us_gettime64();
@@ -340,12 +446,12 @@ static void* events_thread(void* param) {
         }
         sched_unlock();
 
-        bool retrace = false;
+        bool vblank = false;
         if (deadline_us > now_us) {
             int wait_ms = (int)((deadline_us - now_us + 999) / 1000);
-            retrace = sem_wait_timed(&vblank_sem, wait_ms) == 0;
+            vblank = sem_wait_timed(&vblank_sem, wait_ms) == 0;
         } else {
-            retrace = sem_trywait(&vblank_sem) == 0;
+            vblank = sem_trywait(&vblank_sem) == 0;
         }
 
         // Timers that are due.
@@ -367,22 +473,8 @@ static void* events_thread(void* param) {
             }
         }
 
-        if (retrace) {
-            stat_vi_count++;
-            if (vi_next_fb != 0) {
-                vi_current_fb = vi_next_fb;
-            }
-
-            if (--remaining_retraces == 0) {
-                remaining_retraces = vi_retrace_count ? vi_retrace_count : 1;
-                if (vi_target.mq != 0) {
-                    mq_send_nonblock(vi_target.mq, vi_target.msg);
-                }
-            }
-
-            if (stat_vi_count % 60 == 0 && test_disc() && !profile_running() && !pace_on) {
-                sem_signal(&log_sem);
-            }
+        if (vblank) {
+            retrace();
         }
     }
     return NULL;
@@ -431,14 +523,22 @@ void osViSetEvent_recomp(uint8_t* rdram, recomp_context* ctx) {
     printf("[q64dc] osViSetEvent queue 0x%08X every %u retraces\n", (unsigned)ctx->r4, (unsigned)ctx->r6);
 }
 
+static uint64_t count_now_us(void) {
+#ifdef LOCKSTEP
+    return vt_us + ++vt_count_calls;
+#else
+    return events_now_us();
+#endif
+}
+
 void osGetCount_recomp(uint8_t* rdram, recomp_context* ctx) {
     sched_check_yield();
-    ctx->r2 = (gpr)(uint32_t)US_TO_COUNT_TICKS(events_now_us());
+    ctx->r2 = (gpr)(uint32_t)US_TO_COUNT_TICKS(count_now_us());
 }
 
 void osGetTime_recomp(uint8_t* rdram, recomp_context* ctx) {
     sched_check_yield();
-    uint64_t count = US_TO_COUNT_TICKS(events_now_us());
+    uint64_t count = US_TO_COUNT_TICKS(count_now_us());
     ctx->r2 = (gpr)(uint32_t)(count >> 32);
     ctx->r3 = (gpr)(uint32_t)count;
 }
@@ -491,16 +591,96 @@ void osSetTimer_recomp(uint8_t* rdram, recomp_context* ctx) {
 static semaphore_t rsp_sem;
 static uint32_t rsp_queue[RSP_QUEUE];
 static volatile uint32_t rsp_head, rsp_tail;
+#ifdef LOCKSTEP
+// A graphics task takes this long in virtual time, one after another. The RSP thread only runs
+// them; lockstep_step sends their SP and DP events.
+#define RSP_TASK_US 30000
+static uint64_t rsp_done_vt[RSP_QUEUE], rsp_last_done_vt;
+// Tasks whose events are out.
+static volatile uint32_t rsp_posted;
+
+static void lockstep_post(int event) {
+    EventTarget target = event_targets[event];
+    if (target.mq != 0) {
+        sched_lockstep_send(target.mq, target.msg);
+    }
+}
+
+// Once no game thread can run: a message another runtime thread sent, or else the first in virtual
+// time of the graphics task's end, a timer and the next retrace. True if something was sent.
+static bool lockstep_step(void) {
+    if (!sched_lockstep_idle()) {
+        return false;
+    }
+    if (sched_lockstep_deliver()) {
+        return true;
+    }
+    enum { RETRACE, TIMER, TASK } kind = RETRACE;
+    uint64_t next = vt_vi_us + VI_INTERVAL_NS / 1000;
+    int first = -1;
+    sched_lock();
+    for (int i = 0; i < MAX_TIMERS; i++) {
+        if (timers[i].active && timers[i].deadline_us <= next) {
+            next = timers[i].deadline_us;
+            first = i;
+            kind = TIMER;
+        }
+    }
+    sched_unlock();
+    if (rsp_posted != rsp_head && rsp_done_vt[rsp_posted % RSP_QUEUE] <= next) {
+        if (rsp_tail == rsp_posted) {
+            return false;  // still running on the RSP thread
+        }
+        next = rsp_done_vt[rsp_posted % RSP_QUEUE];
+        kind = TASK;
+    }
+    if (next > vt_us) {
+        vt_us = next;
+    }
+
+    if (kind == TASK) {
+        rsp_posted++;
+        lockstep_post(OS_EVENT_SP);
+        lockstep_post(OS_EVENT_DP);
+    } else if (kind == TIMER) {
+        sched_lock();
+        Timer t = timers[first];
+        if (t.interval_us != 0) {
+            timers[first].deadline_us += t.interval_us;
+        } else {
+            timers[first].active = false;
+        }
+        sched_unlock();
+        if (t.mq != 0) {
+            sched_lockstep_send(t.mq, t.msg);
+        }
+    } else {
+        vt_vi_us = next;
+        retrace();
+    }
+    return true;
+}
+#endif
 
 static void* rsp_thread(void* param) {
     (void)param;
     for (;;) {
         sem_wait(&rsp_sem);
         uint32_t task = rsp_queue[rsp_tail % RSP_QUEUE];
+        gfx_task_frames++;
+        if (gfx_want_skip()) {
+            rsp_tail++;
+            events_post(OS_EVENT_SP);
+            events_post(OS_EVENT_DP);
+            continue;
+        }
         gfx_run_task(task);
+        gfx_drawn_once = 1;
         rsp_tail++;
+#ifndef LOCKSTEP
         events_post(OS_EVENT_SP);
         events_post(OS_EVENT_DP);
+#endif
         present_wait();
     }
     return NULL;
@@ -538,6 +718,10 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
         present_note_task();
         pace_note(PACE_TASK);
         rsp_queue[rsp_head % RSP_QUEUE] = task;
+#ifdef LOCKSTEP
+        rsp_last_done_vt = (vt_us > rsp_last_done_vt ? vt_us : rsp_last_done_vt) + RSP_TASK_US;
+        rsp_done_vt[rsp_head % RSP_QUEUE] = rsp_last_done_vt;
+#endif
         rsp_head++;
         sem_signal(&rsp_sem);
     } else {
@@ -546,7 +730,9 @@ void osSpTaskStartGo_recomp(uint8_t* rdram, recomp_context* ctx) {
             // The audio manager starts its sample DMAs and runs the task without waiting for them,
             // as N64 PI DMA beats the RSP to the data.
             rom_wait_audio();
+            bool counting = sched_icache_pause();
             audio_run_task(task);
+            sched_icache_resume(counting);
         }
         events_post(OS_EVENT_SP);
     }

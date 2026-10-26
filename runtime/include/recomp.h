@@ -29,41 +29,59 @@ typedef uint32_t gpr;
 
 // rdram holds the N64's KSEG0 (0x80000000) as 32-bit words in host order, so halfword and byte
 // accesses flip the low address bits.
+// RECOMP_RB points 0x80000000 below rdram. The generated functions redefine it as their local
+// `uint8_t* restrict const rb`: a separate restrict pointer keeps GCC from folding the bias into
+// every offset as a 32-bit literal, so it keeps one base register per MIPS base register and uses
+// @(disp,Rn), and it still knows those accesses can't touch the context.
+#define RECOMP_RB (rdram - 0x80000000u)
+
 #define RDRAM_PTR(addr) \
-    (rdram + (uint32_t)((uint32_t)(addr) - 0x80000000u))
+    (RECOMP_RB + (uint32_t)(addr))
 
 #define MEM_W(offset, reg) \
-    (*(int32_t*)RDRAM_PTR((reg) + (offset)))
+    (*(int32_t*)(RECOMP_RB + (gpr)(reg) + (gpr)(offset)))
 
 #define MEM_WU(offset, reg) \
-    (*(uint32_t*)RDRAM_PTR((reg) + (offset)))
+    (*(uint32_t*)(RECOMP_RB + (gpr)(reg) + (gpr)(offset)))
 
 #define MEM_H(offset, reg) \
-    (*(int16_t*)RDRAM_PTR(((reg) + (offset)) ^ 2))
+    (*(int16_t*)(RECOMP_RB + (((gpr)(reg) + (gpr)(offset)) ^ 2)))
 
 #define MEM_B(offset, reg) \
-    (*(int8_t*)RDRAM_PTR(((reg) + (offset)) ^ 3))
+    (*(int8_t*)(RECOMP_RB + (((gpr)(reg) + (gpr)(offset)) ^ 3)))
 
 #define MEM_HU(offset, reg) \
-    (*(uint16_t*)RDRAM_PTR(((reg) + (offset)) ^ 2))
+    (*(uint16_t*)(RECOMP_RB + (((gpr)(reg) + (gpr)(offset)) ^ 2)))
 
 #define MEM_BU(offset, reg) \
-    (*(uint8_t*)RDRAM_PTR(((reg) + (offset)) ^ 3))
+    (*(uint8_t*)(RECOMP_RB + (((gpr)(reg) + (gpr)(offset)) ^ 3)))
+
+// sp-relative halfwords and bytes. sp is a multiple of 4, so the swizzle only touches the offset.
+#define MEM_H_SP(offset, sp) \
+    (*(int16_t*)(RECOMP_RB + (gpr)(sp) + ((gpr)(offset) ^ 2)))
+
+#define MEM_B_SP(offset, sp) \
+    (*(int8_t*)(RECOMP_RB + (gpr)(sp) + ((gpr)(offset) ^ 3)))
+
+#define MEM_HU_SP(offset, sp) \
+    (*(uint16_t*)(RECOMP_RB + (gpr)(sp) + ((gpr)(offset) ^ 2)))
+
+#define MEM_BU_SP(offset, sp) \
+    (*(uint8_t*)(RECOMP_RB + (gpr)(sp) + ((gpr)(offset) ^ 3)))
+
+// A new stack pointer the compiler can't see through: frame offsets then stay small and positive
+// from it (@(disp,Rn) only reaches 0-60) instead of turning negative from the caller's sp.
+#define SP_ADJ(sp, imm) \
+    ({ gpr sp_ = (gpr)((sp) + (imm)); __asm__("" : "+r"(sp_)); sp_; })
 
 // Doubleword accesses only come from ldc1/sdc1 (FPU doubles); 64-bit GPR loads/stores are rejected.
 #define SD(val, offset, reg) { \
-    *(uint32_t*)RDRAM_PTR((reg) + (offset) + 4) = (uint32_t)((uint64_t)(val) >> 0); \
-    *(uint32_t*)RDRAM_PTR((reg) + (offset) + 0) = (uint32_t)((uint64_t)(val) >> 32); \
-}
-
-static inline uint64_t load_doubleword(uint8_t* rdram, gpr reg, gpr offset) {
-    uint64_t lo = (uint64_t)MEM_WU(reg, offset + 4);
-    uint64_t hi = (uint64_t)MEM_WU(reg, offset + 0);
-    return lo | (hi << 32);
+    MEM_WU((offset) + 4, reg) = (uint32_t)((uint64_t)(val) >> 0); \
+    MEM_WU((offset) + 0, reg) = (uint32_t)((uint64_t)(val) >> 32); \
 }
 
 #define LD(offset, reg) \
-    load_doubleword(rdram, offset, reg)
+    ((uint64_t)(uint32_t)MEM_WU((offset) + 4, reg) | ((uint64_t)(uint32_t)MEM_WU(offset, reg) << 32))
 
 static inline gpr do_lwl(uint8_t* rdram, gpr initial_value, gpr offset, gpr reg) {
     gpr address = offset + reg;
@@ -264,10 +282,12 @@ typedef union {
 _Static_assert(sizeof(double) == 8, "fpr needs 64-bit doubles: build with -m4-single, not -m4-single-only");
 
 typedef struct {
-    gpr r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
-        r8,  r9,  r10, r11, r12, r13, r14, r15,
-        r16, r17, r18, r19, r20, r21, r22, r23,
-        r24, r25, r26, r27, r28, r29, r30, r31;
+    // sp, v0-a3 and the callee-saved registers are synced at calls and returns (codegen.regcache).
+    // They come first so each is one mov.l @(disp,Rn) from the context pointer, which reaches 60 bytes.
+    gpr r29, r2,  r3,  r4,  r5,  r6,  r7,  r16,
+        r17, r18, r19, r20, r21, r22, r23, r30,
+        r31, r1,  r8,  r9,  r10, r11, r12, r13,
+        r14, r15, r24, r25, r26, r27, r28, r0;
     // The generated code writes odd FPU registers as f_odd[(n - 1) * 2], the high word of the even
     // register below. It's an array over the registers rather than a pointer to them so that the
     // compiler sees those writes as writes to the context, which the generated functions take as
@@ -287,13 +307,57 @@ typedef struct {
     gpr hi, lo;
     uint32_t status_reg;
     uint8_t mips3_float_mode;
+    // codegen.abi_trace: a bit per GPR whose value the generator's analysis called dead (bit 0: hi/lo),
+    // and where each was declared dead (a call's address, or a function's address + 1 for its entry).
+    uint32_t taint;
+    uint32_t taint_origin[32];
 } recomp_context;
 
 #define CHECK_FR(ctx, idx)
 
+// codegen.abi_poison: junk in the caller-saved registers the generator's analysis says nothing reads
+// (after calls and at function entry), to find code that reads them anyway.
+#define RECOMP_POISON_REG(ctx, mask, tag, n) \
+    if ((mask) & (1u << (n))) { (ctx)->r##n = (tag) | (n); }
+
+#define RECOMP_POISON(ctx, mask, tag) do { \
+    RECOMP_POISON_REG(ctx, mask, tag, 1) RECOMP_POISON_REG(ctx, mask, tag, 2) RECOMP_POISON_REG(ctx, mask, tag, 3) \
+    RECOMP_POISON_REG(ctx, mask, tag, 4) RECOMP_POISON_REG(ctx, mask, tag, 5) RECOMP_POISON_REG(ctx, mask, tag, 6) \
+    RECOMP_POISON_REG(ctx, mask, tag, 7) RECOMP_POISON_REG(ctx, mask, tag, 8) RECOMP_POISON_REG(ctx, mask, tag, 9) \
+    RECOMP_POISON_REG(ctx, mask, tag, 10) RECOMP_POISON_REG(ctx, mask, tag, 11) RECOMP_POISON_REG(ctx, mask, tag, 12) \
+    RECOMP_POISON_REG(ctx, mask, tag, 13) RECOMP_POISON_REG(ctx, mask, tag, 14) RECOMP_POISON_REG(ctx, mask, tag, 15) \
+    RECOMP_POISON_REG(ctx, mask, tag, 24) RECOMP_POISON_REG(ctx, mask, tag, 25) \
+} while (0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// codegen.abi_trace: the registers the analysis calls dead are tainted instead of overwritten, the taint
+// follows the values through registers (not memory), and the first store, branch, jump, address, FPU
+// move or runtime call argument at each instruction that uses a tainted value is printed (trace.c).
+void trace_set(recomp_context* ctx, uint32_t mask, uint32_t origin);
+void trace_spread(recomp_context* ctx, uint32_t from, uint32_t to);
+void trace_hit(recomp_context* ctx, uint32_t regs, uint32_t vram, int kind);
+
+#define TRACE_SET(ctx, mask, origin) trace_set(ctx, mask, origin)
+#define TRACE_ALU(ctx, use, def) do { \
+    uint32_t t_ = (ctx)->taint & (uint32_t)(use); \
+    (ctx)->taint &= ~(uint32_t)(def); \
+    if (__builtin_expect(t_ != 0, 0)) { trace_spread(ctx, t_, def); } \
+} while (0)
+#define TRACE_LOAD(ctx, base, use, def, vram) do { \
+    uint32_t t_ = (ctx)->taint & (uint32_t)(use); \
+    (ctx)->taint &= ~(uint32_t)(def); \
+    if (__builtin_expect(t_ != 0, 0)) { \
+        if (t_ & (uint32_t)(base)) { trace_hit(ctx, t_ & (uint32_t)(base), vram, 'L'); } \
+        trace_spread(ctx, t_, def); \
+    } \
+} while (0)
+#define TRACE_SINK(ctx, use, vram, kind) do { \
+    uint32_t t_ = (ctx)->taint & (uint32_t)(use); \
+    if (__builtin_expect(t_ != 0, 0)) { trace_hit(ctx, t_, vram, kind); } \
+} while (0)
 
 void cop0_status_write(recomp_context* ctx, gpr value);
 gpr cop0_status_read(recomp_context* ctx);
@@ -333,6 +397,9 @@ void pak_check(uint8_t* rdram, recomp_context* ctx);
 
 // Replaces the game's floor test of a point against a shape, func_8000F238 (collision.c).
 void floor_shape_test(uint8_t* rdram, recomp_context* ctx);
+
+// In alAudioFrame after the players' handlers: plays the voices' updates on the AICA (aica.c).
+void aica_audio_frame(uint8_t* rdram, recomp_context* ctx);
 
 #ifdef __cplusplus
 }

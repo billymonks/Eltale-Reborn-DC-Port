@@ -1,0 +1,21 @@
+# Where codegen.abi_poison's junk ended up in RDRAM: the cg_ab opening, then scans at the title
+# and in the monastery. Lockstep builds (RT_DEFINES="-DLOCKSTEP -DROM_SYNC").
+
+scan DEAD
+scan BEEF
+wait 14000
+tap S                      # skip the intro
+wait 5000
+hash title
+scan DEAD
+scan BEEF
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+pos
+hash monastery
+scan DEAD
+scan BEEF
+log poison_scan finished

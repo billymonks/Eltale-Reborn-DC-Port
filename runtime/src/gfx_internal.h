@@ -66,9 +66,15 @@ typedef struct {
 } GfxTexture;
 
 bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out);
+#ifdef GFX_OPT
+// tex_lookup's usual case, a texture already in the cache, in compact code; the rest goes to it.
+bool tex_lookup_fast(int tile, int tlut, int variant, GfxTexture* out);
+#endif
 void tex_init(void);
 void tex_frame_begin(void);
 void tex_frame_end(void);
+uint32_t tex_vram_free(void);  // bytes of the cache's texture memory not holding a texture
+void tex_print_stats(void);
 extern uint32_t stat_tex_uploads;
 extern uint32_t stat_tex_entries;
 extern uint32_t stat_tmem_copies;    // loads copied into TMEM
@@ -115,5 +121,56 @@ static inline void cc_run(const GfxCCProg* p, const float shade[4], float mul[4]
         add[ch] = p->o[ch][0] + p->o[ch][1] * x + p->o[ch][2] * a + p->o[ch][3] * xa;
     }
 }
+
+#ifdef GFX_OPT
+// Faster versions of the renderer's busiest paths, with the same results. GFX_DIAG builds switch
+// each one at run time (gfx_opt); other GFX_OPT builds always take them.
+enum {
+    OPT_TEX = 1,     // T: texture lookups that hit the cache, in compact code
+    OPT_SUM = 2,     // S: RDRAM checksums a cache line at a time, prefetching further ahead
+    OPT_LOAD = 4,    // L: the TMEM load queue drops hidden loads at once instead of keeping them
+    OPT_VTX = 8,     // V: vertex loads in their own tight loop
+    OPT_COLOR = 16,  // C: lighting and vertex colors in one compact path
+    OPT_TRI = 32,    // D: runs of triangle commands in a compact loop, display lists prefetched
+    OPT_ALL = 63,
+};
+#ifdef GFX_DIAG
+extern uint32_t gfx_opt;
+#define GFX_OPT_ON(bit) ((gfx_opt & (bit)) != 0)
+#else
+#define GFX_OPT_ON(bit) true
+#endif
+#endif
+
+#ifdef GFX_XCHECK
+// Investigation builds: each GFX_OPT path also runs the original on the same input and counts
+// any difference, printed once a second.
+enum { XC_TEX, XC_SUM, XC_LOAD, XC_VTX, XC_LIGHT, XC_OUT, XC_TRI, XC_COUNT };
+extern uint32_t gfx_xcheck_runs[XC_COUNT], gfx_xcheck_fails[XC_COUNT];
+#endif
+
+#ifdef GFX_DIAG
+// Diagnostic modes, each taking one kind of work out while the game runs (gfx.c cycles them).
+enum {
+    DIAG_NORMAL,
+    DIAG_NO_UPLOAD,    // textures decoded into RAM but not copied to VRAM
+    DIAG_NO_TEXTURE,   // no texture lookups, decodes, uploads or TMEM copies: one fixed texture
+    DIAG_NO_CHECKSUM,  // the RDRAM sums of texture loads kept from the first frame that read them
+    DIAG_NO_TA,        // the opaque list written to RAM instead of the tile accelerator
+    DIAG_NO_DMA,       // punch-through and translucent lists built but not sent (the HUD still is)
+    DIAG_NO_LIGHT,     // no lighting, fog or combiner math: one vertex color
+    DIAG_NO_TRI,       // triangle commands skipped
+    DIAG_MODES,
+};
+extern int gfx_diag;  // the mode of the frame being built
+
+// Texture work since boot, for the HUD.
+typedef struct {
+    uint32_t lookups, decodes, sum_bytes, upload_bytes;
+} GfxDiagTex;
+extern GfxDiagTex gfx_diag_tex;
+// Mixed into every texture's key; changing it makes every cached texture miss.
+extern uint32_t gfx_diag_salt;
+#endif
 
 #endif

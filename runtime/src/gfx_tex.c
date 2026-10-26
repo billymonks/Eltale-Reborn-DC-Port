@@ -27,6 +27,11 @@ uint32_t stat_tex_entries;
 uint32_t stat_tmem_copies;
 uint32_t stat_tex_fallbacks;
 
+#ifdef GFX_DIAG
+GfxDiagTex gfx_diag_tex;
+uint32_t gfx_diag_salt;
+#endif
+
 // Stored as 32-bit words in host order, like RDRAM, so byte b of TMEM is at b ^ 3.
 static uint32_t tmem32[1024];
 #define TMEM8(a) (((uint8_t*)tmem32)[((a) & 0xFFF) ^ 3])
@@ -139,19 +144,137 @@ static void copy_load(const TmemLoad* ld) {
     stat_tmem_copies++;
 }
 
+#ifdef GFX_XCHECK
+static void shadow_flush(void);
+static void shadow_compare(void);
+#endif
+
 // Brings TMEM up to date with the queued loads.
 static void pending_flush(void) {
+#ifdef GFX_XCHECK
+    shadow_flush();
+#endif
     for (uint32_t i = 0; i < pending_count; i++) {
         copy_load(&pending[(pending_first + i) % PENDING_MAX]);
     }
     pending_first = 0;
     pending_count = 0;
+#ifdef GFX_XCHECK
+    shadow_compare();
+#endif
 }
+
+#ifdef GFX_XCHECK
+uint32_t gfx_xcheck_runs[XC_COUNT], gfx_xcheck_fails[XC_COUNT];
+
+// The queue as the original pending_add keeps it, copying into a TMEM of its own, compared with
+// the real TMEM after each flush.
+static TmemLoad shadow[PENDING_MAX];
+static uint32_t shadow_first, shadow_count;
+static uint32_t shadow_tmem[1024], real_tmem[1024];
+
+// copy_load into the shadow TMEM.
+static void shadow_copy(const TmemLoad* ld) {
+    memcpy(real_tmem, tmem32, sizeof(tmem32));
+    memcpy(tmem32, shadow_tmem, sizeof(tmem32));
+    copy_load(ld);
+    memcpy(shadow_tmem, tmem32, sizeof(tmem32));
+    memcpy(tmem32, real_tmem, sizeof(tmem32));
+}
+
+static void shadow_add(const TmemLoad* ld, bool overwrites) {
+    if (overwrites || ld->kind == LOAD_TLUT) {
+        for (uint32_t i = 0; i < shadow_count; i++) {
+            TmemLoad* p = &shadow[(shadow_first + i) % PENDING_MAX];
+            bool inside = ld->nq >= 512 || (((p->q0 - ld->q0) & 511) + p->nq <= ld->nq);
+            if (inside && (overwrites || p->kind == LOAD_TLUT)) {
+                p->dead = true;
+            }
+        }
+    }
+    if (shadow_count == PENDING_MAX) {
+        shadow_copy(&shadow[shadow_first]);
+        shadow_first = (shadow_first + 1) % PENDING_MAX;
+        shadow_count--;
+    }
+    shadow[(shadow_first + shadow_count) % PENDING_MAX] = *ld;
+    shadow_count++;
+}
+
+static void shadow_flush(void) {
+    for (uint32_t i = 0; i < shadow_count; i++) {
+        shadow_copy(&shadow[(shadow_first + i) % PENDING_MAX]);
+    }
+    shadow_first = 0;
+    shadow_count = 0;
+}
+
+static void shadow_compare(void) {
+    gfx_xcheck_runs[XC_LOAD]++;
+    if (memcmp(tmem32, shadow_tmem, sizeof(tmem32)) != 0 && gfx_xcheck_fails[XC_LOAD]++ < 8) {
+        uint32_t at = 0;
+        while (tmem32[at] == shadow_tmem[at]) {
+            at++;
+        }
+        printf("[q64dc] xcheck tmem: word %u is %08X, the original's queue gives %08X\n", (unsigned)at,
+               (unsigned)tmem32[at], (unsigned)shadow_tmem[at]);
+    }
+}
+#endif
+
+#ifdef GFX_OPT
+// pending_add, taking the loads the new one hides out of the queue at once rather than marking
+// them: the queue then only holds loads that still decide some TMEM bytes, which are few, and
+// they are copied in the same order as before.
+static void pending_add_compact(const TmemLoad* ld, bool overwrites) {
+    uint32_t keep = 0;
+    for (uint32_t i = 0; i < pending_count; i++) {
+        const TmemLoad* p = &pending[(pending_first + i) % PENDING_MAX];
+        bool inside = ld->nq >= 512 || (((p->q0 - ld->q0) & 511) + p->nq <= ld->nq);
+        if (p->dead || (inside && (overwrites || (ld->kind == LOAD_TLUT && p->kind == LOAD_TLUT)))) {
+            continue;
+        }
+        if (keep != i) {
+            pending[(pending_first + keep) % PENDING_MAX] = *p;
+        }
+        keep++;
+    }
+    pending_count = keep;
+    if (pending_count == PENDING_MAX) {
+        copy_load(&pending[pending_first]);
+        pending_first = (pending_first + 1) % PENDING_MAX;
+        pending_count--;
+    }
+    pending[(pending_first + pending_count) % PENDING_MAX] = *ld;
+    pending_count++;
+}
+#endif
 
 // Queues a load. `overwrites` says it writes all of its qwords; then any queued load inside
 // its range is dropped. A palette load drops earlier palette loads inside its range, which
 // wrote the same bytes of each qword.
 static void pending_add(const TmemLoad* ld, bool overwrites) {
+#ifdef GFX_DIAG
+    // Nothing is decoded from TMEM then.
+    if (gfx_diag == DIAG_NO_TEXTURE) {
+        return;
+    }
+#endif
+#ifdef GFX_XCHECK
+    shadow_add(ld, overwrites);
+#endif
+#ifdef GFX_OPT
+    if (GFX_OPT_ON(OPT_LOAD)) {
+        pending_add_compact(ld, overwrites);
+        return;
+    }
+#endif
+    if (pending_count == 0) {
+        pending[0] = *ld;
+        pending_first = 0;
+        pending_count = 1;
+        return;
+    }
     if (overwrites || ld->kind == LOAD_TLUT) {
         for (uint32_t i = 0; i < pending_count; i++) {
             TmemLoad* p = &pending[(pending_first + i) % PENDING_MAX];
@@ -192,7 +315,11 @@ static void sum_bytes(uint32_t addr, uint32_t len, uint32_t* pa, uint32_t* pb) {
     uint32_t start = addr & ~3u;
     const uint32_t* p = (const uint32_t*)RDRAM_PTR(start);
     uint32_t n = (addr + len + 3 - start) >> 2;
+#ifdef GFX_DIAG
+    gfx_diag_tex.sum_bytes += n * 4;
+#endif
     for (; n >= 4; n -= 4, p += 4) {
+        __builtin_prefetch(p + 8);
         a += p[0];
         b += a;
         a += p[1];
@@ -209,6 +336,63 @@ static void sum_bytes(uint32_t addr, uint32_t len, uint32_t* pa, uint32_t* pb) {
     *pa = a;
     *pb = b;
 }
+
+#ifdef GFX_OPT
+// sum_bytes a 32-byte line at a time, with the next lines already asked for from RAM, so the
+// loop waits less on each line fill. The words are added in the same order.
+static void sum_bytes_lines(uint32_t addr, uint32_t len, uint32_t* pa, uint32_t* pb) {
+    uint32_t a = *pa, b = *pb;
+    uint32_t start = addr & ~3u;
+    const uint32_t* p = (const uint32_t*)RDRAM_PTR(start);
+    uint32_t n = (addr + len + 3 - start) >> 2;
+#ifdef GFX_DIAG
+    gfx_diag_tex.sum_bytes += n * 4;
+#endif
+    __builtin_prefetch(p + 8);
+    __builtin_prefetch(p + 16);
+    for (; n != 0 && ((uintptr_t)p & 31) != 0; n--) {
+        a += *p++;
+        b += a;
+    }
+    for (; n >= 8; n -= 8, p += 8) {
+        __builtin_prefetch(p + 24);
+        a += p[0];
+        b += a;
+        a += p[1];
+        b += a;
+        a += p[2];
+        b += a;
+        a += p[3];
+        b += a;
+        a += p[4];
+        b += a;
+        a += p[5];
+        b += a;
+        a += p[6];
+        b += a;
+        a += p[7];
+        b += a;
+    }
+    for (; n != 0; n--) {
+        a += *p++;
+        b += a;
+    }
+    *pa = a;
+    *pb = b;
+}
+
+static void load_sums_lines(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
+    if (ld->kind == LOAD_BLOCK) {
+        sum_bytes_lines(ld->src, ld->p0 * 8, pa, pb);
+    } else if (ld->kind == LOAD_TILE) {
+        for (uint32_t row = 0; row < ld->p3; row++) {
+            sum_bytes_lines(tile_row_src(ld, row), ld->p2, pa, pb);
+        }
+    } else {
+        sum_bytes_lines(ld->src, ld->p0 * 2, pa, pb);
+    }
+}
+#endif
 
 static void load_sums(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
     uint32_t k0 = ld->src, k1 = ld->kind | (ld->siz << 4) | ((uint32_t)ld->width << 8);
@@ -229,6 +413,28 @@ static void load_sums(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
     }
 
     uint32_t a = 1, b = 0;
+#ifdef GFX_OPT
+    if (GFX_OPT_ON(OPT_SUM)) {
+        load_sums_lines(ld, &a, &b);
+#ifdef GFX_XCHECK
+        uint32_t ra = 1, rb = 0;
+        if (ld->kind == LOAD_BLOCK) {
+            sum_bytes(ld->src, ld->p0 * 8, &ra, &rb);
+        } else if (ld->kind == LOAD_TILE) {
+            for (uint32_t row = 0; row < ld->p3; row++) {
+                sum_bytes(tile_row_src(ld, row), ld->p2, &ra, &rb);
+            }
+        } else {
+            sum_bytes(ld->src, ld->p0 * 2, &ra, &rb);
+        }
+        gfx_xcheck_runs[XC_SUM]++;
+        if ((ra != a || rb != b) && gfx_xcheck_fails[XC_SUM]++ < 8) {
+            printf("[q64dc] xcheck sum: %08X+%u %08X/%08X, original %08X/%08X\n", (unsigned)ld->src, (unsigned)ld->kind,
+                   (unsigned)a, (unsigned)b, (unsigned)ra, (unsigned)rb);
+        }
+#endif
+    } else
+#endif
     if (ld->kind == LOAD_BLOCK) {
         sum_bytes(ld->src, ld->p0 * 8, &a, &b);
     } else if (ld->kind == LOAD_TILE) {
@@ -516,20 +722,162 @@ static inline uint32_t twiddle(uint32_t x, uint32_t y, uint32_t min) {
 #define TEX_MAX_ENTRIES 2048
 #define MAX_TEXELS      (256 * 256)
 
+// --- Texture memory ---
+//
+// Textures are powers of two from 128 bytes (8x8) to 128 KB (256x256). The cache takes the
+// PowerVR's texture memory from KallistiOS as one block at the first upload and splits it as a
+// buddy system: a free block is whole or two free halves, and two free halves join again, so
+// textures freed in any order leave blocks as large as the space allows. A failed
+// pvr_mem_malloc prints "out of PVR memory", so KallistiOS's heap is not asked again.
+
+#define VRAM_MIN_ORDER 7  // log2 of the smallest block, 8x8 texels
+#define VRAM_ORDERS    11 // block sizes, up to 256x256 texels
+#define VRAM_RESERVE   (16 * 1024)  // left to KallistiOS, whose heap rounds to 4 KB pages
+#define VRAM_MAX       (8 * 1024 * 1024)
+
+static uint8_t* vram_base;
+static uint32_t vram_size, vram_used, vram_peak;
+// A bit for each block of each size, set while the block is free.
+static uint32_t vram_bits[(VRAM_MAX >> VRAM_MIN_ORDER) / 16];
+static uint32_t* vram_free_bits[VRAM_ORDERS];
+static uint32_t vram_free_count[VRAM_ORDERS];
+static uint32_t vram_hint[VRAM_ORDERS];  // no free block in the words before this one
+
+static inline uint32_t order_bytes(uint32_t k) {
+    return 1u << (k + VRAM_MIN_ORDER);
+}
+
+static void vram_mark_free(uint32_t k, uint32_t block) {
+    uint32_t w = block >> 5;
+    vram_free_bits[k][w] |= 1u << (block & 31);
+    vram_free_count[k]++;
+    if (w < vram_hint[k]) {
+        vram_hint[k] = w;
+    }
+}
+
+static inline void vram_mark_used(uint32_t k, uint32_t block) {
+    vram_free_bits[k][block >> 5] &= ~(1u << (block & 31));
+    vram_free_count[k]--;
+}
+
+static inline bool vram_is_free(uint32_t k, uint32_t block) {
+    return (vram_free_bits[k][block >> 5] >> (block & 31)) & 1;
+}
+
+static bool vram_init(void) {
+    static bool tried;
+    if (tried) {
+        return vram_base != NULL;
+    }
+    tried = true;
+    uint32_t avail = (uint32_t)pvr_mem_available();
+    uint32_t size = avail > VRAM_RESERVE ? (avail - VRAM_RESERVE) & ~(order_bytes(0) - 1) : 0;
+    if (size > VRAM_MAX) {
+        size = VRAM_MAX;
+    }
+    while (size >= order_bytes(VRAM_ORDERS - 1) && (vram_base = pvr_mem_malloc(size)) == NULL) {
+        size -= 64 * 1024;
+    }
+    if (vram_base == NULL) {
+        return false;
+    }
+    vram_size = size;
+    uint32_t* bits = vram_bits;
+    for (uint32_t k = 0; k < VRAM_ORDERS; k++) {
+        vram_free_bits[k] = bits;
+        bits += ((size >> (k + VRAM_MIN_ORDER)) + 31) >> 5;
+    }
+    // The largest aligned blocks that fit, from the bottom.
+    for (uint32_t off = 0; off + order_bytes(0) <= size;) {
+        uint32_t k = VRAM_ORDERS - 1;
+        while ((off & (order_bytes(k) - 1)) != 0 || off + order_bytes(k) > size) {
+            k--;
+        }
+        vram_mark_free(k, off >> (k + VRAM_MIN_ORDER));
+        off += order_bytes(k);
+    }
+    printf("[q64dc] gfx: %u KB of VRAM for textures\n", (unsigned)(size / 1024));
+    return true;
+}
+
+// The lowest free block of order k, split from a larger one if need be: its offset, or -1.
+static int32_t vram_take(uint32_t k) {
+    uint32_t j = k;
+    while (j < VRAM_ORDERS && vram_free_count[j] == 0) {
+        j++;
+    }
+    if (j == VRAM_ORDERS) {
+        return -1;
+    }
+    const uint32_t* bits = vram_free_bits[j];
+    uint32_t w = vram_hint[j];
+    while (bits[w] == 0) {
+        w++;
+    }
+    vram_hint[j] = w;
+    uint32_t block = (w << 5) + (uint32_t)__builtin_ctz(bits[w]);
+    vram_mark_used(j, block);
+    while (j > k) {
+        j--;
+        block <<= 1;
+        vram_mark_free(j, block + 1);
+    }
+    vram_used += order_bytes(k);
+    if (vram_used > vram_peak) {
+        vram_peak = vram_used;
+    }
+    return (int32_t)(block << (k + VRAM_MIN_ORDER));
+}
+
+static void vram_give(uint32_t off, uint32_t k) {
+    vram_used -= order_bytes(k);
+    uint32_t block = off >> (k + VRAM_MIN_ORDER);
+    for (; k + 1 < VRAM_ORDERS; k++) {
+        uint32_t buddy = block ^ 1;
+        if (((buddy + 1) << (k + VRAM_MIN_ORDER)) > vram_size || !vram_is_free(k, buddy)) {
+            break;
+        }
+        vram_mark_used(k, buddy);
+        block >>= 1;
+    }
+    vram_mark_free(k, block);
+}
+
+static uint32_t vram_largest_free(void) {
+    for (int k = VRAM_ORDERS - 1; k >= 0; k--) {
+        if (vram_free_count[k] != 0) {
+            return order_bytes((uint32_t)k);
+        }
+    }
+    return 0;
+}
+
+// --- The cache ---
+
 typedef struct {
     uint32_t h1, h2;
-    pvr_ptr_t ptr;
+    uint32_t vram;  // offset in the cache's block
     uint32_t pvr_fmt;
     uint16_t pw, ph;
     uint32_t last_frame;
-    int32_t next;
+    int32_t next;          // in a bucket, or the free list
+    int16_t older, newer;  // in the order of last use
+    uint8_t order;
 } TexEntry;
 
 static TexEntry entries[TEX_MAX_ENTRIES];
 static int32_t buckets[TEX_BUCKETS];
 static int32_t free_list;
+static int32_t lru_oldest = -1, lru_newest = -1;
 static uint32_t frame;
-static uint16_t decode_buf[MAX_TEXELS];
+static uint32_t frame_bytes, last_frame_bytes;  // textures used by a frame
+static uint32_t tex_count[VRAM_ORDERS];
+static uint32_t stat_tex_failed;
+static uint32_t period_uploads, period_upload_bytes, period_evictions, period_evicted_bytes, period_frame_peak;
+// Word loads below. A uint16_t array is only 2-byte aligned, and the SH-4 faults a
+// 32-bit load there. Flycast does not.
+static uint16_t decode_buf[MAX_TEXELS] __attribute__((aligned(32)));
 
 void tex_init(void) {
     for (uint32_t i = 0; i < 1024; i++) {
@@ -549,13 +897,60 @@ void tex_init(void) {
 }
 
 void tex_frame_begin(void) {
+    last_frame_bytes = frame_bytes;
+    if (frame_bytes > period_frame_peak) {
+        period_frame_peak = frame_bytes;
+    }
+    frame_bytes = 0;
     frame++;
+#ifdef GFX_DIAG
+    if (gfx_diag == DIAG_NO_CHECKSUM) {
+        return;
+    }
+#endif
     src_gen++;
 }
 
 void tex_frame_end(void) {
     pending_flush();
 }
+
+
+// The PowerVR may still be drawing the previous frame, so anything used in the last two frames
+// stays.
+#define TEX_KEEP_FRAMES 2
+
+static inline bool tex_busy(const TexEntry* e) {
+    return frame - e->last_frame <= TEX_KEEP_FRAMES;
+}
+
+static void lru_unlink(int32_t index) {
+    TexEntry* e = &entries[index];
+    if (e->older >= 0) {
+        entries[e->older].newer = e->newer;
+    } else {
+        lru_oldest = e->newer;
+    }
+    if (e->newer >= 0) {
+        entries[e->newer].older = e->older;
+    } else {
+        lru_newest = e->older;
+    }
+}
+
+// Entries are kept from least to most recently used, so the ones in use come last.
+static void lru_push(int32_t index) {
+    TexEntry* e = &entries[index];
+    e->older = (int16_t)lru_newest;
+    e->newer = -1;
+    if (lru_newest >= 0) {
+        entries[lru_newest].newer = (int16_t)index;
+    } else {
+        lru_oldest = index;
+    }
+    lru_newest = index;
+}
+
 static void remove_entry(int32_t index) {
     TexEntry* e = &entries[index];
     int32_t* link = &buckets[e->h1 & (TEX_BUCKETS - 1)];
@@ -563,39 +958,112 @@ static void remove_entry(int32_t index) {
         link = &entries[*link].next;
     }
     *link = e->next;
-    pvr_mem_free(e->ptr);
+    lru_unlink(index);
+    vram_give(e->vram, e->order);
+    tex_count[e->order]--;
+    period_evictions++;
+    period_evicted_bytes += order_bytes(e->order);
     e->next = free_list;
     free_list = index;
     stat_tex_entries--;
 }
 
-// Frees textures not used for `age` frames. The PowerVR may still be drawing the previous
-// frame, so anything used in the last two frames stays.
-static bool evict_older_than(uint32_t age) {
-    bool freed = false;
-    for (int b = 0; b < TEX_BUCKETS; b++) {
-        int32_t i = buckets[b];
-        while (i >= 0) {
-            int32_t next = entries[i].next;
-            if (frame - entries[i].last_frame > age) {
+// For a texture that no free block fits, when the least recently used texture is smaller:
+// frees the aligned span of the texture's size whose newest texture is the oldest, if none of
+// its textures is in use. A span lies inside one texture at least its size, or holds only
+// smaller textures and free blocks, which join once those go. Below 4 KB, freeing the oldest
+// textures one at a time soon opens a block, and the spans would be too many to count.
+#define SPAN_MIN_ORDER 5  // 4 KB
+static uint32_t span_newest[VRAM_MAX >> (SPAN_MIN_ORDER + VRAM_MIN_ORDER)];
+
+static bool evict_span(uint32_t k) {
+    uint32_t shift = k + VRAM_MIN_ORDER;
+    uint32_t spans = vram_size >> shift;
+    memset(span_newest, 0, spans * sizeof(span_newest[0]));
+    int32_t big = -1;
+    for (int32_t i = lru_oldest; i >= 0; i = entries[i].newer) {
+        const TexEntry* e = &entries[i];
+        if (e->order >= k) {
+            if (big < 0 && !tex_busy(e)) {
+                big = i;
+            }
+        } else if ((e->vram >> shift) < spans) {
+            span_newest[e->vram >> shift] = tex_busy(e) ? UINT32_MAX : e->last_frame + 1;
+        }
+    }
+    uint32_t best = big >= 0 ? entries[big].last_frame + 1 : UINT32_MAX;
+    int32_t span = -1;
+    for (uint32_t s = 0; s < spans; s++) {
+        if (span_newest[s] != 0 && span_newest[s] < best) {
+            best = span_newest[s];
+            span = (int32_t)s;
+        }
+    }
+    if (span >= 0) {
+        for (int32_t i = lru_oldest; i >= 0;) {
+            int32_t next = entries[i].newer;
+            if (entries[i].order < k && (entries[i].vram >> shift) == (uint32_t)span) {
                 remove_entry(i);
-                freed = true;
             }
             i = next;
         }
+        return true;
     }
-    return freed;
+    if (big >= 0) {
+        remove_entry(big);
+        return true;
+    }
+    return false;
 }
 
-static pvr_ptr_t vram_alloc(uint32_t size) {
-    static const uint32_t ages[] = { 600, 120, 30, 2 };
-    pvr_ptr_t p = pvr_mem_malloc(size);
-    for (size_t i = 0; p == NULL && i < sizeof(ages) / sizeof(ages[0]); i++) {
-        if (evict_older_than(ages[i])) {
-            p = pvr_mem_malloc(size);
+// A block of order k, freeing the least recently used textures until one fits: its offset, or
+// -1 when the textures left are all in use.
+static int32_t vram_alloc(uint32_t k) {
+    int32_t off;
+    while ((off = vram_take(k)) < 0) {
+        int32_t oldest = lru_oldest;
+        if (oldest < 0 || tex_busy(&entries[oldest])) {
+            return -1;
+        }
+        if (k >= SPAN_MIN_ORDER && entries[oldest].order < k) {
+            if (!evict_span(k)) {
+                return -1;
+            }
+        } else {
+            remove_entry(oldest);
         }
     }
-    return p;
+    return off;
+}
+
+uint32_t tex_vram_free(void) {
+    return vram_size - vram_used;
+}
+
+// Test discs, once a second.
+void tex_print_stats(void) {
+    char sizes[96];
+    int n = 0;
+    for (int k = VRAM_ORDERS - 1; k >= 0 && n < (int)sizeof(sizes) - 16; k--) {
+        uint32_t b = order_bytes((uint32_t)k);
+        if (tex_count[k] != 0) {
+            n += snprintf(sizes + n, sizeof(sizes) - n, b >= 1024 ? " %uK:%u" : " %u:%u",
+                          (unsigned)(b >= 1024 ? b / 1024 : b), (unsigned)tex_count[k]);
+        }
+    }
+    sizes[n] = 0;
+    printf("[q64dc] vram: %u of %u KB in use (peak %u), %u textures, last frame %u KB (peak %u); "
+           "in the last second %u uploads (%u KB), %u evictions (%u KB); largest free %u KB; %u failed; sizes%s\n",
+           (unsigned)(vram_used / 1024), (unsigned)(vram_size / 1024), (unsigned)(vram_peak / 1024),
+           (unsigned)stat_tex_entries, (unsigned)(last_frame_bytes / 1024), (unsigned)(period_frame_peak / 1024),
+           (unsigned)period_uploads, (unsigned)(period_upload_bytes / 1024), (unsigned)period_evictions,
+           (unsigned)(period_evicted_bytes / 1024), (unsigned)(vram_largest_free() / 1024),
+           (unsigned)stat_tex_failed, sizes);
+    period_uploads = 0;
+    period_upload_bytes = 0;
+    period_evictions = 0;
+    period_evicted_bytes = 0;
+    period_frame_peak = 0;
 }
 
 static inline uint32_t pow2_at_least(uint32_t v) {
@@ -619,6 +1087,9 @@ static uint32_t tile_extent(uint32_t lo, uint32_t hi, uint8_t mask, bool clamp) 
 
 bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
     const GfxTile* t = &gfx_tiles[tile];
+#ifdef GFX_DIAG
+    gfx_diag_tex.lookups++;
+#endif
     bool clamp_s = (t->cms & 2) || t->masks == 0;
     bool clamp_t = (t->cmt & 2) || t->maskt == 0;
     uint32_t w = tile_extent(t->uls, t->lrs, t->masks, clamp_s);
@@ -684,12 +1155,20 @@ bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
         }
 #undef MIX
     }
+#ifdef GFX_DIAG
+    h1 += gfx_diag_salt * 0x9E3779B1u;
+#endif
 
     for (int32_t i = buckets[h1 & (TEX_BUCKETS - 1)]; i >= 0; i = entries[i].next) {
         TexEntry* e = &entries[i];
         if (e->h1 == h1 && e->h2 == h2 && e->pw == pw && e->ph == ph) {
-            e->last_frame = frame;
-            out->ptr = e->ptr;
+            if (e->last_frame != frame) {
+                e->last_frame = frame;
+                lru_unlink(i);
+                lru_push(i);
+                frame_bytes += order_bytes(e->order);
+            }
+            out->ptr = vram_base + e->vram;
             out->pvr_fmt = e->pvr_fmt;
             return true;
         }
@@ -697,6 +1176,9 @@ bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
 
     // Decode.
     pending_flush();
+#ifdef GFX_DIAG
+    gfx_diag_tex.decodes++;
+#endif
     uint32_t pvr_fmt;
     if (variant == TEXVAR_NOALPHA) {
         pvr_fmt = PVR_TXRFMT_RGB565;
@@ -729,41 +1211,145 @@ bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
     }
 
     uint32_t size = pw * ph * 2;
-    pvr_ptr_t ptr = vram_alloc(size);
-    if (ptr == NULL || free_list < 0) {
+    uint32_t order = (uint32_t)__builtin_ctz(size) - VRAM_MIN_ORDER;
+    if (free_list < 0 && lru_oldest >= 0 && !tex_busy(&entries[lru_oldest])) {
+        remove_entry(lru_oldest);
+    }
+    int32_t off = -1;
+    if (free_list >= 0 && (vram_base != NULL || vram_init())) {
+        off = vram_alloc(order);
+    }
+    if (off < 0) {
         static bool warned;
+        stat_tex_failed++;
         if (!warned) {
-            printf("[q64dc] gfx: out of texture memory\n");
+            uint32_t busy = 0;
+            for (int32_t i = lru_newest; i >= 0 && tex_busy(&entries[i]); i = entries[i].older) {
+                busy += order_bytes(entries[i].order);
+            }
+            printf("[q64dc] gfx: out of texture memory: no room for %ux%u, %u textures, %u of %u KB in use, "
+                   "%u KB of it by the last %u frames\n",
+                   (unsigned)pw, (unsigned)ph, (unsigned)stat_tex_entries, (unsigned)(vram_used / 1024),
+                   (unsigned)(vram_size / 1024), (unsigned)(busy / 1024), (unsigned)(TEX_KEEP_FRAMES + 1));
             warned = true;
-        }
-        if (ptr != NULL) {
-            pvr_mem_free(ptr);
         }
         return false;
     }
+    pvr_ptr_t ptr = vram_base + off;
     // Plain stores: the store queues belong to the open display list.
     volatile uint32_t* dst = (volatile uint32_t*)ptr;
     const uint32_t* src = (const uint32_t*)decode_buf;
+#ifdef GFX_DIAG
+    // Without the upload the block keeps whatever texture was there before.
+    uint32_t words = gfx_diag == DIAG_NO_UPLOAD ? 0 : size / 4;
+    gfx_diag_tex.upload_bytes += words * 4;
+    for (uint32_t i = 0; i < words; i++) {
+        dst[i] = src[i];
+    }
+#else
     for (uint32_t i = 0; i < size / 4; i++) {
         dst[i] = src[i];
     }
+#endif
 
     int32_t index = free_list;
     TexEntry* e = &entries[index];
     free_list = e->next;
     e->h1 = h1;
     e->h2 = h2;
-    e->ptr = ptr;
+    e->vram = (uint32_t)off;
+    e->order = (uint8_t)order;
     e->pvr_fmt = pvr_fmt;
     e->pw = pw;
     e->ph = ph;
     e->last_frame = frame;
     e->next = buckets[h1 & (TEX_BUCKETS - 1)];
     buckets[h1 & (TEX_BUCKETS - 1)] = index;
+    lru_push(index);
+    tex_count[order]++;
+    frame_bytes += size;
     stat_tex_uploads++;
     stat_tex_entries++;
+    period_uploads++;
+    period_upload_bytes += size;
 
     out->ptr = ptr;
     out->pvr_fmt = pvr_fmt;
     return true;
 }
+
+#ifdef GFX_OPT
+// tex_lookup's key and cache search, without its decode and TMEM-hash paths in between, so the
+// usual hit runs through a few cache lines of code. Anything else is left to tex_lookup, which
+// starts over.
+bool tex_lookup_fast(int tile, int tlut, int variant, GfxTexture* out) {
+    const GfxTile* t = &gfx_tiles[tile];
+    bool clamp_s = (t->cms & 2) || t->masks == 0;
+    bool clamp_t = (t->cmt & 2) || t->maskt == 0;
+    uint32_t w = tile_extent(t->uls, t->lrs, t->masks, clamp_s);
+    uint32_t h = tile_extent(t->ult, t->lrt, t->maskt, clamp_t);
+    uint32_t pw = pow2_at_least(w), ph = pow2_at_least(h);
+    if (pw * ph > MAX_TEXELS) {
+        return tex_lookup(tile, tlut, variant, out);
+    }
+    bool paletted = t->siz <= G_IM_SIZ_8b && (tlut != G_TT_NONE || t->fmt == G_IM_FMT_CI);
+    int key_tlut = paletted && tlut == G_TT_NONE ? G_TT_RGBA16 : tlut;
+    uint32_t params[3] = {
+        t->fmt | (t->siz << 3) | (key_tlut << 5) | (variant << 7) | (t->cms << 9) | (t->cmt << 11) | (t->palette << 13),
+        w | (h << 16),
+        t->line | (t->tmem << 16),
+    };
+    uint32_t first = t->siz == G_IM_SIZ_4b ? t->palette * 16u : 0;
+    uint32_t count = t->siz == G_IM_SIZ_4b ? 16 : 256;
+    uint32_t h1 = mix32(params[0] ^ 0x51ED270Bu) + mix32(params[1] ^ 0x2545F491u) + mix32(params[2]);
+    uint32_t h2 = mix32(h1 ^ 0x9E3779B9u);
+    ReadShape rs = { t->line, ((w << t->siz) + 1) >> 1, h };
+    uint32_t read_q = (h - 1) * t->line + ((rs.row_bytes + 7) >> 3);
+    if (read_q > 512) {
+        read_q = 512;
+    }
+    if (!segments_key(t->tmem, read_q, &rs, &h1, &h2) ||
+        (paletted && !segments_key(0x100 + first, count, NULL, &h1, &h2))) {
+        return tex_lookup(tile, tlut, variant, out);
+    }
+#ifdef GFX_DIAG
+    h1 += gfx_diag_salt * 0x9E3779B1u;
+#endif
+    for (int32_t i = buckets[h1 & (TEX_BUCKETS - 1)]; i >= 0; i = entries[i].next) {
+        TexEntry* e = &entries[i];
+        if (e->h1 == h1 && e->h2 == h2 && e->pw == pw && e->ph == ph) {
+            if (e->last_frame != frame) {
+                e->last_frame = frame;
+                lru_unlink(i);
+                lru_push(i);
+                frame_bytes += order_bytes(e->order);
+            }
+#ifdef GFX_DIAG
+            gfx_diag_tex.lookups++;
+#endif
+            out->clamp_s = clamp_s;
+            out->clamp_t = clamp_t;
+            out->mirror_s = (t->cms & 1) && !clamp_s;
+            out->mirror_t = (t->cmt & 1) && !clamp_t;
+            out->pw = pw;
+            out->ph = ph;
+            out->ptr = vram_base + e->vram;
+            out->pvr_fmt = e->pvr_fmt;
+#ifdef GFX_XCHECK
+            GfxTexture ref;
+            bool ok = tex_lookup(tile, tlut, variant, &ref);
+            gfx_xcheck_runs[XC_TEX]++;
+            if ((!ok || ref.ptr != out->ptr || ref.pvr_fmt != out->pvr_fmt || ref.pw != out->pw || ref.ph != out->ph ||
+                 ref.clamp_s != out->clamp_s || ref.clamp_t != out->clamp_t || ref.mirror_s != out->mirror_s ||
+                 ref.mirror_t != out->mirror_t) &&
+                gfx_xcheck_fails[XC_TEX]++ < 8) {
+                printf("[q64dc] xcheck tex: tile %d fast %p %ux%u, original %d %p %ux%u\n", tile, out->ptr,
+                       (unsigned)out->pw, (unsigned)out->ph, (int)ok, ref.ptr, (unsigned)ref.pw, (unsigned)ref.ph);
+            }
+#endif
+            return true;
+        }
+    }
+    return tex_lookup(tile, tlut, variant, out);
+}
+#endif

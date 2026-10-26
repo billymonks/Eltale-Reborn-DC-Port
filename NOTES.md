@@ -59,6 +59,20 @@ With audio pinned, the game's heap and the cache leave about 5.6 MB free.
 
 ## Audio
 
+The synthesizer's voices play on the AICA's own channels (`aica.c`). A hook in libultra's `alAudioFrame` (`func_80036A68`, before `0x80036C20`), after the sequence and sound players' handlers have run, takes the parameter updates they posted on each of the 16 physical voices and sends them to the AICA, then leaves the RSP command list empty. Voice allocation and stealing, the update pool and both players are still the game's code. Each voice is a pair of channels, one panned hard left and one hard right, so libultra's equal-power pan and its separate left and right ramps carry over.
+
+The 75 samples (385 KB of VADPCM) are decoded at boot to 1.3 MB of 16-bit PCM in sound RAM, about 0.3 s. The stored loop states equal what the decode reaches on its first pass, so the AICA's own loop plays what the N64 did. A sample's first frame after the loop end is overwritten with the loop's start for the AICA's interpolation.
+
+Levels follow `env.c`: the voice volume squared, `eqpower` for pan and the dry level, ramps that multiply the gain by a constant (straight lines in dB). Pitch is the resampler's ratio, clamped and quantized as `alResamplePull` does, times 22047 Hz. No voice in the game sends anything to the reverb: the sound player's FX mix stays 0, and the sequences only ever set controller 91 to 0. Logged across `tests/audio.txt` and `tests/tour.txt` with the SH-4 mixer: no nonzero wet send. So there is no reverb.
+
+Timing: `osAiGetLength` answers from a virtual AI on the SH-4's clock, sized so the synthesizer's output ends a lead ahead of real time after the next frame, and every update goes to the AICA stamped with its time on that line. The ARM applies it then, however late and bunched up the game's audio thread runs. The lead starts at 60 ms. A frame that would play late slips the time line forward instead (an N64 AI underrun) and raises the lead by 20 ms, up to 160 ms; ten seconds without a slip lower it again. A thread held up for longer than 120 ms, which is a map or battle load, slips without raising it. After a load the game's audio thread catches up in a burst of frames of at least 352 samples each, so the lead runs high for a couple of seconds afterwards.
+
+The ARM runs KallistiOS's stock firmware: channel commands in its queue, on its 4410 Hz clock (measured at boot; 0.8% slow in Flycast). It has no ramps, so a ramp is sent as a volume step every 256 synthesizer samples. `RT_DEFINES=-DAICA_FW` uses the port's own firmware (`runtime/aica/`, 2 KB): events on the AICA's sample clock (a channel looping silence, read through the monitor), ramps walked on the ARM in TL steps every 32 samples, one event per ramp. Building it needs the ARM compiler: `docker build -t q64dc-toolchain-arm docker/arm`; `scripts\dc.ps1` uses that image when it exists, otherwise the committed `runtime/aica/aica_fw.bin`.
+
+The perf HUD's third line is `AIC <us per audio frame> V<voices> D<lead ms> S<slips>`, and `A` on the second line is the audio milliseconds per game frame.
+
+`RT_DEFINES=-DAUDIO_HLE` builds the old path below. A disc also falls back to it when the AICA doesn't answer within 200 ms at boot.
+
 `aspMain` is interpreted in C (`audio_hle.c`) and the mix is streamed to the AICA (`audio.c`). Recompiling the RSP microcode, as the PC port does, is too heavy for the SH-4.
 
 The 16 commands the game actually sends are implemented. Output was checked bit for bit against Quest 64: Recompiled's recompiled microcode. One known difference: the reverb pole filter's first call starts from zero history, where the microcode reads two leftover scratch words. The resampler table is taken from the game's microcode in RDRAM. Semantics came from the public ABI notes and were cross-checked with mupen64plus-rsp-hle (GPL-2.0-or-later).
