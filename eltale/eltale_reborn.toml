@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.13.35"
+version = "0.14.2"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -21,10 +21,33 @@ dependencies = [
 ]
 
 optional_dependencies = [
+    "quest64_modern_gameplay",
 ]
 
+# Ambient sound (native/ambience.c), installed next to the .nrm as eltale_ambience.dll.
 native_libraries = [
+    { name = "eltale_ambience", funcs = [ "ambience_frame", "ambience_set", "ambience_play" ] },
 ]
+
+[[manifest.config_options]]
+id = "ambience"
+name = "Ambient sound"
+description = "Birds, crickets, wind, water and the like under the music, changing with the place and the time of day. PC only."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "ambience_volume"
+name = "Ambient sound volume"
+description = "How loud the ambient sound plays. PC only."
+type = "Number"
+min = 0
+max = 150
+step = 5
+precision = 0
+percent = false
+default = 100
 
 [[manifest.config_options]]
 id = "button_names"

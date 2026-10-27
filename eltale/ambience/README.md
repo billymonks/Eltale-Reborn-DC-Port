@@ -1,0 +1,1 @@
+Eltale Reborn's ambient sound clips (`*.ogg`) and the table that lists them (`ambience_clips.h`), copied unchanged from the PC mod, https://github.com/billymonks/Eltale-Reborn (`sfx/` and `include/q64/ambience_clips.h`, commit 45e8f68). When the PC mod changes them, copy both again. `tools/ambpack` converts them into the disc's `ambience.bin`; `runtime/mod/ambience.c` plays them.

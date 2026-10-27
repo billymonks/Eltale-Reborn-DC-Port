@@ -26,6 +26,7 @@ uint32_t stat_tex_uploads;
 uint32_t stat_tex_entries;
 uint32_t stat_tmem_copies;
 uint32_t stat_tex_fallbacks;
+uint32_t stat_same_loads;
 
 #ifdef GFX_DIAG
 GfxDiagTex gfx_diag_tex;
@@ -134,6 +135,8 @@ static void copy_load(const TmemLoad* ld) {
     if (ld->dead) {
         return;
     }
+    GCOUNT(copies, 1);
+    GCOUNT(copy_bytes, ld->kind == LOAD_BLOCK ? ld->p0 * 8 : (ld->kind == LOAD_TILE ? ld->p2 * ld->p3 : ld->p0 * 2));
     if (ld->kind == LOAD_BLOCK) {
         copy_block(ld);
     } else if (ld->kind == LOAD_TILE) {
@@ -222,11 +225,11 @@ static void shadow_compare(void) {
 }
 #endif
 
-#ifdef GFX_OPT
 // pending_add, taking the loads the new one hides out of the queue at once rather than marking
 // them: the queue then only holds loads that still decide some TMEM bytes, which are few, and
 // they are copied in the same order as before.
 static void pending_add_compact(const TmemLoad* ld, bool overwrites) {
+    GCOUNT(pend_scan, pending_count);
     uint32_t keep = 0;
     for (uint32_t i = 0; i < pending_count; i++) {
         const TmemLoad* p = &pending[(pending_first + i) % PENDING_MAX];
@@ -248,7 +251,6 @@ static void pending_add_compact(const TmemLoad* ld, bool overwrites) {
     pending[(pending_first + pending_count) % PENDING_MAX] = *ld;
     pending_count++;
 }
-#endif
 
 // Queues a load. `overwrites` says it writes all of its qwords; then any queued load inside
 // its range is dropped. A palette load drops earlier palette loads inside its range, which
@@ -263,12 +265,10 @@ static void pending_add(const TmemLoad* ld, bool overwrites) {
 #ifdef GFX_XCHECK
     shadow_add(ld, overwrites);
 #endif
-#ifdef GFX_OPT
     if (GFX_OPT_ON(OPT_LOAD)) {
         pending_add_compact(ld, overwrites);
         return;
     }
-#endif
     if (pending_count == 0) {
         pending[0] = *ld;
         pending_first = 0;
@@ -301,6 +301,10 @@ typedef struct {
     uint32_t k0, k1, k2, k3;
     uint32_t gen;
     uint32_t a, b;
+    // At the last full sum: the sampled lines' sum and the newest ROM DMA into the source's pages
+    // (OPT_KEEP), and how many full sums in a row came out the same.
+    uint32_t sig, seq;
+    uint8_t stable;
 } SrcHash;
 
 #define SRC_HASHES 512
@@ -337,7 +341,6 @@ static void sum_bytes(uint32_t addr, uint32_t len, uint32_t* pa, uint32_t* pb) {
     *pb = b;
 }
 
-#ifdef GFX_OPT
 // sum_bytes a 32-byte line at a time, with the next lines already asked for from RAM, so the
 // loop waits less on each line fill. The words are added in the same order.
 static void sum_bytes_lines(uint32_t addr, uint32_t len, uint32_t* pa, uint32_t* pb) {
@@ -392,29 +395,126 @@ static void load_sums_lines(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
         sum_bytes_lines(ld->src, ld->p0 * 2, pa, pb);
     }
 }
-#endif
+
+// The bytes from a load's first source address to the end of the last one it reads.
+static uint32_t load_span(const TmemLoad* ld) {
+    if (ld->kind == LOAD_BLOCK) {
+        return ld->p0 * 8;
+    }
+    if (ld->kind == LOAD_TILE) {
+        return ld->p3 != 0 ? tile_row_src(ld, ld->p3 - 1) + ld->p2 - ld->src : 0;
+    }
+    return ld->p0 * 2;
+}
+
+// The newest ROM DMA into the pages of [addr, addr + bytes), and whether every page had one.
+static uint32_t span_dma_seq(uint32_t addr, uint32_t bytes, bool* all) {
+    uint32_t seq = 0, off = addr & 0x1FFFFFFFu;
+    *all = bytes != 0;
+    for (uint32_t p = off >> 12; bytes != 0 && p <= (off + bytes - 1) >> 12; p++) {
+        uint32_t s = p < (RDRAM_SIZE >> 12) ? rom_page_seq[p] : 0;
+        *all &= s != 0;
+        seq = s > seq ? s : seq;
+    }
+    return seq;
+}
+
+// OPT_KEEP: a source of at least KEEP_MIN_BYTES whose last KEEP_STABLE full sums came out the
+// same, and that no ROM DMA has written since, is taken as unchanged while every eighth 32-byte
+// line (block) or row (tile), and the last, sum as they did; every KEEP_FULL frames it's summed
+// in full. Palettes, which the CPU animates, are always summed in full.
+#define KEEP_MIN_BYTES 1024
+#define KEEP_STABLE    4
+#define KEEP_STRIDE    8
+#define KEEP_FULL      8
+
+static uint32_t sample_sig(const TmemLoad* ld) {
+    uint32_t a = 1, b = 0;
+    if (ld->kind == LOAD_TILE) {
+        for (uint32_t row = 0; row < ld->p3; row += KEEP_STRIDE) {
+            sum_bytes_lines(tile_row_src(ld, row), ld->p2, &a, &b);
+        }
+        if (ld->p3 > 1 && (ld->p3 - 1) % KEEP_STRIDE != 0) {
+            sum_bytes_lines(tile_row_src(ld, ld->p3 - 1), ld->p2, &a, &b);
+        }
+    } else {
+        uint32_t len = load_span(ld);
+        for (uint32_t off = 0; off < len; off += 32 * KEEP_STRIDE) {
+            sum_bytes_lines(ld->src + off, len - off < 32 ? len - off : 32, &a, &b);
+        }
+        if (len > 32) {
+            sum_bytes_lines(ld->src + len - 32, 32, &a, &b);
+        }
+    }
+    return a ^ (b * 0x9E3779B1u);
+}
+
+static bool keep_eligible(const TmemLoad* ld, const SrcHash* old, uint32_t seq) {
+    uint32_t bytes = ld->kind == LOAD_TILE ? ld->p2 * ld->p3 : (ld->kind == LOAD_BLOCK ? ld->p0 * 8 : 0);
+    return bytes >= KEEP_MIN_BYTES && old->stable >= KEEP_STABLE && old->seq == seq &&
+           ((src_gen + (old->k0 >> 5)) & (KEEP_FULL - 1)) != 0;
+}
 
 static void load_sums(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
     uint32_t k0 = ld->src, k1 = ld->kind | (ld->siz << 4) | ((uint32_t)ld->width << 8);
     uint32_t k2 = ld->p0 | (ld->p1 << 16), k3 = ld->p2 | (ld->p3 << 16);
     uint32_t slot = mix32(k0 ^ mix32(k1 ^ k2 * 31u ^ k3 * 977u)) & (SRC_HASHES - 1);
     uint32_t victim = slot;
+    bool keep = GFX_OPT_ON(OPT_KEEP);
+#ifdef GFX_COUNT
+    bool track = true;
+#else
+    bool track = keep;
+#endif
+    // The source's own sums from an earlier task, which it then replaces.
+    SrcHash* old = NULL;
     for (uint32_t i = 0; i < 4; i++) {
         SrcHash* s = &src_hashes[(slot + i) & (SRC_HASHES - 1)];
         if (s->gen == src_gen) {
             if (s->k0 == k0 && s->k1 == k1 && s->k2 == k2 && s->k3 == k3) {
+                GCOUNT(sum_hits, 1);
                 *pa = s->a;
                 *pb = s->b;
                 return;
             }
         } else {
             victim = (slot + i) & (SRC_HASHES - 1);
+            if (track && s->k0 == k0 && s->k1 == k1 && s->k2 == k2 && s->k3 == k3) {
+                old = s;
+            }
         }
     }
+    if (old != NULL) {
+        victim = (uint32_t)(old - src_hashes);
+    }
+    bool rom = false;
+    uint32_t seq = track ? span_dma_seq(ld->src, load_span(ld), &rom) : 0;
+#ifdef GFX_COUNT
+    uint32_t read = ld->kind == LOAD_TILE ? ld->p2 * ld->p3 : load_span(ld);
+    GCOUNT(sum_misses, 1);
+    GCOUNT(sum_bytes, read);
+    GCOUNT(sum_bytes_rom, rom ? read : 0);
+#endif
 
-    uint32_t a = 1, b = 0;
-#ifdef GFX_OPT
-    if (GFX_OPT_ON(OPT_SUM)) {
+    uint32_t a = 1, b = 0, sig = 0;
+    bool kept = false;
+    if (keep && old != NULL && ld->kind != LOAD_TLUT && keep_eligible(ld, old, seq)) {
+        sig = sample_sig(ld);
+        kept = sig == old->sig;
+    }
+    if (kept) {
+        a = old->a;
+        b = old->b;
+#ifdef GFX_XCHECK
+        uint32_t ra = 1, rb = 0;
+        load_sums_lines(ld, &ra, &rb);
+        gfx_xcheck_runs[XC_KEEP]++;
+        if ((ra != a || rb != b) && gfx_xcheck_fails[XC_KEEP]++ < 8) {
+            printf("[q64dc] xcheck keep: %08X+%u kind %u changed outside the sampled lines\n", (unsigned)ld->src,
+                   (unsigned)load_span(ld), ld->kind);
+        }
+#endif
+    } else if (GFX_OPT_ON(OPT_SUM)) {
         load_sums_lines(ld, &a, &b);
 #ifdef GFX_XCHECK
         uint32_t ra = 1, rb = 0;
@@ -433,9 +533,7 @@ static void load_sums(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
                    (unsigned)a, (unsigned)b, (unsigned)ra, (unsigned)rb);
         }
 #endif
-    } else
-#endif
-    if (ld->kind == LOAD_BLOCK) {
+    } else if (ld->kind == LOAD_BLOCK) {
         sum_bytes(ld->src, ld->p0 * 8, &a, &b);
     } else if (ld->kind == LOAD_TILE) {
         for (uint32_t row = 0; row < ld->p3; row++) {
@@ -444,8 +542,35 @@ static void load_sums(const TmemLoad* ld, uint32_t* pa, uint32_t* pb) {
     } else {
         sum_bytes(ld->src, ld->p0 * 2, &a, &b);
     }
-    SrcHash* s = &src_hashes[victim];
-    *s = (SrcHash){ k0, k1, k2, k3, src_gen, a, b };
+    if (keep && !kept && ld->kind != LOAD_TLUT) {
+        sig = sample_sig(ld);
+    }
+#ifdef GFX_COUNT
+    if (old == NULL) {
+        GCOUNT(sum_new, 1);
+    } else if (old->a != a || old->b != b) {
+        static uint32_t logged;
+        const char* why = old->seq != seq ? "after a DMA" : (rom ? "in ROM pages" : "elsewhere");
+        if (old->seq != seq) {
+            GCOUNT(sum_changed_dma, 1);
+        } else if (rom) {
+            GCOUNT(sum_changed_rom, 1);
+        } else {
+            GCOUNT(sum_changed_other, 1);
+        }
+        if (logged++ < 200) {
+            printf("[q64dc] count: source %08X+%u (kind %u, %ux%u) changed %s\n", (unsigned)ld->src,
+                   (unsigned)load_span(ld), ld->kind, (unsigned)ld->p2, (unsigned)ld->p3, why);
+        }
+    }
+#endif
+    uint8_t stable = 0;
+    if (kept) {
+        stable = old->stable;
+    } else if (old != NULL && old->a == a && old->b == b) {
+        stable = old->stable < 255 ? old->stable + 1 : 255;
+    }
+    src_hashes[victim] = (SrcHash){ k0, k1, k2, k3, src_gen, a, b, sig, seq, stable };
     *pa = a;
     *pb = b;
 }
@@ -574,7 +699,36 @@ static void load_key(const TmemLoad* ld, uint32_t* k1, uint32_t* k2) {
     *k2 = mix32(b + mix32(p));
 }
 
-void tmem_load_block(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
+// OPT_SAME: the last load and its key. A load with the same parameters and key writes TMEM with
+// what the last one did, and nothing has written it since; segments and the queue already have it.
+static TmemLoad same_ld;
+static uint32_t same_k1, same_k2;
+static bool same_ok;
+
+static bool load_repeats(const TmemLoad* ld, bool keyed, uint32_t k1, uint32_t k2) {
+#ifndef GFX_DIAG
+    // GFX_DIAG builds keep the last load while OPT_SAME is off too, for when it is switched on.
+    if (!GFX_OPT_ON(OPT_SAME)) {
+        return false;
+    }
+#endif
+    bool repeat = keyed && same_ok && same_k1 == k1 && same_k2 == k2 && ld->kind == same_ld.kind &&
+                  ld->siz == same_ld.siz && ld->tmem == same_ld.tmem && ld->line == same_ld.line &&
+                  ld->width == same_ld.width && ld->q0 == same_ld.q0 && ld->nq == same_ld.nq && ld->src == same_ld.src &&
+                  ld->p0 == same_ld.p0 && ld->p1 == same_ld.p1 && ld->p2 == same_ld.p2 && ld->p3 == same_ld.p3;
+    same_ld = *ld;
+    same_k1 = k1;
+    same_k2 = k2;
+    same_ok = keyed;
+    if (repeat && GFX_OPT_ON(OPT_SAME)) {
+        stat_same_loads++;
+        return true;
+    }
+    return false;
+}
+
+bool tmem_load_block(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
+    GCOUNT(loads, 1);
     const GfxTile* t = &gfx_tiles[tile];
     uint32_t siz = gfx_timg.siz;
     uint32_t texels = lrs - uls + 1;
@@ -585,31 +739,57 @@ void tmem_load_block(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_
         qwords = 512;
     }
     if (!rdram_range_ok(src, qwords * 8)) {
-        return;
+        return true;
     }
     TmemLoad ld = { .kind = LOAD_BLOCK, .tmem = t->tmem, .q0 = t->tmem, .nq = qwords, .src = src, .p0 = qwords, .p1 = dxt };
     uint32_t k1, k2;
     load_key(&ld, &k1, &k2);
+    if (load_repeats(&ld, true, k1, k2)) {
+        return false;
+    }
     pending_add(&ld, true);
     segments_write(ld.q0, ld.nq, true, SEG_DATA, k1, k2, NULL);
+    return true;
 }
 
-void tmem_load_tile(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
+bool tmem_load_tile(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
+    GCOUNT(loads, 1);
     const GfxTile* t = &gfx_tiles[tile];
     uint32_t s0 = uls >> 2, t0 = ult >> 2, s1 = lrs >> 2, t1 = lrt >> 2;
     if (s1 < s0 || t1 < t0) {
-        return;
+        return true;
     }
     TmemLoad ld = { .kind = LOAD_TILE, .siz = gfx_timg.siz, .tmem = t->tmem, .line = t->line, .width = gfx_timg.width,
                     .q0 = t->tmem, .src = gfx_timg.addr, .p0 = s0, .p1 = t0 };
     ld.p2 = (((s1 - s0 + 1) << ld.siz) + 1) >> 1;
-    // Rows stop at the first one outside RDRAM, as the copy would.
+    // Rows stop at the first one outside RDRAM, as the copy would. Rows only move up through
+    // RDRAM, so when the first and last are inside, all are.
     uint32_t rows = 0;
-    while (rows <= t1 - t0 && rdram_range_ok(tile_row_src(&ld, rows), ld.p2)) {
-        rows++;
+    if (GFX_OPT_ON(OPT_ROWS) && rdram_range_ok(tile_row_src(&ld, 0), ld.p2) &&
+        rdram_range_ok(tile_row_src(&ld, t1 - t0), ld.p2)) {
+        rows = t1 - t0 + 1;
     }
+#ifdef GFX_XCHECK
+    uint32_t fast_rows = rows;
+    rows = 0;
+#else
+    if (rows == 0)
+#endif
+    {
+        while (rows <= t1 - t0 && rdram_range_ok(tile_row_src(&ld, rows), ld.p2)) {
+            rows++;
+        }
+    }
+#ifdef GFX_XCHECK
+    if (GFX_OPT_ON(OPT_ROWS)) {
+        gfx_xcheck_runs[XC_ROWS]++;
+        if (fast_rows != 0 && fast_rows != rows && gfx_xcheck_fails[XC_ROWS]++ < 8) {
+            printf("[q64dc] xcheck rows: %u, the loop %u\n", (unsigned)fast_rows, (unsigned)rows);
+        }
+    }
+#endif
     if (rows == 0) {
-        return;
+        return true;
     }
     ld.p3 = rows;
     uint32_t span = (rows - 1) * ld.line + ((ld.p2 + 7) >> 3);
@@ -623,21 +803,30 @@ void tmem_load_tile(int tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t
     if (whole || partial) {
         load_key(&ld, &k1, &k2);
     }
+    if (load_repeats(&ld, whole || partial, k1, k2)) {
+        return false;
+    }
     pending_add(&ld, whole);
     segments_write(ld.q0, ld.nq, whole || partial, SEG_DATA, k1, k2, partial ? &ld : NULL);
+    return true;
 }
 
-void tmem_load_tlut(int tile, uint32_t count) {
+bool tmem_load_tlut(int tile, uint32_t count) {
+    GCOUNT(loads, 1);
     const GfxTile* t = &gfx_tiles[tile];
     uint32_t src = gfx_timg.addr;
     if (!rdram_range_ok(src, count * 2)) {
-        return;
+        return true;
     }
     TmemLoad ld = { .kind = LOAD_TLUT, .tmem = t->tmem, .q0 = t->tmem, .nq = count > 512 ? 512 : count, .src = src, .p0 = count };
     uint32_t k1, k2;
     load_key(&ld, &k1, &k2);
+    if (load_repeats(&ld, true, k1, k2)) {
+        return false;
+    }
     pending_add(&ld, false);
     segments_write(ld.q0, ld.nq, true, SEG_TLUT, k1, k2, NULL);
+    return true;
 }
 
 // Texel as RGBA8888.
@@ -903,6 +1092,7 @@ void tex_frame_begin(void) {
     }
     frame_bytes = 0;
     frame++;
+    same_ok = false;
 #ifdef GFX_DIAG
     if (gfx_diag == DIAG_NO_CHECKSUM) {
         return;
@@ -1086,6 +1276,7 @@ static uint32_t tile_extent(uint32_t lo, uint32_t hi, uint8_t mask, bool clamp) 
 }
 
 bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
+    GCOUNT(lookup_slow, 1);
     const GfxTile* t = &gfx_tiles[tile];
 #ifdef GFX_DIAG
     gfx_diag_tex.lookups++;
@@ -1176,6 +1367,7 @@ bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
 
     // Decode.
     pending_flush();
+    GCOUNT(decodes, 1);
 #ifdef GFX_DIAG
     gfx_diag_tex.decodes++;
 #endif
@@ -1278,11 +1470,11 @@ bool tex_lookup(int tile, int tlut, int variant, GfxTexture* out) {
     return true;
 }
 
-#ifdef GFX_OPT
 // tex_lookup's key and cache search, without its decode and TMEM-hash paths in between, so the
 // usual hit runs through a few cache lines of code. Anything else is left to tex_lookup, which
 // starts over.
 bool tex_lookup_fast(int tile, int tlut, int variant, GfxTexture* out) {
+    GCOUNT(lookups, 1);
     const GfxTile* t = &gfx_tiles[tile];
     bool clamp_s = (t->cms & 2) || t->masks == 0;
     bool clamp_t = (t->cmt & 2) || t->maskt == 0;
@@ -1352,4 +1544,3 @@ bool tex_lookup_fast(int tile, int tlut, int variant, GfxTexture* out) {
     }
     return tex_lookup(tile, tlut, variant, out);
 }
-#endif

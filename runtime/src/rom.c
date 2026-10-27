@@ -191,7 +191,16 @@ static bool cached_locked(uint32_t rom_addr, uint32_t size) {
 }
 
 // Copies cached ROM to rdram: big-endian ROM words to rdram's host-order words.
+// The newest ROM DMA into each 4 KB page of RDRAM, for the renderer's texture checksums.
+uint32_t rom_page_seq[RDRAM_SIZE >> 12];
+static uint32_t rom_dma_seq;
+
 static void copy_locked(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size) {
+    rom_dma_seq++;
+    uint32_t first = (rdram_addr & 0x1FFFFFFFu) >> 12;
+    for (uint32_t p = first; size > 0 && p <= ((rdram_addr & 0x1FFFFFFFu) + size - 1) >> 12 && p < (RDRAM_SIZE >> 12); p++) {
+        rom_page_seq[p] = rom_dma_seq;
+    }
     while (size > 0) {
         uint32_t block = rom_addr >> BLOCK_SHIFT;
         uint32_t in_block = rom_addr & (BLOCK_SIZE - 1);
@@ -305,6 +314,7 @@ static semaphore_t reader_sem;
 
 static void* reader_thread(void* param) {
     (void)param;
+    fpu_thread_init();
     for (;;) {
         sem_wait(&reader_sem);
         mutex_lock(&lock);
@@ -376,6 +386,13 @@ void rom_wait_audio(void) {
         cond_wait(&done_cv, &lock);
     }
     mutex_unlock(&lock);
+}
+
+bool rom_reader_busy(void) {
+    mutex_lock(&lock);
+    bool busy = queue_head != queue_tail;
+    mutex_unlock(&lock);
+    return busy;
 }
 
 bool rom_open(void) {

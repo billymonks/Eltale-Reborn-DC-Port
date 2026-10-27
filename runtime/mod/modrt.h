@@ -63,4 +63,10 @@ MODRT_IMPORT(recomphook_get_return_u64);
 MODRT_IMPORT(recomphook_get_return_float);
 MODRT_IMPORT(recomphook_get_return_double);
 
+// Native library functions that the runtime implements (tools/modrecomp's runtime_natives): Eltale
+// Reborn's ambient sound, in ambience.c.
+MODRT_IMPORT(native_ambience_frame);
+MODRT_IMPORT(native_ambience_set);
+MODRT_IMPORT(native_ambience_play);
+
 #endif

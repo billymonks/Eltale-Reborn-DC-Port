@@ -1,0 +1,43 @@
+# Code generation A/B run on the title menu (lockstep discs, scripts/compare_runs.py): the cursor sound
+# three times, LOAD, the first slot loaded (tests/save.txt's save on the VMU) and idling in the game, which
+# plays the load's jingle and the ambience. Nothing is masked: the stacks (dumped at 0x80072000) and
+# libaudio's event nodes (0x80370000-0x8038FFFF) have to match too. The cursor sound once rang for good
+# when a skipped register save left a stale stack word (config/quest64.us.toml, skip_saves).
+# make test-cdi TEST_SCRIPT=tests/cg_menu.txt RT_DEFINES="-DLOCKSTEP -DROM_SYNC"
+
+timebase frames
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+hash menu
+stick 70 0 300             # NEW -> LOAD: the cursor sound
+wait 100
+hash cursor1_a
+wait 400
+hash cursor1_b
+wait 1000
+hash cursor1_c
+stick -70 0 300            # LOAD -> NEW
+wait 1000
+hash cursor2
+stick 70 0 300             # NEW -> LOAD
+wait 1000
+hash cursor3
+tap A                      # LOAD
+wait 3000
+hash slots
+wait 5000
+hash slots_idle
+tap A                      # the first slot
+wait 2000
+tap A                      # confirm
+wait 6000
+hash loaded
+wait 10000
+pos
+hash loaded_idle
+dump 80072000 30720
+dump 80370000 32768
+log cg_menu finished

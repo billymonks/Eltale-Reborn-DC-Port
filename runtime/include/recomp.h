@@ -14,6 +14,10 @@
 #endif
 
 #define RECOMP_FUNC __attribute__((noipa))
+// codegen.inline_leaves: small functions without calls, which callers in the same file may inline. Upstream's noipa
+// pairs with optimize("rounding-math") to keep folding away from the FPU's rounding mode; the runtime builds
+// without rounding-math, so inlining changes nothing there. noclone keeps one copy under the function's name.
+#define RECOMP_LEAF_FUNC __attribute__((noclone))
 #define SET_FENV_ACCESS()
 
 typedef uint32_t gpr;
@@ -192,6 +196,14 @@ static inline float sign_op_s(float val, uint32_t xor_mask, uint32_t and_mask) {
 #define ABS_S(val) \
     sign_op_s((val), 0u, 0x7FFFFFFFu)
 
+// codegen.regcache = "gpr+fpr": the FPU's own fneg and fabs, which only touch the sign bit like the integer
+// versions above (Flycast 2.7 and later run them correctly between double operations).
+#define FNEG_S(val) \
+    (-(val))
+
+#define FABS_S(val) \
+    __builtin_fabsf(val)
+
 #define MUL_S(val1, val2) \
     ((val1) * (val2))
 
@@ -280,6 +292,16 @@ typedef union {
 } fpr;
 
 _Static_assert(sizeof(double) == 8, "fpr needs 64-bit doubles: build with -m4-single, not -m4-single-only");
+
+// codegen.regcache = "gpr+fpr": an even FPR used only as a single or a raw word, kept in a local.
+typedef union {
+    float fl;
+    uint32_t u32l;
+} fpr32;
+
+// lwc1/swc1 straight to and from a float local. rdram holds host-order words, so a float load is the word.
+#define MEM_F(offset, reg) \
+    (*(float*)(RECOMP_RB + (gpr)(reg) + (gpr)(offset)))
 
 typedef struct {
     // sp, v0-a3 and the callee-saved registers are synced at calls and returns (codegen.regcache).
@@ -372,6 +394,36 @@ recomp_func_t* get_function(int32_t vram);
 #define LOOKUP_FUNC(val) \
     get_function((int32_t)(val))
 
+// codegen.lookup_cache: indirect calls into the main code segment, which stays loaded, go through a small
+// direct-mapped cache in front of get_function(); overlay addresses (0x80100000 up), whose functions change with
+// what's loaded there, always ask get_function().
+typedef struct {
+    uint32_t vram;
+    recomp_func_t* func;
+} recomp_lookup_entry;
+__attribute__((weak)) recomp_lookup_entry recomp_lookup_cache[256];
+
+static __attribute__((noinline, unused)) recomp_func_t* lookup_func_miss(uint32_t vram) {
+    recomp_func_t* func = get_function((int32_t)vram);
+    if (vram < 0x80100000u) {
+        recomp_lookup_entry* e = &recomp_lookup_cache[(vram >> 2) & 255];
+        e->vram = vram;
+        e->func = func;
+    }
+    return func;
+}
+
+static inline recomp_func_t* lookup_func_cached(uint32_t vram) {
+    recomp_lookup_entry* e = &recomp_lookup_cache[(vram >> 2) & 255];
+    if (__builtin_expect(e->vram == vram, 1)) {
+        return e->func;
+    }
+    return lookup_func_miss(vram);
+}
+
+#define LOOKUP_FUNC_CACHED(val) \
+    lookup_func_cached((uint32_t)(val))
+
 extern int32_t* section_addresses;
 
 #define LO16(x) \
@@ -397,6 +449,10 @@ void pak_check(uint8_t* rdram, recomp_context* ctx);
 
 // Replaces the game's floor test of a point against a shape, func_8000F238 (collision.c).
 void floor_shape_test(uint8_t* rdram, recomp_context* ctx);
+
+// Replace libultra's __sinf and __cosf with the same double-precision steps in native code (sincos.c).
+void ultra_sinf(uint8_t* rdram, recomp_context* ctx);
+void ultra_cosf(uint8_t* rdram, recomp_context* ctx);
 
 // In alAudioFrame after the players' handlers: plays the voices' updates on the AICA (aica.c).
 void aica_audio_frame(uint8_t* rdram, recomp_context* ctx);

@@ -61,13 +61,9 @@
 #define DL_STACK_SIZE 32
 #define MAX_LIGHTS    8
 
-// GFX_OPT builds keep these out of the functions that call them, so the display list loop and
-// the triangle and vertex paths stay small enough to share the 8 KB instruction cache.
-#ifdef GFX_OPT
+// Kept out of the functions that call them, so the display list loop and the triangle and vertex
+// paths stay small enough to share the 8 KB instruction cache.
 #define GFX_OUTLINE __attribute__((noinline))
-#else
-#define GFX_OUTLINE
-#endif
 
 // Stop adding to the frame before the PowerVR's vertex buffer overflows. KallistiOS takes two
 // of them out of texture memory; the busiest frames fill about 140 KB.
@@ -149,6 +145,11 @@ static struct {
     float light_coeff[MAX_LIGHTS][3];
     float lookat_dir[2][3];
     float lookat_coeff[2][3];
+    uint32_t light_seq;  // bumped when the light count or a light's or look-at's direction changes
+    // The rotation and light_seq light_coeff and lookat_coeff were last worked out for.
+    float lights_rot[3][3];
+    uint32_t lights_rot_seq;
+    bool lights_rot_ok;
 
     float fog_mul, fog_off;
     float vp_sx, vp_sy, vp_tx, vp_ty;
@@ -190,6 +191,86 @@ static struct {
 } g;
 
 static matrix_t mvp __attribute__((aligned(32)));
+
+// OPT_DEFER's records of a frame's draws (see defer_flush).
+enum { QD_TRI, QD_NEAR, QD_RECT };
+
+typedef struct {
+    uint16_t v[3];  // in q.vtx; for QD_RECT, v[0] is in q.rect
+    uint8_t kind;
+    uint8_t flat;
+    uint16_t mat, cc;  // in q.mat and q.cc
+    uint16_t view;     // QD_NEAR: in q.view
+    uint16_t pad;
+} QDraw;
+_Static_assert(sizeof(QDraw) == 16, "two draws a cache line");
+
+typedef struct {
+    Material mat;
+    HeaderKey key;
+    uint32_t out_gen;
+} QMat;
+
+// A draw's out_gen is the newer of its QMat's and its QCC's: out_gen moves on with a material or,
+// with OPT_COLORS, with a combiner epoch.
+typedef struct {
+    GfxCombiner cc;
+    GfxCCConst k;
+    uint32_t prim_raw, env_raw, prim_lod_raw, epoch, out_gen;
+} QCC;
+
+// What projecting a near-plane triangle's clipped corners reads.
+typedef struct {
+    float vp_sx, vp_sy, vp_tx, vp_ty;
+    bool ortho;
+} QView;
+
+#define Q_DRAWS 4096
+#define Q_VTX   2048
+#define Q_MATS  512
+#define Q_CCS   512
+#define Q_RECTS 256
+#define Q_VIEWS 128
+
+static struct {
+    QDraw* draw;
+    Vertex* vtx;
+    QMat* mat;
+    QCC* cc;
+    ClipVert (*rect)[4];
+    QView* view;
+    uint32_t ndraw, nvtx, nmat, ncc, nrect, nview;
+    int16_t slot[32];   // q.vtx copy of each slot's vertex as it is now, -1 if none
+    bool mat_new;       // the material changed since q.mat[nmat - 1]
+    uint32_t cc_epoch;  // the combiner epoch of q.cc[ncc - 1]
+    bool ok;            // the arrays are there
+} q;
+static bool q_on;  // this frame's draws are deferred
+
+#ifdef GFX_DIAG
+#define DEFER_POSSIBLE true
+#else
+#define DEFER_POSSIBLE GFX_OPT_ON(OPT_DEFER)
+#endif
+
+static void defer_draw(int kind, int i0, int i1, int i2, bool flat, const ClipVert* rect);
+
+static void defer_reset(void) {
+    q.ndraw = q.nvtx = q.nmat = q.ncc = q.nrect = q.nview = 0;
+    for (int i = 0; i < 32; i++) {
+        q.slot[i] = -1;
+    }
+    q.mat_new = true;
+}
+
+// Slots a load or a modification gives new vertices.
+static inline void defer_forget(uint32_t first, uint32_t count) {
+    if (DEFER_POSSIBLE) {
+        for (uint32_t i = first; i < first + count && i < 32; i++) {
+            q.slot[i] = -1;
+        }
+    }
+}
 
 // The opaque list goes straight to the tile accelerator through the store queues as the display
 // list runs; the punch-through and translucent lists are kept in RAM and sent by DMA after it.
@@ -259,8 +340,8 @@ static uint32_t cpu_ticks(const CpuMark* a, const CpuMark* b) {
 }
 
 // The display list's time by kind of command. The clock is read where the kind changes, not per
-// command.
-enum { DR_OTHER, DR_VTX, DR_TRI, DR_TEX, DR_COUNT };
+// command. DR_DEFER is OPT_DEFER's second pass over the frame's recorded draws.
+enum { DR_OTHER, DR_VTX, DR_TRI, DR_TEX, DR_DEFER, DR_COUNT };
 static struct {
     int cur;
     CpuMark mark;
@@ -309,22 +390,29 @@ static void pmc_end(void) {
     dg.ic_stall += ic > 0 ? (uint32_t)ic : 0;
 }
 
-#ifdef GFX_OPT
-// The sets both triggers + B steps through: all, none, then each one left out.
-static const uint8_t opt_sets[] = {
-    OPT_ALL,
+// The sets both triggers + B steps through: the default, none, the release's before M, N, E, O, G
+// and F joined it, then the default without each of Q, M, U, N, E, O, G and F. Builds start in set 3,
+// the default without Q: the fastest on hardware, and the release's.
+static const uint32_t opt_sets[] = {
+    OPT_DEFAULT,
     0,
-    OPT_ALL & ~OPT_TEX,
-    OPT_ALL & ~OPT_SUM,
-    OPT_ALL & ~OPT_LOAD,
-    OPT_ALL & ~OPT_VTX,
-    OPT_ALL & ~OPT_COLOR,
-    OPT_ALL & ~OPT_TRI,
+    OPT_TEX | OPT_SUM | OPT_LOAD | OPT_VTX | OPT_COLOR | OPT_TRI | OPT_REJECT | OPT_KEEP | OPT_RECT | OPT_ROWS |
+        OPT_LIGHTS,
+    OPT_DEFAULT & ~OPT_DEFER,
+    OPT_DEFAULT & ~OPT_ALLOC,
+    OPT_DEFAULT & ~OPT_LIGHTS,
+    OPT_DEFAULT & ~OPT_NOOP,
+    OPT_DEFAULT & ~OPT_SAME,
+    OPT_DEFAULT & ~OPT_COLORS,
+    OPT_DEFAULT & ~OPT_PROGS,
+    OPT_DEFAULT & ~OPT_PACK,
 };
 #define OPT_SETS ((int)(sizeof(opt_sets) / sizeof(opt_sets[0])))
-uint32_t gfx_opt = OPT_ALL;
-static int opt_set;
-static volatile int opt_request;
+#define OPT_START 3
+_Static_assert((OPT_DEFAULT & ~OPT_DEFER) == OPT_RELEASE, "set 3 is the release's");
+uint32_t gfx_opt = OPT_DEFAULT & ~OPT_DEFER;  // opt_sets[OPT_START]
+static int opt_set = OPT_START;
+static volatile int opt_request = OPT_START;
 
 void gfx_diag_cycle(void) {
     opt_request = (opt_request + 1) % OPT_SETS;
@@ -342,11 +430,6 @@ void gfx_diag_select(int set, int mode) {
         diag_request = mode;
     }
 }
-#else
-void gfx_diag_cycle(void) {
-    diag_request = (diag_request + 1) % DIAG_MODES;
-}
-#endif
 
 static void diag_pvr_init(void);
 #else
@@ -379,14 +462,58 @@ static inline void* out_target(void) {
 #endif
         return pvr_dr_target(dr);
     }
-    return list_buf[out_list] + list_used[out_list];
+    uint8_t* p = list_buf[out_list] + list_used[out_list];
+    if (GFX_OPT_ON(OPT_ALLOC)) {
+        // Every word of the block is written next, so its line needn't be read from RAM first.
+        dcache_alloc_block(p, 0);
+    }
+    return p;
 }
+
+#ifdef GFX_HASH
+// Test builds: a hash of what each frame's display list sends to the PowerVR, printed with the
+// frame so runs of two configurations can be compared frame by frame. It covers what the PowerVR
+// reads: a header's first four words (all pvr_poly_compile sets), and a vertex's words but its
+// u and v under an untextured header, which hold whatever the vertex had there before.
+static uint32_t frame_hash;
+static bool hash_on;
+static bool hash_textured[LIST_COUNT];
+static uint32_t frames;
+
+static inline void hash_block(const uint32_t* d) {
+    bool header = (d[0] >> 29) == 4;
+    int n = header ? 4 : 8;
+    if (header) {
+        hash_textured[out_list] = (d[0] & PVR_TA_CMD_TXRENABLE) != 0;
+    }
+    for (int i = 0; i < n; i++) {
+        if (!header && !hash_textured[out_list] && (i == 4 || i == 5)) {
+            continue;
+        }
+        frame_hash = (frame_hash ^ d[i]) * 16777619u;
+    }
+    frame_hash = (frame_hash ^ (uint32_t)out_list) * 16777619u;
+#ifdef GFX_HASH_DUMP
+    // One frame's blocks in full, for finding where two runs part.
+    if (frames == GFX_HASH_DUMP) {
+        printf("[q64dc] fblk %d %08X %08X %08X %08X %08X %08X %08X %08X\n", out_list, (unsigned)d[0], (unsigned)d[1],
+               (unsigned)d[2], (unsigned)d[3], n == 8 ? (unsigned)d[4] : 0, n == 8 ? (unsigned)d[5] : 0,
+               n == 8 ? (unsigned)d[6] : 0, n == 8 ? (unsigned)d[7] : 0);
+    }
+#endif
+}
+#endif
 
 static inline void out_commit(void* p) {
 #ifdef GFX_XCHECK
     if (cap.on) {
         cap.list[cap.n++] = (uint8_t)out_list;
         return;
+    }
+#endif
+#ifdef GFX_HASH
+    if (hash_on) {
+        hash_block((const uint32_t*)p);
     }
 #endif
     if (out_list == LIST_OP) {
@@ -409,6 +536,68 @@ static inline bool list_room(int list, uint32_t n) {
 
 static uint32_t stat_tris, stat_headers, stat_frame_tris, stat_tex_lookups, stat_mat_updates, stat_culled_dls;
 static uint32_t stat_list_tris[LIST_COUNT];
+
+#ifdef GFX_COUNT
+GfxCount gfx_count;
+
+// What became of each vertex slot's vertex: 1 loaded, 2 used by a rejected triangle, 3 by a drawn
+// one; and whether its G_VTX batch was entirely outside one plane (2 once a drawn triangle used it).
+static uint8_t slot_fate[32], slot_out[32];
+
+static void count_retire(uint32_t i) {
+    if (slot_fate[i] == 1) {
+        GCOUNT(vtx_unused, 1);
+    } else if (slot_fate[i] == 2) {
+        GCOUNT(vtx_rejected, 1);
+    } else if (slot_fate[i] == 3) {
+        GCOUNT(vtx_drawn, 1);
+    }
+    slot_fate[i] = 0;
+}
+
+static void count_batch(const Vertex* vtx, uint32_t first, uint32_t count) {
+    if (first + count > 32) {
+        return;
+    }
+    GCOUNT(vtx_cmds, 1);
+    GCOUNT(vtx_verts, count);
+    uint8_t all = 0xFF;
+    for (uint32_t i = first; i < first + count; i++) {
+        count_retire(i);
+        slot_fate[i] = 1;
+        all &= vtx[i].clip;
+        GCOUNT(vtx_outside, vtx[i].clip != 0);
+    }
+    bool out = count != 0 && (all & (0x0F | CLIP_NEAR)) != 0;
+    for (uint32_t i = first; i < first + count; i++) {
+        slot_out[i] = out;
+    }
+    GCOUNT(batch_out, out);
+    GCOUNT(batch_out_verts, out ? count : 0);
+}
+
+static void count_tri(int i0, int i1, int i2, int fate) {
+    const int s[3] = { i0, i1, i2 };
+    for (int k = 0; k < 3; k++) {
+        if (slot_fate[s[k]] < fate) {
+            slot_fate[s[k]] = (uint8_t)fate;
+        }
+        if (fate == 3 && slot_out[s[k]] == 1) {
+            slot_out[s[k]] = 2;
+            GCOUNT(batch_out_used, 1);
+        }
+    }
+}
+
+// Display list calls, for the ones that draw nothing.
+static struct {
+    uint32_t verts, tris, drawn;
+} dl_mark[DL_STACK_SIZE];
+
+// The last 30 frames' counts, taken by the RSP thread for the log thread to print.
+static GfxCount count_report;
+static volatile uint32_t count_report_seq;
+#endif
 static uint32_t stat_vbuf_peak, vbuf_peak_boot;
 static bool warned_op[256];
 
@@ -485,12 +674,7 @@ static void GFX_OUTLINE mat_mul(matrix_t res, matrix_t a, matrix_t b) {
 static void normalize3(float v[3]) {
     float len = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
     if (len > 0.0f) {
-#if defined(PERF_HUD) && !defined(GFX_OPT)
-        float inv = len;
-        __asm__ volatile("fsrra %0" : "+f"(inv));
-#else
         float inv = 1.0f / sqrtf(len);
-#endif
         v[0] *= inv;
         v[1] *= inv;
         v[2] *= inv;
@@ -513,6 +697,26 @@ static void GFX_OUTLINE update_mvp(void) {
 }
 
 static void GFX_OUTLINE update_lights(void) {
+    // The directions depend only on the modelview's rotation and on the lights (light_seq).
+    const matrix_t* m = &g.mv[g.mv_top];
+    float rot[3][3];
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            rot[i][j] = (*m)[i][j];
+        }
+    }
+    bool same = g.lights_rot_ok && g.lights_rot_seq == g.light_seq && memcmp(rot, g.lights_rot, sizeof(rot)) == 0;
+#ifdef GFX_XCHECK
+    float kept_light[MAX_LIGHTS][3], kept_lookat[2][3];
+    memcpy(kept_light, g.light_coeff, sizeof(kept_light));
+    memcpy(kept_lookat, g.lookat_coeff, sizeof(kept_lookat));
+    bool check = GFX_OPT_ON(OPT_LIGHTS) && same;
+    same = false;
+#endif
+    if (GFX_OPT_ON(OPT_LIGHTS) && same) {
+        g.lights_dirty = false;
+        return;
+    }
     for (int i = 0; i < g.num_lights; i++) {
         model_space_dir(g.light_dir[i], g.light_coeff[i]);
         // Normals are s8 with 127 for 1.
@@ -523,24 +727,63 @@ static void GFX_OUTLINE update_lights(void) {
     model_space_dir(g.lookat_dir[0], g.lookat_coeff[0]);
     model_space_dir(g.lookat_dir[1], g.lookat_coeff[1]);
     g.lights_dirty = false;
+    memcpy(g.lights_rot, rot, sizeof(rot));
+    g.lights_rot_seq = g.light_seq;
+    g.lights_rot_ok = true;
+#ifdef GFX_XCHECK
+    if (check) {
+        gfx_xcheck_runs[XC_LIGHTS]++;
+        if ((memcmp(kept_light, g.light_coeff, (size_t)g.num_lights * sizeof(kept_light[0])) != 0 ||
+             memcmp(kept_lookat, g.lookat_coeff, sizeof(kept_lookat)) != 0) &&
+            gfx_xcheck_fails[XC_LIGHTS]++ < 8) {
+            printf("[q64dc] xcheck lights: kept %f %f %f, recomputed %f %f %f\n", (double)kept_light[0][0],
+                   (double)kept_light[0][1], (double)kept_light[0][2], (double)g.light_coeff[0][0],
+                   (double)g.light_coeff[0][1], (double)g.light_coeff[0][2]);
+        }
+    }
+#endif
 }
 
 // --- Vertices ---
 
-// Positive reciprocal. fsrra(w*w) is 1/|w| and avoids the per-vertex fdiv; the SH-4's
-// approximation is what the perf discs measure. The release build keeps the divide, and so do
-// GFX_OPT builds, whose pictures are checked against it.
+// Positive reciprocal. A divide, not fsrra: the SH-4's approximation would move vertices.
 static inline float recip_pos(float w) {
     if (!(w > 0.0f)) {
         return 32767.0f;
     }
-#if defined(PERF_HUD) && !defined(GFX_OPT)
-    float x = w * w;
-    __asm__ volatile("fsrra %0" : "+f"(x));
-    return x;
-#else
     return 1.0f / w;
+}
+
+// OPT_BATCH: when every vertex of a load is outside the same plane, the load stops after the
+// transform and the clip codes, since triangles of those vertices alone are rejected on them. The
+// rest of each vertex waits here, with the state it depended on, until a triangle with other
+// vertices needs it (vtx_complete).
+typedef struct {
+    float tex_ss, tex_st, fog_mul, fog_off, vp_sx, vp_sy, vp_tx, vp_ty;
+    bool lighting, fog, ortho;
+} VtxState;
+
+typedef struct {
+    uint32_t w2, w3;  // texture coordinates; color or normal and alpha
+    VtxState st;
+} VtxLater;
+
+static VtxLater vtx_later[32];
+static uint32_t vtx_pending;  // a bit per slot still waiting
+
+// OPT_REJECT: each slot's clip code, packed, for rejecting triangles without their vertices.
+static uint8_t vclip[32];
+
+#ifdef GFX_DIAG
+#define BATCH_POSSIBLE  true
+#define REJECT_POSSIBLE true
+#else
+#define BATCH_POSSIBLE  GFX_OPT_ON(OPT_BATCH)
+#define REJECT_POSSIBLE GFX_OPT_ON(OPT_REJECT)
 #endif
+
+static inline uint32_t slot_bits(uint32_t first, uint32_t count) {
+    return (count >= 32 ? 0xFFFFFFFFu : ((1u << count) - 1)) << first;
 }
 
 static inline void project(Vertex* v, float winv) {
@@ -556,6 +799,10 @@ static void GFX_OUTLINE load_vertices(uint32_t addr, uint32_t first, uint32_t co
     if (g.mvp_dirty) {
         update_mvp();
     }
+    if (BATCH_POSSIBLE) {
+        vtx_pending &= ~slot_bits(first, count);
+    }
+    defer_forget(first, count);
     bool lighting = (g.geom & G_LIGHTING) != 0;
     mat_load(&mvp);
 
@@ -578,6 +825,9 @@ static void GFX_OUTLINE load_vertices(uint32_t addr, uint32_t first, uint32_t co
         v->w = w;
         v->clip = (uint8_t)((x < -w) | ((x > w) << 1) | ((y < -w) << 2) | ((y > w) << 3) |
                             (((z < -w) | (w <= 0.0f)) * CLIP_NEAR));
+        if (REJECT_POSSIBLE) {
+            vclip[first + i] = v->clip;
+        }
 
         float s = (float)(int16_t)(w2 >> 16) * g.tex_ss * (1.0f / 32.0f);
         float t = (float)(int16_t)w2 * g.tex_st * (1.0f / 32.0f);
@@ -609,7 +859,6 @@ static void GFX_OUTLINE load_vertices(uint32_t addr, uint32_t first, uint32_t co
     }
 }
 
-#ifdef GFX_OPT
 // load_vertices as its own small loop: aligned word loads with the RDRAM a few vertices ahead
 // and the Vertex lines about to be filled already asked for. Same arithmetic, expression for
 // expression.
@@ -625,6 +874,10 @@ static void __attribute__((noinline)) load_vertices_fast(uint32_t addr, uint32_t
     if (g.mvp_dirty) {
         update_mvp();
     }
+    if (BATCH_POSSIBLE) {
+        vtx_pending &= ~slot_bits(first, count);
+    }
+    defer_forget(first, count);
     bool lighting = (g.geom & G_LIGHTING) != 0;
     bool fog = (g.geom & G_FOG) && !DIAG_IS(DIAG_NO_LIGHT);
     mat_load(&mvp);
@@ -655,6 +908,9 @@ static void __attribute__((noinline)) load_vertices_fast(uint32_t addr, uint32_t
         v->w = w;
         v->clip = (uint8_t)((x < -w) | ((x > w) << 1) | ((y < -w) << 2) | ((y > w) << 3) |
                             (((z < -w) | (w <= 0.0f)) * CLIP_NEAR));
+        if (REJECT_POSSIBLE) {
+            vclip[first + i] = v->clip;
+        }
 
         float s = (float)(int16_t)(w2 >> 16) * g.tex_ss * (1.0f / 32.0f);
         float t = (float)(int16_t)w2 * g.tex_st * (1.0f / 32.0f);
@@ -700,7 +956,172 @@ static void __attribute__((noinline)) load_vertices_fast(uint32_t addr, uint32_t
     }
 #endif
 }
+
+// What load_vertices does after the clip code, from the state it had at the load: the same
+// expressions, with st's copies for g's fields.
+static inline void vtx_finish(Vertex* v, uint32_t w2, uint32_t w3, const VtxState* st) {
+    float s = (float)(int16_t)(w2 >> 16) * st->tex_ss * (1.0f / 32.0f);
+    float t = (float)(int16_t)w2 * st->tex_st * (1.0f / 32.0f);
+    v->st_lock = 0;
+    if (st->lighting) {
+        v->nx = (float)(int8_t)(w3 >> 24);
+        v->ny = (float)(int8_t)(w3 >> 16);
+        v->nz = (float)(int8_t)(w3 >> 8);
+        v->unlit = 1;
+    } else {
+        v->shade[0] = u8f(w3 >> 24);
+        v->shade[1] = u8f(w3 >> 16);
+        v->shade[2] = u8f(w3 >> 8);
+        v->unlit = 0;
+    }
+    v->shade[3] = u8f(w3);
+    v->s = s;
+    v->t = t;
+
+    float z = v->z;
+    float winv = recip_pos(v->w);
+    if (st->fog) {
+        float f = z * winv * st->fog_mul + st->fog_off;
+        f = f < 0.0f ? 0.0f : (f > 255.0f ? 255.0f : f);
+        v->shade[3] = f * (1.0f / 255.0f);
+    }
+    v->sx = v->x * winv * st->vp_sx + st->vp_tx;
+    v->sy = -v->y * winv * st->vp_sy + st->vp_ty;
+    v->sz = st->ortho ? 1.0f - v->z * winv * 0.01f : winv;
+    v->cc_epoch = 0;
+    v->out_gen = 0;
+}
+
+#ifdef GFX_XCHECK
+// The original load's vertex for each slot still waiting, for comparing once it's completed.
+static Vertex vtx_reference[32];
 #endif
+
+// The rest of the waiting vertices among mask.
+static void __attribute__((noinline)) vtx_complete(uint32_t mask) {
+    mask &= vtx_pending;
+    vtx_pending &= ~mask;
+    while (mask != 0) {
+        uint32_t i = (uint32_t)__builtin_ctz(mask);
+        mask &= mask - 1;
+        const VtxLater* l = &vtx_later[i];
+        vtx_finish(&g.vtx[i], l->w2, l->w3, &l->st);
+#ifdef GFX_XCHECK
+        gfx_xcheck_runs[XC_BATCH]++;
+        if (memcmp(&g.vtx[i], &vtx_reference[i], sizeof(Vertex)) != 0 && gfx_xcheck_fails[XC_BATCH]++ < 8) {
+            printf("[q64dc] xcheck batch: slot %u completed %f %f %f, original %f %f %f\n", (unsigned)i,
+                   (double)g.vtx[i].sx, (double)g.vtx[i].sy, (double)g.vtx[i].shade[3], (double)vtx_reference[i].sx,
+                   (double)vtx_reference[i].sy, (double)vtx_reference[i].shade[3]);
+        }
+#endif
+    }
+}
+
+// load_vertices_fast in two passes: the transform and clip codes, then the rest only if some
+// vertex isn't outside a plane all the others are outside too.
+static void __attribute__((noinline)) load_vertices_batch(uint32_t addr, uint32_t first, uint32_t count) {
+    if (first + count > 32 || !addr_ok(addr, count * 16)) {
+        return;
+    }
+    const uint32_t* src = (const uint32_t*)RDRAM_PTR(addr);
+    if (((uintptr_t)src & 3) != 0) {
+        load_vertices(addr, first, count);
+        return;
+    }
+    if (g.mvp_dirty) {
+        update_mvp();
+    }
+    defer_forget(first, count);
+    const VtxState st = { g.tex_ss,   g.tex_st,
+                          g.fog_mul,  g.fog_off,
+                          g.vp_sx,    g.vp_sy,
+                          g.vp_tx,    g.vp_ty,
+                          (g.geom & G_LIGHTING) != 0, (g.geom & G_FOG) && !DIAG_IS(DIAG_NO_LIGHT),
+                          g.ortho };
+    mat_load(&mvp);
+#ifdef GFX_XCHECK
+    static Vertex before[32];
+    uint32_t pending_before = vtx_pending;
+    memcpy(before, &g.vtx[first], count * sizeof(Vertex));
+#endif
+    __builtin_prefetch(src + 8);
+    __builtin_prefetch(src + 16);
+    Vertex* v = &g.vtx[first];
+    uint8_t all = 0xFF;
+    for (uint32_t i = 0; i < count; i++, v++) {
+        const uint32_t* s = src + i * 4;
+        __builtin_prefetch(s + 24);
+        const char* next = (const char*)(v + 1);
+        __builtin_prefetch(next);
+        __builtin_prefetch(next + 64);
+        uint32_t w0 = s[0], w1 = s[1];
+        float x = (float)(int16_t)(w0 >> 16);
+        float y = (float)(int16_t)w0;
+        float z = (float)(int16_t)(w1 >> 16);
+        float w = 1.0f;
+        mat_trans_nodiv(x, y, z, w);
+        v->x = x;
+        v->y = y;
+        v->z = z;
+        v->w = w;
+        uint8_t clip = (uint8_t)((x < -w) | ((x > w) << 1) | ((y < -w) << 2) | ((y > w) << 3) |
+                                 (((z < -w) | (w <= 0.0f)) * CLIP_NEAR));
+        v->clip = clip;
+        vclip[first + i] = clip;
+        all &= clip;
+    }
+    uint32_t bits = slot_bits(first, count);
+#ifdef GFX_XCHECK_DEFER
+    // Cross-checks of vtx_complete: every batch waits.
+    all = 0xFF;
+#endif
+    if (all != 0) {
+        for (uint32_t i = 0; i < count; i++) {
+            VtxLater* l = &vtx_later[first + i];
+            l->w2 = src[i * 4 + 2];
+            l->w3 = src[i * 4 + 3];
+            l->st = st;
+        }
+        vtx_pending |= bits;
+    } else {
+        v = &g.vtx[first];
+        for (uint32_t i = 0; i < count; i++, v++) {
+            const char* next = (const char*)(v + 1);
+            __builtin_prefetch(next + 32);
+            __builtin_prefetch(next + 96);
+            vtx_finish(v, src[i * 4 + 2], src[i * 4 + 3], &st);
+        }
+        vtx_pending &= ~bits;
+    }
+#ifdef GFX_XCHECK
+    // The original load from the same state; a waiting slot is compared on what the first pass
+    // wrote now, and in full once it's completed.
+    static Vertex after[32];
+    uint32_t pending_after = vtx_pending;
+    memcpy(after, &g.vtx[first], count * sizeof(Vertex));
+    memcpy(&g.vtx[first], before, count * sizeof(Vertex));
+    vtx_pending = pending_before;
+    load_vertices(addr, first, count);
+    gfx_xcheck_runs[XC_VTX] += count;
+    for (uint32_t i = 0; i < count; i++) {
+        const Vertex* a = &after[i];
+        const Vertex* b = &g.vtx[first + i];
+        bool waiting = (pending_after >> (first + i)) & 1;
+        bool same = waiting ? a->x == b->x && a->y == b->y && a->z == b->z && a->w == b->w && a->clip == b->clip
+                            : memcmp(a, b, sizeof(Vertex)) == 0;
+        if (!same && gfx_xcheck_fails[XC_VTX]++ < 8) {
+            printf("[q64dc] xcheck vtx %u (batch, %s): %f %f c%u, original %f %f c%u\n", (unsigned)(first + i),
+                   waiting ? "waiting" : "done", (double)a->sx, (double)a->sy, a->clip, (double)b->sx, (double)b->sy,
+                   b->clip);
+        }
+        if (waiting) {
+            vtx_reference[first + i] = *b;
+        }
+    }
+    memcpy(&g.vtx[first], after, count * sizeof(Vertex));
+    vtx_pending = pending_after;
+#endif
+}
 
 // --- Materials and PowerVR headers ---
 
@@ -740,6 +1161,7 @@ static float tile_shift(uint8_t shift) {
 }
 
 static void GFX_OUTLINE update_material(bool rect, int rect_tile) {
+    GCOUNT(mat_updates, 1);
     Material* m = &g.mat;
     int cycle = (g.oh >> 20) & 3;
     int tlut = (g.oh >> 14) & 3;
@@ -770,6 +1192,7 @@ static void GFX_OUTLINE update_material(bool rect, int rect_tile) {
         bool same = last.index == tile && last.tlut == tlut && last.variant == m->variant &&
                     last.tmem_gen == g.tmem_gen && memcmp(&last.tile, &gfx_tiles[tile], sizeof(GfxTile)) == 0 &&
                     g.tmem_gen != 0;
+        GCOUNT(lookups_skipped, same);
         if (!same) {
             last.tile = gfx_tiles[tile];
             last.tmem_gen = g.tmem_gen;
@@ -780,12 +1203,11 @@ static void GFX_OUTLINE update_material(bool rect, int rect_tile) {
             int region = dr_time.cur;
             dr_enter(DR_TEX);
 #endif
-#ifdef GFX_OPT
             if (GFX_OPT_ON(OPT_TEX)) {
                 last.ok = tex_lookup_fast(tile, tlut, m->variant, &last.tex);
-            } else
-#endif
-            last.ok = tex_lookup(tile, tlut, m->variant, &last.tex);
+            } else {
+                last.ok = tex_lookup(tile, tlut, m->variant, &last.tex);
+            }
 #ifdef GFX_DIAG
             dr_enter(region);
 #endif
@@ -866,6 +1288,7 @@ static void GFX_OUTLINE update_material(bool rect, int rect_tile) {
     k->depth_write = m->depth_write;
     g.mat_key_changed = true;
     g.out_gen++;
+    q.mat_new = true;
 
     stat_mat_updates++;
     g.mat_dirty = false;
@@ -884,10 +1307,12 @@ static void ensure_material(bool rect, int rect_tile) {
 
 // Sends a header to the key's list, unless it's the list's current one. Leaves out_list on that list.
 static void GFX_OUTLINE submit_header(const HeaderKey* k) {
+    GCOUNT(header_calls, 1);
     out_list = k->list;
     if (have_key[k->list] && memcmp(k, &cur_key[k->list], sizeof(*k)) == 0) {
         return;
     }
+    GCOUNT(headers, 1);
     cur_key[k->list] = *k;
     have_key[k->list] = true;
 
@@ -936,6 +1361,21 @@ static inline uint32_t pack_color(const float c[4]) {
     uint32_t b = c[2] <= 0.0f ? 0 : (c[2] >= 1.0f ? 255 : (uint32_t)(c[2] * 255.0f));
     uint32_t a = c[3] <= 0.0f ? 0 : (c[3] >= 1.0f ? 255 : (uint32_t)(c[3] * 255.0f));
     return (a << 24) | (r << 16) | (gg << 8) | b;
+}
+
+// OPT_PACK: pack_color's byte for a channel without its float compares. c * 255 is at most 0 for
+// c <= 0, under 255 for c < 1 and at least 255 for c >= 1, so the bytes are the same for any color
+// but NaN.
+static inline uint32_t color_byte(float c) {
+    int32_t v = (int32_t)(c * 255.0f);
+    if (__builtin_expect((uint32_t)v > 255, 0)) {
+        v = v < 0 ? 0 : 255;
+    }
+    return (uint32_t)v;
+}
+
+static inline uint32_t pack_color_int(const float c[4]) {
+    return (color_byte(c[3]) << 24) | (color_byte(c[0]) << 16) | (color_byte(c[1]) << 8) | color_byte(c[2]);
 }
 
 // Turns the combiner's tex * mul + add into the PowerVR's texture * color + offset.
@@ -1111,7 +1551,8 @@ static int clip_near(const ClipVert* in, ClipVert* out) {
 
 // Prepared combiners for recent combiners and constants: the game switches prim and env colors
 // back and forth many times a frame.
-#define CC_PROGS 32
+// OPT_PROGS uses all of them, otherwise only the first 32.
+#define CC_PROGS 256
 
 typedef struct {
     uint32_t w0, w1, prim, env, lod;
@@ -1124,7 +1565,7 @@ static CCProgEntry cc_progs[CC_PROGS];
 static const GfxCCProg* GFX_OUTLINE find_cc_prog(void) {
     uint32_t h = g.cc.w0 * 0x9E3779B1u ^ g.cc.w1 * 0x85EBCA77u ^ g.prim_raw * 0xC2B2AE3Du ^ g.env_raw * 0x27D4EB2Fu ^
                  g.prim_lod_raw ^ g.cc.two_cycle;
-    CCProgEntry* e = &cc_progs[(h ^ (h >> 15)) % CC_PROGS];
+    CCProgEntry* e = &cc_progs[(h ^ (h >> 15)) & (GFX_OPT_ON(OPT_PROGS) ? CC_PROGS - 1 : 31)];
     if (!e->valid || e->w0 != g.cc.w0 || e->w1 != g.cc.w1 || e->two_cycle != g.cc.two_cycle || e->prim != g.prim_raw ||
         e->env != g.env_raw || e->lod != g.prim_lod_raw) {
         e->w0 = g.cc.w0;
@@ -1134,6 +1575,7 @@ static const GfxCCProg* GFX_OUTLINE find_cc_prog(void) {
         e->lod = g.prim_lod_raw;
         e->two_cycle = g.cc.two_cycle;
         e->valid = true;
+        GCOUNT(cc_prep, 1);
         cc_prepare(&g.cc, &g.k, &e->prog);
     }
     return &e->prog;
@@ -1141,6 +1583,7 @@ static const GfxCCProg* GFX_OUTLINE find_cc_prog(void) {
 
 static void ensure_combined(Vertex* v) {
     if (v->cc_epoch != g.cc_epoch) {
+        GCOUNT(comb, 1);
         if (g.cc_prog_epoch != g.cc_epoch) {
             g.cc_prog = find_cc_prog();
             g.cc_prog_epoch = g.cc_epoch;
@@ -1148,6 +1591,7 @@ static void ensure_combined(Vertex* v) {
         if (g.cc_prog->ok) {
             cc_run(g.cc_prog, v->shade, v->mul, v->add);
         } else {
+            GCOUNT(cc_slow, 1);
             cc_eval(&g.cc, &g.k, v->shade, v->mul, v->add);
         }
         v->cc_epoch = g.cc_epoch;
@@ -1254,7 +1698,6 @@ static void light_vertex(Vertex* v) {
     }
 }
 
-#ifdef GFX_OPT
 // light_vertex for a triangle's three corners in one small function, statement for statement.
 static void __attribute__((noinline)) light3_fast(Vertex* v0, Vertex* v1, Vertex* v2) {
     Vertex* const corners[3] = { v0, v1, v2 };
@@ -1264,6 +1707,7 @@ static void __attribute__((noinline)) light3_fast(Vertex* v0, Vertex* v1, Vertex
         if (!v->unlit) {
             continue;
         }
+        GCOUNT(lit, 1);
 #ifdef GFX_XCHECK
         Vertex ref = *v;
         light_vertex(&ref);
@@ -1308,6 +1752,7 @@ static void __attribute__((noinline)) light3_fast(Vertex* v0, Vertex* v1, Vertex
 // finish_colors' mapping and pack_color, statement for statement.
 static void __attribute__((noinline)) output3_fast(Vertex* v0, Vertex* v1, Vertex* v2) {
     const Material* m = &g.mat;
+    const bool pack_int = GFX_OPT_ON(OPT_PACK);
     Vertex* const corners[3] = { v0, v1, v2 };
 #pragma GCC unroll 1
     for (int k = 0; k < 3; k++) {
@@ -1315,6 +1760,7 @@ static void __attribute__((noinline)) output3_fast(Vertex* v0, Vertex* v1, Verte
         if (v->out_gen == g.out_gen) {
             continue;
         }
+        GCOUNT(out, 1);
 #ifdef GFX_XCHECK
         Vertex ref = *v;
         ensure_output(&ref);
@@ -1361,8 +1807,13 @@ static void __attribute__((noinline)) output3_fast(Vertex* v0, Vertex* v1, Verte
                 }
             }
         }
-        v->argb = pack_color(col);
-        v->oargb = pack_color(ofs);
+        if (pack_int) {
+            v->argb = pack_color_int(col);
+            v->oargb = pack_color_int(ofs);
+        } else {
+            v->argb = pack_color(col);
+            v->oargb = pack_color(ofs);
+        }
         v->has_ofs = m->textured && (ofs[0] > 0.004f || ofs[1] > 0.004f || ofs[2] > 0.004f);
         if (m->textured) {
             v->u = (v->s * m->shift_s - m->uls) * m->inv_pw;
@@ -1378,93 +1829,10 @@ static void __attribute__((noinline)) output3_fast(Vertex* v0, Vertex* v1, Verte
 #endif
     }
 }
-#endif
 
-static void draw_triangle(int i0, int i1, int i2) {
-    Vertex* v[3] = { &g.vtx[i0], &g.vtx[i1], &g.vtx[i2] };
-    if (g.cimg == g.zimg) {
-        return;
-    }
-    if (v[0]->clip & v[1]->clip & v[2]->clip) {
-        return;
-    }
-
-    // Back/front face culling, with the winding on screen (y down). A triangle that crosses the
-    // near plane has no screen winding yet, so it is culled on the sign of det(x, y, w).
-    uint32_t cull = g.geom & (G_CULL_FRONT | G_CULL_BACK);
-    bool near = (v[0]->clip | v[1]->clip | v[2]->clip) & CLIP_NEAR;
-    if (cull) {
-        float cross;
-        if (!near) {
-            cross = (v[1]->sx - v[0]->sx) * (v[2]->sy - v[0]->sy) - (v[1]->sy - v[0]->sy) * (v[2]->sx - v[0]->sx);
-        } else {
-            float det = v[0]->x * (v[1]->y * v[2]->w - v[2]->y * v[1]->w) -
-                        v[0]->y * (v[1]->x * v[2]->w - v[2]->x * v[1]->w) +
-                        v[0]->w * (v[1]->x * v[2]->y - v[2]->x * v[1]->y);
-            cross = -det * g.vp_sx * g.vp_sy;
-        }
-        if ((cull & G_CULL_BACK) && cross >= 0.0f) {
-            return;
-        }
-        if ((cull & G_CULL_FRONT) && cross <= 0.0f) {
-            return;
-        }
-    }
-
-#ifdef GFX_OPT
-    bool fast_colors = GFX_OPT_ON(OPT_COLOR) && !DIAG_IS(DIAG_NO_LIGHT);
-    if (fast_colors) {
-        light3_fast(v[0], v[1], v[2]);
-    } else
-#endif
-    {
-        light_vertex(v[0]);
-        light_vertex(v[1]);
-        light_vertex(v[2]);
-    }
-    if (g.mat_dirty || g.mat_for_rect || g.mat_phase != g.phase) {
-        ensure_material(false, 0);
-    }
-
-    bool flat = !(g.geom & G_SHADING_SMOOTH);
-    stat_frame_tris++;
-    stat_list_tris[g.mat.list]++;
-    if (!near) {
-        if (!list_room(g.mat.list, 3)) {
-            return;
-        }
-#ifdef GFX_OPT
-        if (fast_colors) {
-            output3_fast(v[0], v[1], v[2]);
-        } else
-#endif
-        {
-            ensure_output(v[0]);
-            ensure_output(v[1]);
-            ensure_output(v[2]);
-        }
-        bool offset = flat ? v[0]->has_ofs : (v[0]->has_ofs || v[1]->has_ofs || v[2]->has_ofs);
-        submit_material_header(offset);
-        float zbias = 0.0f;
-        if (g.mat.decal) {
-            const float xs[3] = { v[0]->sx, v[1]->sx, v[2]->sx };
-            const float ys[3] = { v[0]->sy, v[1]->sy, v[2]->sy };
-            const float zs[3] = { v[0]->sz, v[1]->sz, v[2]->sz };
-            zbias = decal_bias(xs, ys, zs);
-        }
-        if (flat) {
-            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
-            emit_cached(v[1], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[1]->oargb & 0xFF000000), false, zbias);
-            emit_cached(v[2], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[2]->oargb & 0xFF000000), true, zbias);
-        } else {
-            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
-            emit_cached(v[1], v[1]->argb, v[1]->oargb, false, zbias);
-            emit_cached(v[2], v[2]->argb, v[2]->oargb, true, zbias);
-        }
-        vbuf_used += 3 * 32;
-        return;
-    }
-
+// A triangle across the near plane, once its material is current: its corners' colors, then the
+// part in front of the plane to the PowerVR.
+static void __attribute__((noinline)) tri_emit_near(Vertex* const v[3], bool flat) {
     ClipVert cv[3];
     for (int i = 0; i < 3; i++) {
         Vertex* src = flat ? v[0] : v[i];
@@ -1498,36 +1866,32 @@ static void draw_triangle(int i0, int i1, int i2) {
     }
 }
 
-#ifdef GFX_OPT
-// The corners of a triangle to the PowerVR, in one copy of emit_cached for flat and smooth shading.
-static void __attribute__((noinline)) emit3(const Vertex* v0, const Vertex* v1, const Vertex* v2,
-                                            const uint32_t argb[3], const uint32_t oargb[3], float zbias) {
-    emit_cached(v0, argb[0], oargb[0], false, zbias);
-    emit_cached(v1, argb[1], oargb[1], false, zbias);
-    emit_cached(v2, argb[2], oargb[2], true, zbias);
-}
-
-// draw_triangle for a triangle in front of the near plane, its usual case, with the lighting,
-// colors, material and header work behind calls; triangles that cross the near plane go to
-// draw_triangle. Same results, in the same order.
-static void tri_fast(int i0, int i1, int i2) {
-    Vertex* v0 = &g.vtx[i0];
-    Vertex* v1 = &g.vtx[i1];
-    Vertex* v2 = &g.vtx[i2];
+static void draw_triangle(int i0, int i1, int i2) {
+    Vertex* v[3] = { &g.vtx[i0], &g.vtx[i1], &g.vtx[i2] };
     if (g.cimg == g.zimg) {
         return;
     }
-    uint8_t c0 = v0->clip, c1 = v1->clip, c2 = v2->clip;
-    if (c0 & c1 & c2) {
+    if (v[0]->clip & v[1]->clip & v[2]->clip) {
         return;
     }
-    if ((c0 | c1 | c2) & CLIP_NEAR) {
-        draw_triangle(i0, i1, i2);
-        return;
+    if (BATCH_POSSIBLE && (vtx_pending & ((1u << i0) | (1u << i1) | (1u << i2)))) {
+        vtx_complete((1u << i0) | (1u << i1) | (1u << i2));
     }
+
+    // Back/front face culling, with the winding on screen (y down). A triangle that crosses the
+    // near plane has no screen winding yet, so it is culled on the sign of det(x, y, w).
     uint32_t cull = g.geom & (G_CULL_FRONT | G_CULL_BACK);
+    bool near = (v[0]->clip | v[1]->clip | v[2]->clip) & CLIP_NEAR;
     if (cull) {
-        float cross = (v1->sx - v0->sx) * (v2->sy - v0->sy) - (v1->sy - v0->sy) * (v2->sx - v0->sx);
+        float cross;
+        if (!near) {
+            cross = (v[1]->sx - v[0]->sx) * (v[2]->sy - v[0]->sy) - (v[1]->sy - v[0]->sy) * (v[2]->sx - v[0]->sx);
+        } else {
+            float det = v[0]->x * (v[1]->y * v[2]->w - v[2]->y * v[1]->w) -
+                        v[0]->y * (v[1]->x * v[2]->w - v[2]->x * v[1]->w) +
+                        v[0]->w * (v[1]->x * v[2]->y - v[2]->x * v[1]->y);
+            cross = -det * g.vp_sx * g.vp_sy;
+        }
         if ((cull & G_CULL_BACK) && cross >= 0.0f) {
             return;
         }
@@ -1538,18 +1902,69 @@ static void tri_fast(int i0, int i1, int i2) {
 
     bool fast_colors = GFX_OPT_ON(OPT_COLOR) && !DIAG_IS(DIAG_NO_LIGHT);
     if (fast_colors) {
-        light3_fast(v0, v1, v2);
+        light3_fast(v[0], v[1], v[2]);
     } else {
-        light_vertex(v0);
-        light_vertex(v1);
-        light_vertex(v2);
+        light_vertex(v[0]);
+        light_vertex(v[1]);
+        light_vertex(v[2]);
     }
     if (g.mat_dirty || g.mat_for_rect || g.mat_phase != g.phase) {
         ensure_material(false, 0);
     }
+
     bool flat = !(g.geom & G_SHADING_SMOOTH);
     stat_frame_tris++;
     stat_list_tris[g.mat.list]++;
+    if (DEFER_POSSIBLE && q_on) {
+        defer_draw(near ? QD_NEAR : QD_TRI, i0, i1, i2, flat, NULL);
+        return;
+    }
+    if (!near) {
+        if (!list_room(g.mat.list, 3)) {
+            return;
+        }
+        if (fast_colors) {
+            output3_fast(v[0], v[1], v[2]);
+        } else {
+            ensure_output(v[0]);
+            ensure_output(v[1]);
+            ensure_output(v[2]);
+        }
+        bool offset = flat ? v[0]->has_ofs : (v[0]->has_ofs || v[1]->has_ofs || v[2]->has_ofs);
+        submit_material_header(offset);
+        float zbias = 0.0f;
+        if (g.mat.decal) {
+            const float xs[3] = { v[0]->sx, v[1]->sx, v[2]->sx };
+            const float ys[3] = { v[0]->sy, v[1]->sy, v[2]->sy };
+            const float zs[3] = { v[0]->sz, v[1]->sz, v[2]->sz };
+            zbias = decal_bias(xs, ys, zs);
+        }
+        if (flat) {
+            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
+            emit_cached(v[1], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[1]->oargb & 0xFF000000), false, zbias);
+            emit_cached(v[2], v[0]->argb, (v[0]->oargb & 0x00FFFFFF) | (v[2]->oargb & 0xFF000000), true, zbias);
+        } else {
+            emit_cached(v[0], v[0]->argb, v[0]->oargb, false, zbias);
+            emit_cached(v[1], v[1]->argb, v[1]->oargb, false, zbias);
+            emit_cached(v[2], v[2]->argb, v[2]->oargb, true, zbias);
+        }
+        vbuf_used += 3 * 32;
+        return;
+    }
+    tri_emit_near(v, flat);
+}
+
+// The corners of a triangle to the PowerVR, in one copy of emit_cached for flat and smooth shading.
+static void __attribute__((noinline)) emit3(const Vertex* v0, const Vertex* v1, const Vertex* v2,
+                                            const uint32_t argb[3], const uint32_t oargb[3], float zbias) {
+    emit_cached(v0, argb[0], oargb[0], false, zbias);
+    emit_cached(v1, argb[1], oargb[1], false, zbias);
+    emit_cached(v2, argb[2], oargb[2], true, zbias);
+}
+
+// What tri_fast does for a triangle once its material is current: its corners' colors, the header
+// and the corners to the PowerVR.
+static void __attribute__((noinline)) tri_emit(Vertex* v0, Vertex* v1, Vertex* v2, bool flat, bool fast_colors) {
     if (!list_room(g.mat.list, 3)) {
         return;
     }
@@ -1588,6 +2003,271 @@ static void tri_fast(int i0, int i1, int i2) {
     vbuf_used += 3 * 32;
 }
 
+// --- Deferred output (OPT_DEFER) ---
+//
+// The display list walk keeps everything that depends on where in the list it happens: rejecting
+// triangles, lighting a vertex at its first drawn triangle, materials with their texture lookups,
+// combiner changes. Each triangle, near-plane triangle and rectangle that gets that far is
+// recorded with its vertices (copied once until their slot changes), its material and its
+// combiner (copied when they change). defer_flush then gives them their colors, headers and
+// PowerVR vertices in one loop whose code fits the instruction cache: the same functions on the
+// same values in the same order.
+
+static void __attribute__((noinline)) defer_flush(void) {
+    if (q.ndraw == 0) {
+        defer_reset();
+        return;
+    }
+#ifdef GFX_DIAG
+    int region = dr_time.cur;
+    dr_enter(DR_DEFER);
+#endif
+    // The walk's own state, which the draws' copies stand in for until the end.
+    Material mat = g.mat;
+    HeaderKey key = g.mat_key;
+    bool key_changed = g.mat_key_changed;
+    uint32_t out_gen = g.out_gen;
+    GfxCombiner cc = g.cc;
+    GfxCCConst k = g.k;
+    uint32_t prim_raw = g.prim_raw, env_raw = g.env_raw, prim_lod_raw = g.prim_lod_raw;
+    uint32_t cc_epoch = g.cc_epoch, cc_prog_epoch = g.cc_prog_epoch;
+    const GfxCCProg* cc_prog = g.cc_prog;
+    float vp_sx = g.vp_sx, vp_sy = g.vp_sy, vp_tx = g.vp_tx, vp_ty = g.vp_ty;
+    bool ortho = g.ortho;
+
+    bool fast_colors = GFX_OPT_ON(OPT_COLOR);
+    uint32_t cur_mat = 0xFFFF, cur_cc = 0xFFFF;
+    g.cc_prog_epoch = 0;
+    for (uint32_t n = 0; n < q.ndraw; n++) {
+        const QDraw* d = &q.draw[n];
+        __builtin_prefetch(d + 4);
+        if (n + 1 < q.ndraw && d[1].kind != QD_RECT) {
+            __builtin_prefetch(&q.vtx[d[1].v[0]]);
+            __builtin_prefetch(&q.vtx[d[1].v[1]]);
+            __builtin_prefetch(&q.vtx[d[1].v[2]]);
+        }
+        if (d->mat != cur_mat || d->cc != cur_cc) {
+            if (d->mat != cur_mat) {
+                cur_mat = d->mat;
+                const QMat* m = &q.mat[cur_mat];
+                g.mat = m->mat;
+                g.mat_key = m->key;
+                g.mat_key_changed = true;
+            }
+            if (d->cc != cur_cc) {
+                cur_cc = d->cc;
+                const QCC* c = &q.cc[cur_cc];
+                g.cc = c->cc;
+                g.k = c->k;
+                g.prim_raw = c->prim_raw;
+                g.env_raw = c->env_raw;
+                g.prim_lod_raw = c->prim_lod_raw;
+                g.cc_epoch = c->epoch;
+            }
+            uint32_t mg = q.mat[cur_mat].out_gen, cg = q.cc[cur_cc].out_gen;
+            g.out_gen = mg > cg ? mg : cg;
+        }
+        if (d->kind == QD_TRI) {
+            tri_emit(&q.vtx[d->v[0]], &q.vtx[d->v[1]], &q.vtx[d->v[2]], d->flat, fast_colors);
+        } else if (d->kind == QD_NEAR) {
+            const QView* w = &q.view[d->view];
+            g.vp_sx = w->vp_sx;
+            g.vp_sy = w->vp_sy;
+            g.vp_tx = w->vp_tx;
+            g.vp_ty = w->vp_ty;
+            g.ortho = w->ortho;
+            Vertex* v[3] = { &q.vtx[d->v[0]], &q.vtx[d->v[1]], &q.vtx[d->v[2]] };
+            tri_emit_near(v, d->flat);
+        } else {
+            submit_polygon(q.rect[d->v[0]], 4, true, 0.0f);
+        }
+    }
+    g.mat = mat;
+    g.mat_key = key;
+    g.mat_key_changed = key_changed;
+    g.out_gen = out_gen;
+    g.cc = cc;
+    g.k = k;
+    g.prim_raw = prim_raw;
+    g.env_raw = env_raw;
+    g.prim_lod_raw = prim_lod_raw;
+    g.cc_epoch = cc_epoch;
+    g.cc_prog_epoch = cc_prog_epoch;
+    g.cc_prog = cc_prog;
+    g.vp_sx = vp_sx;
+    g.vp_sy = vp_sy;
+    g.vp_tx = vp_tx;
+    g.vp_ty = vp_ty;
+    g.ortho = ortho;
+    defer_reset();
+#ifdef GFX_DIAG
+    dr_enter(region);
+#endif
+}
+
+// The vertex in a slot as recorded draws see it: copied the first time one needs it after the
+// slot was loaded or modified. Only what the second pass reads is copied (x, y, z and w only for
+// near-plane triangles, by defer_draw); with cc_epoch and out_gen at 0, no combiner or material
+// has, so it works the colors out before reading them.
+static inline uint16_t defer_vtx(int slot) {
+    int16_t i = q.slot[slot];
+    if (i < 0) {
+        i = (int16_t)q.nvtx++;
+        Vertex* d = &q.vtx[i];
+        const Vertex* s = &g.vtx[slot];
+        if (GFX_OPT_ON(OPT_ALLOC)) {
+            uint8_t* p = (uint8_t*)d;
+            dcache_alloc_block(p, 0);
+            dcache_alloc_block(p + 32, 0);
+            dcache_alloc_block(p + 64, 0);
+            dcache_alloc_block(p + 96, 0);
+        }
+        d->s = s->s;
+        d->t = s->t;
+        d->shade[0] = s->shade[0];
+        d->shade[1] = s->shade[1];
+        d->shade[2] = s->shade[2];
+        d->shade[3] = s->shade[3];
+        d->sx = s->sx;
+        d->sy = s->sy;
+        d->sz = s->sz;
+        d->cc_epoch = 0;
+        d->out_gen = 0;
+        q.slot[slot] = i;
+    }
+    return (uint16_t)i;
+}
+
+static void __attribute__((noinline)) defer_draw(int kind, int i0, int i1, int i2, bool flat, const ClipVert* rect) {
+    if (q.ndraw >= Q_DRAWS || q.nvtx + 3 > Q_VTX || q.nmat >= Q_MATS || q.ncc >= Q_CCS || q.nrect >= Q_RECTS ||
+        q.nview >= Q_VIEWS) {
+        defer_flush();
+    }
+    QDraw* d = &q.draw[q.ndraw];
+    if (GFX_OPT_ON(OPT_ALLOC) && (q.ndraw & 1) == 0) {
+        dcache_alloc_block(d, 0);
+    }
+    q.ndraw++;
+    if (q.mat_new) {
+        QMat* m = &q.mat[q.nmat++];
+        m->mat = g.mat;
+        m->key = g.mat_key;
+        m->out_gen = g.out_gen;
+        q.mat_new = false;
+    }
+    if (q.ncc == 0 || q.cc_epoch != g.cc_epoch) {
+        QCC* c = &q.cc[q.ncc++];
+        c->cc = g.cc;
+        c->k = g.k;
+        c->prim_raw = g.prim_raw;
+        c->env_raw = g.env_raw;
+        c->prim_lod_raw = g.prim_lod_raw;
+        c->epoch = g.cc_epoch;
+        c->out_gen = g.out_gen;
+        q.cc_epoch = g.cc_epoch;
+    }
+    d->kind = (uint8_t)kind;
+    d->flat = flat;
+    d->mat = (uint16_t)(q.nmat - 1);
+    d->cc = (uint16_t)(q.ncc - 1);
+    d->view = 0;
+    if (kind == QD_RECT) {
+        memcpy(q.rect[q.nrect], rect, sizeof(q.rect[0]));
+        d->v[0] = (uint16_t)q.nrect++;
+        d->v[1] = d->v[2] = 0;
+        return;
+    }
+    d->v[0] = defer_vtx(i0);
+    d->v[1] = defer_vtx(i1);
+    d->v[2] = defer_vtx(i2);
+    if (kind == QD_NEAR) {
+        // Clipping reads the corners' clip-space positions.
+        const int slots[3] = { i0, i1, i2 };
+        for (int k = 0; k < 3; k++) {
+            Vertex* c = &q.vtx[d->v[k]];
+            const Vertex* s = &g.vtx[slots[k]];
+            c->x = s->x;
+            c->y = s->y;
+            c->z = s->z;
+            c->w = s->w;
+        }
+        QView* w = &q.view[q.nview];
+        w->vp_sx = g.vp_sx;
+        w->vp_sy = g.vp_sy;
+        w->vp_tx = g.vp_tx;
+        w->vp_ty = g.vp_ty;
+        w->ortho = g.ortho;
+        d->view = (uint16_t)q.nview++;
+    }
+}
+
+// draw_triangle for a triangle in front of the near plane, its usual case, with the lighting,
+// colors, material and header work behind calls; triangles that cross the near plane go to
+// draw_triangle. Same results, in the same order.
+static void tri_fast(int i0, int i1, int i2) {
+    Vertex* v0 = &g.vtx[i0];
+    Vertex* v1 = &g.vtx[i1];
+    Vertex* v2 = &g.vtx[i2];
+    if (g.cimg == g.zimg) {
+        return;
+    }
+    GCOUNT(tris, 1);
+    uint8_t c0 = v0->clip, c1 = v1->clip, c2 = v2->clip;
+    if (c0 & c1 & c2) {
+#ifdef GFX_COUNT
+        GCOUNT(tri_offscreen, 1);
+        count_tri(i0, i1, i2, 2);
+#endif
+        return;
+    }
+    if (BATCH_POSSIBLE && (vtx_pending & ((1u << i0) | (1u << i1) | (1u << i2)))) {
+        vtx_complete((1u << i0) | (1u << i1) | (1u << i2));
+    }
+    if ((c0 | c1 | c2) & CLIP_NEAR) {
+#ifdef GFX_COUNT
+        GCOUNT(tri_near, 1);
+        count_tri(i0, i1, i2, 3);
+#endif
+        draw_triangle(i0, i1, i2);
+        return;
+    }
+    uint32_t cull = g.geom & (G_CULL_FRONT | G_CULL_BACK);
+    if (cull) {
+        float cross = (v1->sx - v0->sx) * (v2->sy - v0->sy) - (v1->sy - v0->sy) * (v2->sx - v0->sx);
+        if (((cull & G_CULL_BACK) && cross >= 0.0f) || ((cull & G_CULL_FRONT) && cross <= 0.0f)) {
+#ifdef GFX_COUNT
+            GCOUNT(tri_backface, 1);
+            count_tri(i0, i1, i2, 2);
+#endif
+            return;
+        }
+    }
+#ifdef GFX_COUNT
+    GCOUNT(tri_drawn, 1);
+    count_tri(i0, i1, i2, 3);
+#endif
+
+    bool fast_colors = GFX_OPT_ON(OPT_COLOR) && !DIAG_IS(DIAG_NO_LIGHT);
+    if (fast_colors) {
+        light3_fast(v0, v1, v2);
+    } else {
+        light_vertex(v0);
+        light_vertex(v1);
+        light_vertex(v2);
+    }
+    if (g.mat_dirty || g.mat_for_rect || g.mat_phase != g.phase) {
+        ensure_material(false, 0);
+    }
+    bool flat = !(g.geom & G_SHADING_SMOOTH);
+    stat_frame_tris++;
+    stat_list_tris[g.mat.list]++;
+    if (DEFER_POSSIBLE && q_on) {
+        defer_draw(QD_TRI, i0, i1, i2, flat, NULL);
+        return;
+    }
+    tri_emit(v0, v1, v2, flat, fast_colors);
+}
+
 #ifdef GFX_XCHECK
 // The renderer state a triangle can change, besides g and the once-a-second statistics the
 // log thread resets.
@@ -1595,7 +2275,7 @@ typedef struct {
     HeaderKey cur_key[LIST_COUNT];
     bool have_key[LIST_COUNT];
     int out_list;
-    uint32_t vbuf_used, frame_tris, list_tris[LIST_COUNT];
+    uint32_t vbuf_used, frame_tris, list_tris[LIST_COUNT], pending;
 } TriState;
 
 static void tri_state_save(TriState* s) {
@@ -1606,6 +2286,7 @@ static void tri_state_save(TriState* s) {
     s->vbuf_used = vbuf_used;
     s->frame_tris = stat_frame_tris;
     memcpy(s->list_tris, stat_list_tris, sizeof(stat_list_tris));
+    s->pending = vtx_pending;
 }
 
 static void tri_state_load(const TriState* s) {
@@ -1615,6 +2296,7 @@ static void tri_state_load(const TriState* s) {
     vbuf_used = s->vbuf_used;
     stat_frame_tris = s->frame_tris;
     memcpy(stat_list_tris, s->list_tris, sizeof(stat_list_tris));
+    vtx_pending = s->pending;
 }
 
 // draw_triangle and tri_fast from the same state, compared on what they send to the PowerVR and
@@ -1624,6 +2306,11 @@ static void tri_checked(int i0, int i1, int i2) {
     static TriState s_before, s_after;
     static uint32_t data[16][8];
     static uint8_t list[16];
+    // Deferred triangles send nothing here; GFX_HASH runs compare what their frames send.
+    if (DEFER_POSSIBLE && q_on) {
+        tri_fast(i0, i1, i2);
+        return;
+    }
     g_before = g;
     tri_state_save(&s_before);
     cap.on = true;
@@ -1682,16 +2369,39 @@ static void tri_checked(int i0, int i1, int i2) {
 #define tri_fast tri_checked
 #endif
 
+// A triangle of a run. With OPT_REJECT one whose corners share an outside plane stops here, on
+// the packed clip codes, where tri_fast would have returned on its vertices' own.
+static inline void tri_one(int i0, int i1, int i2) {
+    if (GFX_OPT_ON(OPT_REJECT) && (vclip[i0] & vclip[i1] & vclip[i2]) != 0) {
+#ifdef GFX_XCHECK
+        gfx_xcheck_runs[XC_REJECT]++;
+        if ((g.vtx[i0].clip & g.vtx[i1].clip & g.vtx[i2].clip) == 0 && gfx_xcheck_fails[XC_REJECT]++ < 8) {
+            printf("[q64dc] xcheck reject: %d %d %d packed %X %X %X, vertices %X %X %X\n", i0, i1, i2, vclip[i0],
+                   vclip[i1], vclip[i2], g.vtx[i0].clip, g.vtx[i1].clip, g.vtx[i2].clip);
+        }
+#endif
+#ifdef GFX_COUNT
+        if (g.cimg != g.zimg) {
+            GCOUNT(tris, 1);
+            GCOUNT(tri_offscreen, 1);
+            count_tri(i0, i1, i2, 2);
+        }
+#endif
+        return;
+    }
+    tri_fast(i0, i1, i2);
+}
+
 // A triangle command (w0, w1) and the triangle commands after it at pc, in one loop that keeps
 // the triangle path in the instruction cache. Returns the address of the next other command.
 static uint32_t __attribute__((noinline)) tri_run(uint32_t w0, uint32_t w1, uint32_t pc) {
     for (;;) {
         if (!DIAG_IS(DIAG_NO_TRI)) {
             if ((w0 >> 24) == 0xB1) {  // G_TRI2
-                tri_fast(((w0 >> 16) & 0xFF) / 2, ((w0 >> 8) & 0xFF) / 2, (w0 & 0xFF) / 2);
-                tri_fast(((w1 >> 16) & 0xFF) / 2, ((w1 >> 8) & 0xFF) / 2, (w1 & 0xFF) / 2);
+                tri_one(((w0 >> 16) & 0xFF) / 2, ((w0 >> 8) & 0xFF) / 2, (w0 & 0xFF) / 2);
+                tri_one(((w1 >> 16) & 0xFF) / 2, ((w1 >> 8) & 0xFF) / 2, (w1 & 0xFF) / 2);
             } else {  // G_TRI1
-                tri_fast(((w1 >> 16) & 0xFF) / 2, ((w1 >> 8) & 0xFF) / 2, (w1 & 0xFF) / 2);
+                tri_one(((w1 >> 16) & 0xFF) / 2, ((w1 >> 8) & 0xFF) / 2, (w1 & 0xFF) / 2);
             }
         }
         if (!addr_ok(pc, 8)) {
@@ -1709,11 +2419,12 @@ static uint32_t __attribute__((noinline)) tri_run(uint32_t w0, uint32_t w1, uint
         dg.cmds++;
         dg.tri_cmds += op == 0xB1 ? 2 : 1;
 #endif
+        GCOUNT(cmds, 1);
+        GCOUNT(op[op], 1);
     }
 }
 #ifdef GFX_XCHECK
 #undef tri_fast
-#endif
 #endif
 
 // Fill and texture rectangles, in N64 pixels.
@@ -1769,7 +2480,30 @@ static void __attribute__((noinline)) draw_rect(float x0, float y0, float x1, fl
         add[0] = add[1] = add[2] = add[3] = 0.0f;
     } else {
         static const float no_shade[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        cc_eval(&g.cc, &g.k, no_shade, mul, add);
+        // cc_eval only reads the combiner and its colors, which bump cc_epoch when they change.
+        static uint32_t rect_epoch;
+        static float rect_mul[4], rect_add[4];
+        if (GFX_OPT_ON(OPT_RECT)) {
+            if (rect_epoch != g.cc_epoch) {
+                cc_eval(&g.cc, &g.k, no_shade, rect_mul, rect_add);
+                rect_epoch = g.cc_epoch;
+            }
+            memcpy(mul, rect_mul, sizeof(rect_mul));
+            memcpy(add, rect_add, sizeof(rect_add));
+#ifdef GFX_XCHECK
+            float rm[4], ra[4];
+            cc_eval(&g.cc, &g.k, no_shade, rm, ra);
+            gfx_xcheck_runs[XC_RECT]++;
+            if ((memcmp(rm, mul, sizeof(rm)) != 0 || memcmp(ra, add, sizeof(ra)) != 0) &&
+                gfx_xcheck_fails[XC_RECT]++ < 8) {
+                printf("[q64dc] xcheck rect: kept %f %f, cc_eval %f %f\n", (double)mul[0], (double)add[0],
+                       (double)rm[0], (double)ra[0]);
+            }
+#endif
+        } else {
+            rect_epoch = 0;
+            cc_eval(&g.cc, &g.k, no_shade, mul, add);
+        }
     }
 
     float w = cx1 - cx0, h = cy1 - cy0;
@@ -1788,6 +2522,10 @@ static void __attribute__((noinline)) draw_rect(float x0, float y0, float x1, fl
     }
     (void)w;
     (void)h;
+    if (DEFER_POSSIBLE && q_on) {
+        defer_draw(QD_RECT, 0, 0, 0, false, v);
+        return;
+    }
     submit_polygon(v, 4, true, 0.0f);
 }
 
@@ -1798,6 +2536,18 @@ static void cc_changed(void) {
     g.mat_dirty = true;
 }
 
+// Prim and env colors. The material doesn't depend on them (update_material reads only which
+// inputs the combiner uses), so with OPT_COLORS they only make the vertices' colors stale, which a
+// new material would otherwise do.
+static void cc_colors_changed(void) {
+    if (GFX_OPT_ON(OPT_COLORS)) {
+        g.cc_epoch++;
+        g.out_gen++;
+    } else {
+        cc_changed();
+    }
+}
+
 static void set_combine(uint32_t w0, uint32_t w1) {
     bool two_cycle = ((g.oh >> 20) & 3) == CYCLE_2;
     static bool compiled;
@@ -1805,7 +2555,34 @@ static void set_combine(uint32_t w0, uint32_t w1) {
         return;
     }
     compiled = true;
-    cc_compile(&g.cc, w0, w1, two_cycle);
+    if (GFX_OPT_ON(OPT_RECT)) {
+        // cc_compile depends on nothing else, and the game goes back and forth between a few.
+        static GfxCombiner seen[8];
+        static bool seen_ok[8];
+        uint32_t h = ((w0 * 0x9E3779B1u) ^ (w1 * 0x85EBCA77u) ^ (uint32_t)two_cycle) >> 29;
+        GfxCombiner* e = &seen[h];
+        if (seen_ok[h] && e->w0 == w0 && e->w1 == w1 && e->two_cycle == two_cycle) {
+            g.cc = *e;
+        } else {
+            cc_compile(&g.cc, w0, w1, two_cycle);
+            *e = g.cc;
+            seen_ok[h] = true;
+        }
+#ifdef GFX_XCHECK
+        GfxCombiner ref;
+        memset(&ref, 0, sizeof(ref));
+        cc_compile(&ref, w0, w1, two_cycle);
+        gfx_xcheck_runs[XC_COMBINE]++;
+        if ((ref.w0 != g.cc.w0 || ref.w1 != g.cc.w1 || ref.two_cycle != g.cc.two_cycle ||
+             memcmp(ref.in, g.cc.in, sizeof(ref.in)) != 0 || ref.tex_rgb != g.cc.tex_rgb ||
+             ref.tex_alpha != g.cc.tex_alpha) &&
+            gfx_xcheck_fails[XC_COMBINE]++ < 8) {
+            printf("[q64dc] xcheck combine: %08X %08X\n", (unsigned)w0, (unsigned)w1);
+        }
+#endif
+    } else {
+        cc_compile(&g.cc, w0, w1, two_cycle);
+    }
     cc_changed();
 }
 
@@ -1845,7 +2622,8 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
         dg.loads += dl_region[op] == DR_TEX;
         dr_enter(dl_region[op]);
 #endif
-#ifdef GFX_OPT
+        GCOUNT(cmds, 1);
+        GCOUNT(op[op], 1);
         if (GFX_OPT_ON(OPT_TRI)) {
             __builtin_prefetch(RDRAM_PTR(pc + 64));
             if (op == 0xB1 || op == 0xBF) {
@@ -1853,7 +2631,6 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 continue;
             }
         }
-#endif
         switch (op) {
             case 0x00:  // G_SPNOOP
                 break;
@@ -1865,6 +2642,7 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                     break;
                 }
                 matrix_t m;
+                GCOUNT(mtx, 1);
                 read_matrix(a, m);
                 if (p & 0x01) {
                     if (p & 0x02) {
@@ -1908,6 +2686,7 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                         g.lookat_dir[i][j] = (float)(int8_t)rd8(a + 8 + j) * (1.0f / 127.0f);
                     }
                     g.lights_dirty = true;
+                    g.light_seq++;
                 } else if (idx >= 0x86 && idx <= 0x94) {  // lights
                     int i = (idx - 0x86) / 2;
                     for (int j = 0; j < 3; j++) {
@@ -1915,6 +2694,7 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                         g.light_dir[i][j] = (float)(int8_t)rd8(a + 8 + j) * (1.0f / 127.0f);
                     }
                     g.lights_dirty = true;
+                    g.light_seq++;
                 }
                 break;
             }
@@ -1922,13 +2702,16 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
             case 0x04: {  // G_VTX
                 uint32_t n = (w0 >> 10) & 0x3F;
                 uint32_t v0 = ((w0 >> 16) & 0xFF) / 2;
-#ifdef GFX_OPT
-                if (GFX_OPT_ON(OPT_VTX)) {
+                if (GFX_OPT_ON(OPT_VTX) && GFX_OPT_ON(OPT_BATCH)) {
+                    load_vertices_batch(seg_addr(w1), v0, n);
+                } else if (GFX_OPT_ON(OPT_VTX)) {
                     load_vertices_fast(seg_addr(w1), v0, n);
-                    break;
+                } else {
+                    load_vertices(seg_addr(w1), v0, n);
                 }
+#ifdef GFX_COUNT
+                count_batch(g.vtx, v0, n);
 #endif
-                load_vertices(seg_addr(w1), v0, n);
                 break;
             }
 
@@ -1938,6 +2721,12 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                         printf("[q64dc] gfx: display list stack overflow\n");
                         return;
                     }
+#ifdef GFX_COUNT
+                    GCOUNT(dl_calls, 1);
+                    dl_mark[sp].verts = gfx_count.vtx_verts;
+                    dl_mark[sp].tris = gfx_count.tris;
+                    dl_mark[sp].drawn = gfx_count.tri_drawn + gfx_count.tri_near;
+#endif
                     stack[sp++] = pc;
                 }
                 pc = seg_addr(w1);
@@ -1967,6 +2756,10 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 if (i >= 32) {
                     break;
                 }
+                if (BATCH_POSSIBLE) {
+                    vtx_complete(1u << i);
+                }
+                defer_forget(i, 1);
                 Vertex* v = &g.vtx[i];
                 if (where == 0x10) {
                     unpack_rgba(w1, v->shade);
@@ -1999,13 +2792,17 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 break;
 
             case 0xB6:  // G_CLEARGEOMETRYMODE
-                g.geom &= ~w1;
-                g.mat_dirty = true;
+                if (!GFX_OPT_ON(OPT_NOOP) || (g.geom & w1) != 0) {
+                    g.geom &= ~w1;
+                    g.mat_dirty = true;
+                }
                 break;
 
             case 0xB7:  // G_SETGEOMETRYMODE
-                g.geom |= w1;
-                g.mat_dirty = true;
+                if (!GFX_OPT_ON(OPT_NOOP) || (g.geom | w1) != g.geom) {
+                    g.geom |= w1;
+                    g.mat_dirty = true;
+                }
                 break;
 
             case 0xB8:  // G_ENDDL
@@ -2013,6 +2810,15 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                     return;
                 }
                 pc = stack[--sp];
+#ifdef GFX_COUNT
+                if (gfx_count.tri_drawn + gfx_count.tri_near == dl_mark[sp].drawn &&
+                    gfx_count.vtx_verts != dl_mark[sp].verts) {
+                    int d = sp < 3 ? sp : 3;
+                    GCOUNT(dead_calls[d], 1);
+                    GCOUNT(dead_verts[d], gfx_count.vtx_verts - dl_mark[sp].verts);
+                    GCOUNT(dead_tris[d], gfx_count.tris - dl_mark[sp].tris);
+                }
+#endif
                 break;
 
             case 0xB9:    // G_SETOTHERMODE_L
@@ -2020,15 +2826,25 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 uint32_t shift = (w0 >> 8) & 0xFF, len = w0 & 0xFF;
                 uint32_t mask = (len >= 32 ? 0xFFFFFFFFu : ((1u << len) - 1)) << shift;
                 if (op == 0xB9) {
-                    g.ol = (g.ol & ~mask) | (w1 & mask);
-                    g.mat_dirty = true;
+                    uint32_t ol = (g.ol & ~mask) | (w1 & mask);
+                    if (!GFX_OPT_ON(OPT_NOOP) || ol != g.ol) {
+                        g.ol = ol;
+                        g.mat_dirty = true;
+                    }
                 } else {
-                    set_othermode_h((g.oh & ~mask) | (w1 & mask));
+                    uint32_t oh = (g.oh & ~mask) | (w1 & mask);
+                    if (!GFX_OPT_ON(OPT_NOOP) || oh != g.oh) {
+                        set_othermode_h(oh);
+                    }
                 }
                 break;
             }
 
             case 0xBB:  // G_TEXTURE
+                if (GFX_OPT_ON(OPT_NOOP) && g.tex_on == ((w0 & 0xFF) != 0) && g.tex_tile == (int)((w0 >> 8) & 7) &&
+                    g.tex_scale_raw_s == w1 >> 16 && g.tex_scale_raw_t == (w1 & 0xFFFF)) {
+                    break;
+                }
                 g.tex_on = (w0 & 0xFF) != 0;
                 g.tex_tile = (w0 >> 8) & 7;
                 g.tex_scale_raw_s = w1 >> 16;
@@ -2046,6 +2862,7 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                     int n = (int)((w1 - 0x80000000u) >> 5) - 1;
                     g.num_lights = n < 0 ? 0 : (n > MAX_LIGHTS ? MAX_LIGHTS : n);
                     g.lights_dirty = true;
+                    g.light_seq++;
                 } else if (index == 0x08) {
                     g.fog_mul = (float)(int16_t)(w1 >> 16);
                     g.fog_off = (float)(int16_t)w1;
@@ -2078,7 +2895,9 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 for (uint32_t i = first; i <= last; i++) {
                     all &= g.vtx[i].clip;
                 }
+                GCOUNT(culldl, 1);
                 if (all & (0x0F | CLIP_NEAR)) {
+                    GCOUNT(culldl_hits, 1);
                     stat_culled_dls++;
                     if (sp == 0) {
                         return;
@@ -2130,19 +2949,27 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 break;
 
             case 0xEF:  // G_RDPSETOTHERMODE
+                if (GFX_OPT_ON(OPT_NOOP) && (w0 & 0x00FFFFFF) == g.oh && w1 == g.ol) {
+                    break;
+                }
                 set_othermode_h(w0 & 0x00FFFFFF);
                 g.ol = w1;
                 g.mat_dirty = true;
                 break;
 
             case 0xF0:  // G_LOADTLUT
-                tmem_load_tlut((w1 >> 24) & 7, ((w1 >> 14) & 0x3FF) + 1);
-                g.tmem_gen++;
-                g.mat_dirty = true;
+                if (tmem_load_tlut((w1 >> 24) & 7, ((w1 >> 14) & 0x3FF) + 1)) {
+                    g.tmem_gen++;
+                    g.mat_dirty = true;
+                }
                 break;
 
             case 0xF2: {  // G_SETTILESIZE
                 GfxTile* t = &gfx_tiles[(w1 >> 24) & 7];
+                if (GFX_OPT_ON(OPT_NOOP) && t->uls == ((w0 >> 12) & 0xFFF) && t->ult == (w0 & 0xFFF) &&
+                    t->lrs == ((w1 >> 12) & 0xFFF) && t->lrt == (w1 & 0xFFF)) {
+                    break;
+                }
                 t->uls = (w0 >> 12) & 0xFFF;
                 t->ult = w0 & 0xFFF;
                 t->lrs = (w1 >> 12) & 0xFFF;
@@ -2152,26 +2979,38 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
             }
 
             case 0xF3:  // G_LOADBLOCK
-                tmem_load_block((w1 >> 24) & 7, (w0 >> 12) & 0xFFF, w0 & 0xFFF, (w1 >> 12) & 0xFFF, w1 & 0xFFF);
-                g.tmem_gen++;
-                g.mat_dirty = true;
+                if (tmem_load_block((w1 >> 24) & 7, (w0 >> 12) & 0xFFF, w0 & 0xFFF, (w1 >> 12) & 0xFFF, w1 & 0xFFF)) {
+                    g.tmem_gen++;
+                    g.mat_dirty = true;
+                }
                 break;
 
             case 0xF4: {  // G_LOADTILE
                 int tile = (w1 >> 24) & 7;
                 uint32_t uls = (w0 >> 12) & 0xFFF, ult = w0 & 0xFFF, lrs = (w1 >> 12) & 0xFFF, lrt = w1 & 0xFFF;
-                tmem_load_tile(tile, uls, ult, lrs, lrt);
-                g.tmem_gen++;
-                gfx_tiles[tile].uls = uls;
-                gfx_tiles[tile].ult = ult;
-                gfx_tiles[tile].lrs = lrs;
-                gfx_tiles[tile].lrt = lrt;
-                g.mat_dirty = true;
+                GfxTile* t = &gfx_tiles[tile];
+                bool loaded = tmem_load_tile(tile, uls, ult, lrs, lrt);
+                if (loaded || t->uls != uls || t->ult != ult || t->lrs != lrs || t->lrt != lrt) {
+                    if (loaded) {
+                        g.tmem_gen++;
+                    }
+                    t->uls = uls;
+                    t->ult = ult;
+                    t->lrs = lrs;
+                    t->lrt = lrt;
+                    g.mat_dirty = true;
+                }
                 break;
             }
 
             case 0xF5: {  // G_SETTILE
                 GfxTile* t = &gfx_tiles[(w1 >> 24) & 7];
+                if (GFX_OPT_ON(OPT_NOOP) && t->fmt == ((w0 >> 21) & 7) && t->siz == ((w0 >> 19) & 3) &&
+                    t->line == ((w0 >> 9) & 0x1FF) && t->tmem == (w0 & 0x1FF) && t->palette == ((w1 >> 20) & 0xF) &&
+                    t->cmt == ((w1 >> 18) & 3) && t->maskt == ((w1 >> 14) & 0xF) && t->shiftt == ((w1 >> 10) & 0xF) &&
+                    t->cms == ((w1 >> 8) & 3) && t->masks == ((w1 >> 4) & 0xF) && t->shifts == (w1 & 0xF)) {
+                    break;
+                }
                 t->fmt = (w0 >> 21) & 7;
                 t->siz = (w0 >> 19) & 3;
                 t->line = (w0 >> 9) & 0x1FF;
@@ -2208,17 +3047,23 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                 break;
 
             case 0xFA:  // G_SETPRIMCOLOR
+                if (GFX_OPT_ON(OPT_NOOP) && w1 == g.prim_raw && (w0 & 0xFF) == g.prim_lod_raw) {
+                    break;
+                }
                 unpack_rgba(w1, g.k.prim);
                 g.k.prim_lod = u8f(w0);
                 g.prim_raw = w1;
                 g.prim_lod_raw = w0 & 0xFF;
-                cc_changed();
+                cc_colors_changed();
                 break;
 
             case 0xFB:  // G_SETENVCOLOR
+                if (GFX_OPT_ON(OPT_NOOP) && w1 == g.env_raw) {
+                    break;
+                }
                 unpack_rgba(w1, g.k.env);
                 g.env_raw = w1;
-                cc_changed();
+                cc_colors_changed();
                 break;
 
             case 0xFC:  // G_SETCOMBINE
@@ -2298,6 +3143,19 @@ void gfx_init(void) {
     if (list_buf[LIST_PT] == NULL || list_buf[LIST_TR] == NULL) {
         runtime_fatal("[q64dc] gfx: out of RAM for list buffers");
     }
+    if (DEFER_POSSIBLE) {
+        q.draw = memalign(32, Q_DRAWS * sizeof(QDraw));
+        q.vtx = memalign(32, Q_VTX * sizeof(Vertex));
+        q.mat = memalign(32, Q_MATS * sizeof(QMat));
+        q.cc = memalign(32, Q_CCS * sizeof(QCC));
+        q.rect = memalign(32, Q_RECTS * sizeof(q.rect[0]));
+        q.view = memalign(32, Q_VIEWS * sizeof(QView));
+        q.ok = q.draw && q.vtx && q.mat && q.cc && q.rect && q.view;
+        if (!q.ok) {
+            printf("[q64dc] gfx: no RAM for deferred draws, drawing as the list runs\n");
+        }
+        defer_reset();
+    }
 
     memset(&g, 0, sizeof(g));
     for (int i = 0; i < 4; i++) {
@@ -2357,7 +3215,7 @@ static void draw_test_banner(void) {
 // 3x5 glyphs, bit 2 is the left pixel. Indexed by hud_glyph().
 static const char hud_chars[] = " 0123456789ACDEFGIKLMNOPRSTUVX.BH"
 #ifdef GFX_DIAG
-                                "W"
+                                "WQ"
 #endif
     ;
 static const uint8_t hud_bits[][5] = {
@@ -2369,7 +3227,7 @@ static const uint8_t hud_bits[][5] = {
     { 7, 4, 7, 1, 7 },     { 7, 2, 2, 2, 2 }, { 5, 5, 5, 5, 7 }, { 5, 5, 5, 5, 2 }, { 5, 5, 2, 5, 5 },
     { 0, 0, 0, 0, 2 }, { 7, 5, 6, 5, 7 }, { 5, 5, 7, 5, 5 },
 #ifdef GFX_DIAG
-    { 5, 5, 5, 7, 5 },
+    { 5, 5, 5, 7, 5 }, { 7, 5, 5, 7, 1 },
 #endif
 };
 _Static_assert(sizeof(hud_bits) / sizeof(hud_bits[0]) == sizeof(hud_chars) - 1, "hud font");
@@ -2500,7 +3358,7 @@ static void hud_text(float x, float y, const char* s) {
 
 #ifdef GFX_DIAG
 #define HUD_LINES 12
-#define HUD_COLS  34
+#define HUD_COLS  38
 #else
 #define HUD_LINES 8
 #define HUD_COLS  22
@@ -2557,14 +3415,14 @@ static const char* hud_tenths(char* buf, uint32_t v10) {
 // (the display list by kind of command, the end-of-frame submission, the wait for the tile
 // accelerator, the RSP thread's cache miss stalls), then counts and KB.
 static void diag_hud_lines(void) {
-    static const char* const tag[DIAG_MODES] = { "NORM", "NOUP", "NOTX", "NOCS", "NOTA", "NODM", "NOLT", "NOTR" };
     typedef struct {
         uint32_t frames, ticks[DR_COUNT], wait_us, submit_us, oc_stall, ic_stall;
         uint32_t loads, sum_bytes, decodes, upload_bytes, lookups, ta_bytes, dma_bytes, drawn, tri_cmds, cmds;
     } Sums;
     static Sums prev;
     Sums cur = { dg.frames,
-                 { dr_time.ticks[DR_OTHER], dr_time.ticks[DR_VTX], dr_time.ticks[DR_TRI], dr_time.ticks[DR_TEX] },
+                 { dr_time.ticks[DR_OTHER], dr_time.ticks[DR_VTX], dr_time.ticks[DR_TRI], dr_time.ticks[DR_TEX],
+                   dr_time.ticks[DR_DEFER] },
                  dg.wait_us, dg.submit_us, dg.oc_stall, dg.ic_stall, dg.loads, gfx_diag_tex.sum_bytes,
                  gfx_diag_tex.decodes, gfx_diag_tex.upload_bytes, gfx_diag_tex.lookups, dg.ta_bytes, dg.dma_bytes,
                  dg.drawn, dg.tri_cmds, dg.cmds };
@@ -2581,25 +3439,26 @@ static void diag_hud_lines(void) {
     }
     char a[12], b[12], c[12], d[12], e[12];
     // 5 ns per cycle: 20000 cycles to the tenth of a millisecond.
-#ifdef GFX_OPT
     // The set's number and its optimizations, a dot for each one that is off.
-    char on[7];
-    for (int i = 0; i < 6; i++) {
-        on[i] = (gfx_opt >> i) & 1 ? "TSLVCD"[i] : '.';
+    static const char letters[] = "TSLVCDBRKPWUQMNEOGF";
+    char on[sizeof(letters)];
+    for (int i = 0; i < (int)sizeof(letters) - 1; i++) {
+        on[i] = (gfx_opt >> i) & 1 ? letters[i] : '.';
     }
-    on[6] = 0;
-    snprintf(hud_lines[8], HUD_COLS, "C%d %s M%d WT%s RO%s RI%s", opt_set, on, gfx_diag,
-             hud_tenths(a, PER(wait_us) / 100), hud_tenths(b, PER(oc_stall) / 20000),
-             hud_tenths(c, PER(ic_stall) / 20000));
-    (void)tag;
-#else
-    snprintf(hud_lines[8], HUD_COLS, "M%d %s WT%s RO%s RI%s", gfx_diag, tag[gfx_diag], hud_tenths(a, PER(wait_us) / 100),
-             hud_tenths(b, PER(oc_stall) / 20000), hud_tenths(c, PER(ic_stall) / 20000));
-#endif
-    snprintf(hud_lines[9], HUD_COLS, "DL%s TX%s VX%s TRI%s SB%s", hud_tenths(a, TICKS10(dl)),
+    on[sizeof(letters) - 1] = 0;
+    // The diagnostic mode only when there is one, for room.
+    if (gfx_diag == DIAG_NORMAL) {
+        snprintf(hud_lines[8], HUD_COLS, "C%d %s RO%s RI%s", opt_set, on, hud_tenths(b, PER(oc_stall) / 20000),
+                 hud_tenths(c, PER(ic_stall) / 20000));
+    } else {
+        snprintf(hud_lines[8], HUD_COLS, "C%d %s M%d RI%s", opt_set, on, gfx_diag, hud_tenths(c, PER(ic_stall) / 20000));
+    }
+    // DL is the whole list; Q is the part of it OPT_DEFER's second pass took.
+    snprintf(hud_lines[9], HUD_COLS, "DL%s TX%s VX%s TRI%s Q%s", hud_tenths(a, TICKS10(dl)),
              hud_tenths(b, TICKS10(cur.ticks[DR_TEX] - prev.ticks[DR_TEX])),
              hud_tenths(c, TICKS10(cur.ticks[DR_VTX] - prev.ticks[DR_VTX])),
-             hud_tenths(d, TICKS10(cur.ticks[DR_TRI] - prev.ticks[DR_TRI])), hud_tenths(e, PER(submit_us) / 100));
+             hud_tenths(d, TICKS10(cur.ticks[DR_TRI] - prev.ticks[DR_TRI])),
+             hud_tenths(e, TICKS10(cur.ticks[DR_DEFER] - prev.ticks[DR_DEFER])));
     snprintf(hud_lines[10], HUD_COLS, "TL%u CS%u DE%u UP%u LK%u", (unsigned)PER(loads), (unsigned)KB(sum_bytes),
              (unsigned)PER(decodes), (unsigned)KB(upload_bytes), (unsigned)PER(lookups));
     snprintf(hud_lines[11], HUD_COLS, "TA%u DM%u ND%u NC%u CM%u", (unsigned)KB(ta_bytes), (unsigned)KB(dma_bytes),
@@ -2724,11 +3583,7 @@ static void hud_refresh(uint32_t tris_op, uint32_t tris_pt, uint32_t tris_tr, ui
     hud_ready = 1;
 }
 
-#ifdef GFX_OPT
 static void __attribute__((noinline)) draw_perf_hud(void) {
-#else
-static void __attribute__((always_inline)) draw_perf_hud(void) {
-#endif
     profile_poll();
     hud_refresh(stat_list_tris[LIST_OP], stat_list_tris[LIST_PT], stat_list_tris[LIST_TR], vbuf_used);
     if (!hud_ready) {
@@ -2756,7 +3611,7 @@ static void __attribute__((always_inline)) draw_perf_hud(void) {
 #ifdef GFX_DIAG
     float box_h = (HUD_LINES + extra) * 12.0f + 8.0f;
     float y0 = 444.0f - box_h;
-    hud_quad(8.0f, y0, 276.0f, box_h, 0xC0000000);
+    hud_quad(8.0f, y0, (HUD_COLS - 1) * 8.0f + 12.0f, box_h, 0xC0000000);
     if (hud_font != NULL) {
         pvr_poly_cxt_txr(&cxt, PVR_LIST_TR_POLY, PVR_TXRFMT_ARGB4444 | PVR_TXRFMT_NONTWIDDLED, HUD_FONT_W, HUD_FONT_H,
                          hud_font, PVR_FILTER_NEAREST);
@@ -2794,14 +3649,12 @@ static void diag_frame_begin(uint32_t wait_us) {
         gfx_diag = want;
         printf("[q64dc] gfx diag mode %d\n", want);
     }
-#ifdef GFX_OPT
     int set = opt_request;
     if (set != opt_set) {
         opt_set = set;
         gfx_opt = opt_sets[set];
-        printf("[q64dc] gfx opt set %d (0x%02X)\n", set, (unsigned)gfx_opt);
+        printf("[q64dc] gfx opt set %d (0x%03X)\n", set, (unsigned)gfx_opt);
     }
-#endif
     dg.wait_us += wait_us;
     pmc_begin();
 }
@@ -2816,7 +3669,9 @@ static void diag_dl_end(void) {
 }
 #endif
 
+#ifndef GFX_HASH
 static uint32_t frames;
+#endif
 static uint32_t period_frames;
 static uint64_t period_wait_us, period_build_us;
 
@@ -2860,11 +3715,31 @@ void gfx_run_task(uint32_t task) {
     // Look textures up again at least once a frame, which marks them as in use.
     g.tmem_gen++;
     tex_frame_begin();
+    q_on = q.ok && GFX_OPT_ON(OPT_DEFER) && GFX_OPT_ON(OPT_TRI) && !DIAG_IS(DIAG_NO_UPLOAD) &&
+           !DIAG_IS(DIAG_NO_TEXTURE) && !DIAG_IS(DIAG_NO_CHECKSUM) && !DIAG_IS(DIAG_NO_TA) && !DIAG_IS(DIAG_NO_DMA) &&
+           !DIAG_IS(DIAG_NO_LIGHT) && !DIAG_IS(DIAG_NO_TRI);
+    if (DEFER_POSSIBLE) {
+        defer_reset();
+    }
+#ifdef GFX_HASH
+    frame_hash = 2166136261u;
+    hash_on = true;
+#endif
 
 #ifdef GFX_DIAG
     dr_start();
 #endif
     run_dl(dl);
+    if (DEFER_POSSIBLE && q_on) {
+        defer_flush();
+    }
+#ifdef GFX_HASH
+    hash_on = false;
+    if (test_disc()) {
+        printf("[q64dc] fhash %u %08X %u %u\n", (unsigned)frames, (unsigned)frame_hash, (unsigned)vbuf_used,
+               (unsigned)stat_frame_tris);
+    }
+#endif
 #ifdef GFX_DIAG
     dr_enter(DR_TEX);
 #endif
@@ -2903,6 +3778,17 @@ void gfx_run_task(uint32_t task) {
     period_build_us += timer_us_gettime64() - t1;
 #ifdef GFX_DIAG
     pmc_end();
+#endif
+#ifdef GFX_COUNT
+    for (uint32_t i = 0; i < 32; i++) {
+        count_retire(i);
+    }
+    gfx_count.frames++;
+    if (gfx_count.frames >= 30) {
+        count_report = gfx_count;
+        count_report_seq++;
+        memset(&gfx_count, 0, sizeof(gfx_count));
+    }
 #endif
 }
 
@@ -2975,6 +3861,8 @@ void gfx_print_stats(void) {
            (unsigned)(stat_vbuf_peak / 1024), (unsigned)(vbuf_peak_boot / 1024), (unsigned)(VERTEX_BUF_LIMIT / 1024),
            (unsigned)stat_culled_dls);
     tex_print_stats();
+    printf("[q64dc] gfx: %u repeated texture loads left out/s\n", (unsigned)stat_same_loads);
+    stat_same_loads = 0;
 #ifdef GFX_DIAG
     // The HUD's renderer lines, for test runs.
     printf("[q64dc] hud: %s | %s | %s | %s | %s | %s\n", hud_lines[1], hud_lines[8], hud_lines[9], hud_lines[10],
@@ -2982,14 +3870,59 @@ void gfx_print_stats(void) {
 #endif
 #ifdef GFX_XCHECK
     {
-        static const char* const names[XC_COUNT] = { "tex", "sum", "load", "vtx", "light", "out", "tri" };
-        char line[256];
+        static const char* const names[XC_COUNT] = { "tex",  "sum",  "load", "vtx",  "light",   "out",   "tri",
+                                                     "batch", "reject", "keep", "rect", "rows", "combine", "lights" };
+        char line[512];
         int len = 0;
-        for (int i = 0; i < XC_COUNT; i++) {
+        for (int i = 0; i < XC_COUNT && len < (int)sizeof(line) - 40; i++) {
             len += snprintf(line + len, sizeof(line) - len, " %s %u/%u", names[i], (unsigned)gfx_xcheck_fails[i],
                             (unsigned)gfx_xcheck_runs[i]);
         }
-        printf("[q64dc] xcheck (differences/checks since boot):%s; opt 0x%02X\n", line, (unsigned)gfx_opt);
+        printf("[q64dc] xcheck (differences/checks since boot):%s; opt 0x%03X\n", line, (unsigned)gfx_opt);
+    }
+#endif
+#ifdef GFX_COUNT
+    static uint32_t count_printed;
+    if (count_report_seq != count_printed) {
+        count_printed = count_report_seq;
+        const GfxCount* c = &count_report;
+        uint32_t f = c->frames ? c->frames : 1;
+#define PF(x) ((unsigned)((c->x + f / 2) / f))
+        printf("[q64dc] count/frame: tris %u (offscreen %u backface %u near %u drawn %u); verts %u in %u loads (outside "
+               "%u; unused %u, rejected only %u, drawn %u); batches outside a plane %u with %u verts, %u used drawn; "
+               "cmds %u, dl calls %u, mtx %u, culldl %u/%u hit; dead calls/verts/tris %u/%u/%u %u/%u/%u %u/%u/%u "
+               "%u/%u/%u\n",
+               PF(tris), PF(tri_offscreen), PF(tri_backface), PF(tri_near), PF(tri_drawn), PF(vtx_verts), PF(vtx_cmds),
+               PF(vtx_outside), PF(vtx_unused), PF(vtx_rejected), PF(vtx_drawn), PF(batch_out), PF(batch_out_verts),
+               PF(batch_out_used), PF(cmds), PF(dl_calls), PF(mtx), PF(culldl), PF(culldl_hits), PF(dead_calls[0]),
+               PF(dead_verts[0]), PF(dead_tris[0]), PF(dead_calls[1]), PF(dead_verts[1]), PF(dead_tris[1]),
+               PF(dead_calls[2]), PF(dead_verts[2]), PF(dead_tris[2]), PF(dead_calls[3]), PF(dead_verts[3]),
+               PF(dead_tris[3]));
+        printf("[q64dc] count/frame: lit %u, out %u, comb %u (slow %u), cc prep %u, mat %u (lookup skipped %u), headers "
+               "%u of %u; loads %u, sums %u + %u hits, %u bytes (%u from ROM pages); in %u frames: sums changed %u after "
+               "DMA, %u in ROM pages, %u other, %u new; pending scan %u, copies %u (%u bytes), lookups %u (%u slow), "
+               "decodes %u\n",
+               PF(lit), PF(out), PF(comb), PF(cc_slow), PF(cc_prep), PF(mat_updates), PF(lookups_skipped), PF(headers),
+               PF(header_calls), PF(loads), PF(sum_misses), PF(sum_hits), PF(sum_bytes), PF(sum_bytes_rom),
+               (unsigned)c->frames, (unsigned)c->sum_changed_dma, (unsigned)c->sum_changed_rom,
+               (unsigned)c->sum_changed_other, (unsigned)c->sum_new, PF(pend_scan), PF(copies), PF(copy_bytes),
+               PF(lookups), PF(lookup_slow), PF(decodes));
+        // The busiest commands.
+        char line[256];
+        int len = 0;
+        uint8_t done[256] = { 0 };
+        for (int k = 0; k < 16; k++) {
+            int best = -1;
+            for (int op = 0; op < 256; op++) {
+                if (!done[op] && (best < 0 || c->op[op] > c->op[best])) {
+                    best = op;
+                }
+            }
+            done[best] = 1;
+            len += snprintf(line + len, sizeof(line) - len, " %02X:%u", best, PF(op[best]));
+        }
+        printf("[q64dc] count/frame ops:%s\n", line);
+#undef PF
     }
 #endif
     stat_vbuf_peak = 0;

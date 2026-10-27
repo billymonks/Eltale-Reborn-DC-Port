@@ -18,6 +18,10 @@
 
 #include "recomp.h"
 
+// The original rounds each product and each sum, as the generated code does (-ffp-contract=off).
+// The runtime's flags let GCC fuse them into FMAC, which rounds once.
+#pragma GCC optimize("fp-contract=off")
+
 typedef struct {
     int hit, has_height;
     float height, nx, ny, nz;

@@ -1,8 +1,10 @@
 # Notes
 
-Numbers are from Flycast 2.7 unless a line says otherwise. Flycast's SH-4 timing is not cycle-accurate, and it does not model the caches, so a real Dreamcast can come out slower. Hardware has not been timed.
+Numbers are from Flycast 2.7 unless a line says otherwise. Flycast's SH-4 timing is not cycle-accurate, and it does not model the caches, so a real Dreamcast can come out slower. Hardware timings are in [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Speed
+
+The figures in this section are from Flycast. Hardware numbers, and how to take them, are in `PERFORMANCE.md`.
 
 Quest 64 advances one fixed step per frame. The field loop waits until two retraces have passed, then builds the next frame, so 30 fps is the speed the game was made for. Below that it is slow motion. The opening cutscene is 60. `tests/speed.txt` walks the Holy Plain normally and then with `burn 50`. Brian covers the same distance per frame either way.
 
@@ -109,11 +111,11 @@ There is no framebuffer readback, and no texture over 256 px on a side. RT64's e
 
 ## Registers and threads
 
-Quest 64 does not use the upper half of a GPR. The 64-bit libultra helpers are already runtime calls, and the recompiler is patched (`tools/patches/n64recomp-gpr32.patch`, `gpr_32bit` in the toml) to reject a 64-bit GPR op, emit 32-bit `hi`/`lo`, and call `DIV32`/`DIVU32`. `runtime/include/recomp.h` types `gpr` as `uint32_t`. RDRAM words are host-endian, same as the PC runtime. SH-4 is little-endian.
+Quest 64 does not use the upper half of a GPR. The 64-bit libultra helpers are already runtime calls, and the recompiler (`gpr_32bit` in the toml) rejects a 64-bit GPR op, emits 32-bit `hi`/`lo`, and calls `DIV32`/`DIVU32`. `runtime/include/recomp.h` types `gpr` as `uint32_t`. RDRAM words are host-endian, same as the PC runtime. SH-4 is little-endian.
 
 One KallistiOS thread per N64 thread, and only one of them runs game code at a time. A thread yields when it blocks on a message queue. `events.c` raises the VI retrace on vblank and fires `osSetTimer`. Graphics tasks run on the "n64 rsp" thread. Audio tasks run in the interpreter immediately. SP and DP done are sent when the task finishes.
 
-`tools/patches/` is applied by `scripts/build_n64recomp.sh` when the submodule does not already have the change. The return-hook patch is there for mods.
+The recompiler is N64Recomp-DC, the `tools/N64Recomp` submodule: `gpr_32bit`, return hooks (for mods) and the `[codegen]` options are commits there. `scripts/build_n64recomp.sh` builds it.
 
 ## Mods
 
@@ -125,16 +127,29 @@ Imports that exist (`runtime/mod/modrt.c`): `recomp_printf`, alloc/free, the con
 
 Eltale Reborn 0.9.42 was 947 KB at `0x80410000`-`0x804FCB00` (775 KB code and data, 171 KB bss). The gameplay mod was 11 KB after it. The modded ELF was 1.3 MB larger. With the 2 MB area, the largest free block in Melrode dropped from 5.2 MB to 2.2 MB. Eltale allocates nothing, so a smaller `MOD_RAM_SIZE` (for example `0x110000`) gives most of that heap back.
 
+Native libraries (`native_libraries` in `mod.toml`, PC DLLs) become stubs that do nothing and return 0, except the functions `tools/modrecomp` lists in `runtime_natives`, which call `modrt_native_<name>`: Eltale's ambient sound, below.
+
 Not supported, and the build stops if it sees them:
 
 - `RECOMP_DECLARE_EVENT` and `RECOMP_CALLBACK`
-- native libraries
 - fixed-address sections
 - imports the runtime does not have (`recomp_change_save_file`, the path functions)
 
 No in-game config menu. `MOD_CONFIG` is the stand-in. Per-frame mod code has to stay small. Busy scenes already fill the frame.
 
 `MOD=gameplay` alone is `build/quest64-gameplay.cdi`, serial `Q64-GP`, VMU `Q64GP.PAK`. It saves nothing of its own. Next to Eltale it leaves the disc title, serial, and save file as Eltale's.
+
+### Eltale's ambient sound
+
+Since 0.14.2 Eltale plays loops of birds, crickets, wind, water and so on under the music, picked by the room and blended by the time of day, quieter and muffled indoors, half as loud in battle, plus owls at night and the rooster at dawn. The mod decides the levels once a frame (its `src/ambience.c`, a return hook on the music update) and calls a native library of its own, `eltale_ambience.dll` (`ambience_frame`, `ambience_set`, `ambience_play`), which plays 13 OGG clips with miniaudio. Here `runtime/mod/ambience.c` implements those three calls. The clips and their table are in `eltale/ambience` (from the PC repository, unchanged). `tools/ambpack`, a host program built with the Eltale disc, writes them into `ambience.bin` on the disc: 22050 Hz AICA ADPCM, stereo, each clip normalised and given back its level by its gain (12.5 MB).
+
+Levels follow the library: a loop's level moves to its target at a third of full scale a second, and its volume is the clip's gain times the level squared. The gains bring the loops to -42 dBFS RMS at level 1, except the birds since the PC mod's 45e8f68, whose louder file kept its gain (-33 dBFS). A loop that falls silent stops and resumes near where it stopped. With no frame for half a second (the title screen) everything fades out. Indoors the library mixes in a 700 Hz low-pass of the clips at 1.4 times; here each clip's volume follows how loud that mix comes out for it (`ambience_pack.h`), but not its tone.
+
+The clips play on AICA channels 40-55, programmed from the SH-4 directly, so the stock KallistiOS firmware, the port's own firmware and the `-DAUDIO_HLE` path all play them. Up to 6 loops at once, each streamed through a 2.95 s ring in sound RAM per channel, topped up by a thread below the game's from a 3 s buffer in main RAM, and that from the disc in 48-64 KB reads. Reads wait while the ROM reader has work, unless the loop is under 1 s from running dry; a loop starting at a room change, while the game loads the room, waits up to 2 s, as it fades in from silence anyway. One loop reads about once every 2 s. The one-shots stay in sound RAM. It takes 498 KB of sound RAM, which leaves 49 KB free after the game's samples, and 504 KB of main RAM. The SH-4 time is a few register writes a frame and 22 KB/s of copying per loop.
+
+ADPCM keeps a decoder state, and the AICA starts every channel from the same one, so a loop can't simply start anywhere in its data. Each loop has 8 starts: a chunk where its data takes over, and a preamble of up to 142 codes, played muted, that takes the decoder from its key-on state to the encoder's state there. A loop's last sample leaves the decoder where its first began, so it repeats without a click. `scripts/ambience_check.py ambience.bin` decodes the file and checks all of that.
+
+When the PC mod changes its clips or `include/q64/ambience_clips.h`, copy both into `eltale/ambience`. The clip order is the mod's (`AMB_FIELD` is 0). `tests/ambience.txt` visits the places; `RT_DEFINES=-DAUDIO_MUTE_GAME` silences the game's voices so a recording holds the ambience alone.
 
 ## Tests
 

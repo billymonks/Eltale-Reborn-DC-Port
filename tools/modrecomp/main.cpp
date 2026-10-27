@@ -58,6 +58,14 @@ const std::set<std::string> runtime_imports {
     "recomphook_get_return_double",
 };
 
+// Functions of mods' native libraries (mod.toml native_libraries) that runtime/mod implements, as
+// "library.function". The rest become stubs that do nothing and return 0.
+const std::set<std::string> runtime_natives {
+    "eltale_ambience.ambience_frame",
+    "eltale_ambience.ambience_set",
+    "eltale_ambience.ambience_play",
+};
+
 constexpr size_t funcs_per_file = 150;
 
 [[noreturn]] void fail(const std::string& msg) {
@@ -134,7 +142,14 @@ struct Mod {
     std::unordered_map<std::string, std::string> exports; // export name -> C name
     std::vector<Hook> hooks;
     std::set<std::string> imports_used;
+    std::map<std::string, std::string> native_funcs; // the functions of its native libraries (mod.toml) -> library
+    std::set<std::string> native_used;               // ... that it calls
 };
+
+bool native_in_runtime(const Mod& mod, const std::string& func) {
+    auto lib = mod.native_funcs.find(func);
+    return lib != mod.native_funcs.end() && runtime_natives.contains(lib->second + "." + func);
+}
 
 void read_manifest(Mod& mod, const std::map<std::string, std::string>& overrides) {
     toml::table manifest_file;
@@ -148,8 +163,20 @@ void read_manifest(Mod& mod, const std::map<std::string, std::string>& overrides
     std::string version = manifest["version"].value_or(std::string{ "0.0.0" });
     std::sscanf(version.c_str(), "%u.%u.%u", &mod.version[0], &mod.version[1], &mod.version[2]);
 
-    if (const toml::array* libs = manifest["native_libraries"].as_array(); libs != nullptr && !libs->empty()) {
-        fail(fmt::format("{} uses native libraries, which the Dreamcast build can't load", mod.id));
+    // Native libraries are PC DLLs: the runtime implements some of their functions (runtime_natives), and
+    // the rest become stubs, so mods have to cope with them doing nothing.
+    if (const toml::array* libs = manifest["native_libraries"].as_array(); libs != nullptr) {
+        for (const toml::node& lib : *libs) {
+            const toml::table* table = lib.as_table();
+            const toml::array* funcs = table != nullptr ? (*table)["funcs"].as_array() : nullptr;
+            if (funcs == nullptr) {
+                fail(fmt::format("{}: a native library has no funcs list", mod.id));
+            }
+            std::string lib_name = (*table)["name"].value_or(std::string{});
+            for (const toml::node& func : *funcs) {
+                mod.native_funcs[func.value_or(std::string{})] = lib_name;
+            }
+        }
     }
 
     std::set<std::string> used_overrides;
@@ -376,6 +403,12 @@ int main(int argc, const char** argv) {
                 }
                 mod.imports_used.insert(name);
                 imp.base.name = fmt::format("{}_import_{}", mod.prefix, name);
+            } else if (dep == N64Recomp::DependencySelf) {
+                if (!mod.native_funcs.contains(name)) {
+                    fail(fmt::format("{} imports {} from its own native libraries, which don't list it", mod.id, name));
+                }
+                mod.native_used.insert(name);
+                imp.base.name = fmt::format("{}_native_{}", mod.prefix, name);
             } else {
                 auto other = mods_by_id.find(dep);
                 if (other == mods_by_id.end()) {
@@ -411,6 +444,9 @@ int main(int argc, const char** argv) {
         }
         for (const auto& name : mod.imports_used) {
             all_protos += fmt::format("RECOMP_FUNC void {}_import_{}(uint8_t* rdram, recomp_context* ctx);\n", mod.prefix, name);
+        }
+        for (const auto& name : mod.native_used) {
+            all_protos += fmt::format("RECOMP_FUNC void {}_native_{}(uint8_t* rdram, recomp_context* ctx);\n", mod.prefix, name);
         }
     }
 
@@ -545,6 +581,15 @@ int main(int argc, const char** argv) {
             data += fmt::format("RECOMP_FUNC void {0}_import_{1}(uint8_t* rdram, recomp_context* ctx) {{ modrt_{1}(rdram, ctx, &{0}_info); }}\n",
                 mod.prefix, name);
         }
+        for (const auto& name : mod.native_used) {
+            if (native_in_runtime(mod, name)) {
+                data += fmt::format("RECOMP_FUNC void {0}_native_{1}(uint8_t* rdram, recomp_context* ctx) {{ modrt_native_{1}(rdram, ctx, &{0}_info); }}\n",
+                    mod.prefix, name);
+            } else {
+                data += fmt::format("RECOMP_FUNC void {}_native_{}(uint8_t* rdram, recomp_context* ctx) {{ (void)rdram; ctx->r2 = 0; }}\n",
+                    mod.prefix, name);
+            }
+        }
         data += "\n";
     }
     data += fmt::format("const uint32_t mods_count = {};\nconst ModInfo* const mods_list[] = {{", mods.size());
@@ -610,6 +655,10 @@ int main(int argc, const char** argv) {
         bool first_import = true;
         for (const auto& name : mod.imports_used) {
             fmt::print("{}{}", first_import ? "" : ", ", name);
+            first_import = false;
+        }
+        for (const auto& name : mod.native_used) {
+            fmt::print("{}{} ({})", first_import ? "" : ", ", name, native_in_runtime(mod, name) ? "native, in the runtime" : "native, stubbed");
             first_import = false;
         }
         fmt::print("\n");

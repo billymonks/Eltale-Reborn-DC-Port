@@ -1,0 +1,81 @@
+# Eltale Reborn's ambient sound (runtime/mod/ambience.c): a new game without the prologue, then about
+# 10 s in each kind of place, by day and by night, indoors and out, at dawn for the rooster, in a battle
+# and on the Start menu. On test discs the runtime logs the loops' levels once a second ("ambience:").
+# RT_DEFINES=-DAUDIO_MUTE_GAME silences the game's own voices, for recording the ambience alone.
+#   make MOD=eltale test-cdi TEST_SCRIPT=tests/ambience.txt
+#   scripts\flycast.ps1 330 -Test -Disc build/eltale-reborn-test.cdi -AudioDump build/ambience.raw
+# {gModSave+8} is the mod's flag array (see tests/mod_story.txt). gCurrentTime (0x800859D0), in frames
+# of a 27000-frame day: dawn 5625, day 9000, dusk 19125, night 21375; the rooster crows at 6225.
+# Warps out of Connor Forest, Dindom Dries and Boil Hole time out (the game holds state 0x02 there),
+# so Connor Forest comes last.
+
+wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 500
+setbit {gModSave+8} 8      # FLAG_PROLOGUE_DONE: no prologue
+wait 2500
+talk 150000                # the Grand Abbott's farewell
+log AMB monastery          # inside: the village through the walls
+wait 8000
+
+poke32 800859D0 2EE0       # midday (12000)
+warp 0 0 0                 # Melrode village: birds and wind
+log AMB melrode_day
+wait 10000
+shot amb_melrode
+warp 0x0F 5 0              # Melrode Inn: the same, through the walls
+log AMB inn_day
+wait 10000
+warp 2 0 0                 # the Holy Plain
+log AMB plain_day
+wait 10000
+poke32 800859D0 59D8       # night (23000): crickets, and an owl now and then
+log AMB plain_night
+wait 35000
+warp 0 0 0
+poke32 800859D0 17D4       # just before the rooster (6100)
+log AMB melrode_dawn
+wait 12000
+
+poke32 800859D0 2EE0
+warp 2 0 0                 # a battle on the Holy Plain: half as loud
+log AMB plain_again
+wait 6000
+to_battle
+battle_walk 30000
+log AMB battle
+wait 8000
+stick 0 -75 8000           # run out of the battle circle
+wait16 8008C592 1 0 90000
+log AMB after_battle
+wait 6000
+tap S                      # the Start menu
+log AMB menu
+wait 6000
+tap B
+wait 2000
+
+warp 0x1A 0 0              # the Blue Cave: magic cave and a stream
+log AMB blue_cave
+wait 10000
+warp 0x04 0 0              # Larapool: birds and water
+log AMB larapool
+wait 10000
+warp 0x0C 0 0              # the Isle of Skye: harbour and birds
+log AMB skye
+wait 10000
+warp 0x1E 0 0              # Brannoch Castle: the dungeon
+log AMB brannoch_castle
+wait 10000
+warp 0x22 0 0              # the World of Mammon
+log AMB mammon
+wait 10000
+warp 0x1F 0 0              # Connor Forest: leaves and birds
+log AMB connor_forest
+wait 10000
+log AMB ambience finished
+wait 2000

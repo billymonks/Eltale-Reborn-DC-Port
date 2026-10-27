@@ -21,6 +21,7 @@
 //   poke8|poke16|poke32 <addr> <value>   (hex)
 //   peek32 <addr>                     print a word
 //   shot <name>                       print a SHOT line; run_flycast.sh saves build/screens/<name>.png
+//                                     (LOCKSTEP builds hold the game still until the frame is drawn and taken)
 //   log <text>
 //   pos                               print Brian's position and step, the retrace and frame counts and the time
 //   watch <addr>                      print every change of a halfword, checked at each controller poll (hex, up to 4)
@@ -28,13 +29,18 @@
 //   profile_start, profile_dump       sample the program counter in between (profile.c)
 //   pace_start, pace_dump <label>     record each vblank's flips, swaps and task hand-overs in between (events.c)
 //   pacing 0|1                        hand frames to the PowerVR as soon as they are built / on the frame cadence
+//   gfxopt <set>, gfxdiag <mode>      GFX_DIAG builds: the renderer's optimization set and diagnostic mode (gfx.c)
 //   romtrace [0|1]                    print every ROM cache miss (rom.c)
 //   mem                               print the heap's size and use, and the largest block malloc can still give
+//   fpscr                             print every KallistiOS thread's FPSCR (fpu.c: the runtime's threads set DN)
 //   timebase frames|ms                count script times in controller polls (1000/30 ms each) instead of real time,
 //                                     so a build that runs slower or faster gets the same input on the same game frame
 //                                     (LOCKSTEP builds always count in their virtual time; see ultra.h)
 //   hash <label>                      print a hash of each 64 KB block of RDRAM (scripts/compare_runs.py)
 //   hashsub <block>                   print a hash of each 1 KB of one 64 KB block
+//   hashmask <addr> <bytes>           hash a range as zeros from now on (hex; N64 stacks with stale save slots)
+//   sincos_sweep [stride], sincos_report   SINCOS_CHECK builds: compare the native sinf/cosf (sincos.c) with the
+//                                     recompiled ones on every stride-th float and edge cases / print the counts
 //   dump <addr> <words>               print words of RDRAM (hex address)
 //   scan <hi16>                       print the first 64 words of RDRAM whose top halfword is hi16 (hex), e.g.
 //                                     DEAD or BEEF for codegen.abi_poison's junk
@@ -50,6 +56,11 @@
 #include "ultra.h"
 #include "test.h"
 #include "profile.h"
+
+#ifdef SINCOS_CHECK
+void sincos_sweep(uint8_t* rdram, uint32_t stride);
+void sincos_report(void);
+#endif
 #include "gfx.h"
 
 // Game globals (the Eltale Reborn mod's include/q64/game.h).
@@ -103,11 +114,49 @@ static int8_t latched_x, latched_y;
 static bool frame_time;
 static uint32_t polls;
 
+#define MAX_THREAD_ROWS 32
+static struct {
+    int tid;
+    uint32_t fpscr;
+    char label[24];
+} thread_rows[MAX_THREAD_ROWS];
+static int thread_row_count;
+
+// This thread's FPSCR as it runs; the others' as saved when they last stopped.
+static int note_thread(kthread_t* t, void* data) {
+    (void)data;
+    if (thread_row_count < MAX_THREAD_ROWS) {
+        thread_rows[thread_row_count].tid = (int)t->tid;
+        thread_rows[thread_row_count].fpscr = t == thd_get_current() ? __builtin_sh_get_fpscr() : t->context.fpscr;
+        char* label = thread_rows[thread_row_count].label;
+        size_t n = 0;
+        while (n < sizeof(thread_rows[0].label) - 1 && t->label[n] != '\0') {
+            label[n] = t->label[n];
+            n++;
+        }
+        label[n] = '\0';
+        thread_row_count++;
+    }
+    return 0;
+}
+
+// Ranges hashed as zeros (hashmask): N64 thread stacks, whose stale save slots differ between codegen variants.
+static struct {
+    uint32_t addr, bytes;
+} hash_masks[16];
+static int num_hash_masks;
+
 // FNV-1a over words: an RDRAM block's contents, compared between runs.
 static uint32_t hash_words(uint32_t addr, uint32_t words) {
     uint32_t h = 2166136261u;
     for (uint32_t i = 0; i < words; i++) {
-        h = (h ^ (uint32_t)MEM_W(i * 4, addr)) * 16777619u;
+        uint32_t v = (uint32_t)MEM_W(i * 4, addr);
+        for (int m = 0; m < num_hash_masks; m++) {
+            if (addr + i * 4 - hash_masks[m].addr < hash_masks[m].bytes) {
+                v = 0;
+            }
+        }
+        h = (h ^ v) * 16777619u;
     }
     return h;
 }
@@ -461,6 +510,17 @@ static bool step(uint64_t now) {
         }
         return true;
     }
+    if (strcmp(cmd, "fpscr") == 0) {
+        thread_row_count = 0;
+        int old = irq_disable();
+        thd_each(note_thread, NULL);
+        irq_restore(old);
+        for (int i = 0; i < thread_row_count; i++) {
+            printf("[q64dc] test: fpscr %08X thread %d %s\n", (unsigned)thread_rows[i].fpscr, thread_rows[i].tid,
+                   thread_rows[i].label);
+        }
+        return true;
+    }
     if (strcmp(cmd, "mem") == 0) {
         struct mallinfo mi = mallinfo();
         uint32_t lo = 0, hi = 16 * 1024 * 1024;
@@ -510,7 +570,7 @@ static bool step(uint64_t now) {
         gfx_skip_set(atoi(args));
         return true;
     }
-#if defined(GFX_DIAG) && defined(GFX_OPT)
+#ifdef GFX_DIAG
     if (strcmp(cmd, "gfxopt") == 0) {
         gfx_diag_select(atoi(args), -1);
         return true;
@@ -558,6 +618,28 @@ static bool step(uint64_t now) {
             printf(" %08X", (unsigned)hash_words(0x80000000u + block * 0x10000, 0x10000 / 4));
         }
         printf("\n");
+        return true;
+    }
+#ifdef SINCOS_CHECK
+    if (strcmp(cmd, "sincos_sweep") == 0) {
+        unsigned stride = 509;
+        sscanf(args, "%u", &stride);
+        sincos_sweep(rdram, stride);
+        return true;
+    }
+    if (strcmp(cmd, "sincos_report") == 0) {
+        sincos_report();
+        return true;
+    }
+#endif
+    if (strcmp(cmd, "hashmask") == 0) {
+        unsigned addr = 0, bytes = 0;
+        sscanf(args, "%x %x", &addr, &bytes);
+        if (num_hash_masks < (int)(sizeof(hash_masks) / sizeof(hash_masks[0]))) {
+            hash_masks[num_hash_masks].addr = addr;
+            hash_masks[num_hash_masks].bytes = bytes;
+            num_hash_masks++;
+        }
         return true;
     }
     if (strcmp(cmd, "hashsub") == 0) {

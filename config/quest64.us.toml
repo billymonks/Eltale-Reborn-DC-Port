@@ -13,7 +13,15 @@ gpr_32bit = true
 [codegen]
 rdram_base = true
 sp_subword_fold = true
-regcache = "gpr"
+regcache = "gpr+fpr"
+delay_once = true
+# Off: the game reads stack it never wrote. func_80025BD8's sp+0x28 is where func_80025E0C saved $s0
+# (0x8008F92C, never a sound id); without that store a stale 0 skips the menu sound's stop.
+skip_saves = false
+lookup_cache = true
+ret_trim = true
+fpr_abi_sync = true
+inline_leaves = 24
 
 [patches]
 stubs = [
@@ -40,6 +48,18 @@ before_vram = 0x80031ACC
 func = "func_8000F238"
 text = "floor_shape_test(rdram, ctx); return;"
 before_vram = 0x8000F238
+
+# libultra's sinf and cosf, the game's busiest functions after the renderer's, in native code that
+# does exactly their double-precision steps (runtime/src/sincos.c).
+[[patches.hook]]
+func = "__sinf_recomp"
+text = "ultra_sinf(rdram, ctx); return;"
+before_vram = 0x80035680
+
+[[patches.hook]]
+func = "__cosf_recomp"
+text = "ultra_cosf(rdram, ctx); return;"
+before_vram = 0x800361F0
 
 # libultra's alAudioFrame, once the players' handlers have run ($s1 the synthesizer, $s3 the
 # samples to make): the voices' updates go to the AICA, and $s3 = 0 skips the command list.

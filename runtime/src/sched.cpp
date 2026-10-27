@@ -239,6 +239,7 @@ GameThread* wake_best(std::vector<GameThread*>& list) {
 
 void* game_thread_main(void* param) {
     GameThread* t = static_cast<GameThread*>(param);
+    fpu_thread_init();
     sem_wait(&t->run);
 
     printf("[q64dc] thread %d running (entry 0x%08X, priority %d)\n", (int)t->id, (unsigned)t->entry, (int)priority(t));

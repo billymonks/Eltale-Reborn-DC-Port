@@ -1,0 +1,23 @@
+# Code generation A/B run over tests/tour.txt's places: a hash of RDRAM at each of its stops, for
+# scripts/compare_runs.py. Meant for lockstep test discs (RT_DEFINES="-DLOCKSTEP -DROM_SYNC").
+
+# N64 stacks: the boot stack (top 80074E90) and the osCreateThread stacks (tops 800761F0 800781F0 800792D0
+# 8007A2D0 8007B2D0 8008F240), each masked for 2-4 KB below its top (the deepest frames reach 0x9B8). skip_saves
+# leaves stale save slots there, so they hash as zeros; the dumps at the end show what differs inside them.
+hashmask 80074690 800
+hashmask 800751F0 1000
+hashmask 800771F0 1000
+hashmask 80078AD0 800
+hashmask 80079AD0 800
+hashmask 8007AAD0 800
+hashmask 8008E240 1000
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+hash title_menu
+dump 8008F000 1024
+dump 80370000 32768
+log cg_diag finished

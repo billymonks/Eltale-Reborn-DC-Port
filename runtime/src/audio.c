@@ -83,6 +83,7 @@ static void* stream_cb(snd_stream_hnd_t hnd, int bytes, int* got) {
 
 static void* stream_thread(void* param) {
     (void)param;
+    fpu_thread_init();
     for (;;) {
         mutex_lock(&stream_lock);
         if (stream != SND_STREAM_INVALID && stream_freq != 0) {

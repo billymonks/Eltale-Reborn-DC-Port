@@ -42,6 +42,8 @@ def main():
     text = re.sub(r'^(abi_poison\s*=\s*)\w+', r'\1false', text, flags=re.M)
     text = re.sub(r'^(abi_trace\s*=\s*)\w+', r'\1false', text, flags=re.M)
     text = re.sub(r'^abi_report\s*=.*\n', '', text, flags=re.M)
+    text = re.sub(r'^(delay_once|skip_saves|lookup_cache|ret_trim|fpr_abi_sync)\s*=\s*\w+', r'\1 = false', text, flags=re.M)
+    text = re.sub(r'^(inline_leaves)\s*=\s*\w+', r'\1 = 0', text, flags=re.M)
 
     patches = base.get("patches", {})
     blocked = set(patches.get("stubs", [])) | set(patches.get("ignored", []))

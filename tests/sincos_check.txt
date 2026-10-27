@@ -1,0 +1,67 @@
+# Native sinf/cosf check (SINCOS_CHECK builds, build/agent/sccheck.sh): the recompiled __sinf and __cosf run and
+# every call is compared with runtime/src/sincos.c's result; first a sweep over every 509th float and the edge
+# cases, then cg_tour's places, which call both thousands of times a second.
+wait 14000
+sincos_sweep 509
+sincos_report
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+hash title_menu
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+hash monastery_hall
+
+warp 0 0 0                 # Melrode village
+wait 1500
+hash melrode
+stick 0 70 2500            # walk up the street
+pos
+hash melrode_walk
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+hash holy_plain
+
+warp 0x1A 0 0              # Blue Cave
+wait 1500
+hash blue_cave
+warp 0x0D 9 0              # Melrode Monastery dormitory corridor
+wait 1500
+hash monastery_corridor
+warp 0x0E 0 0              # Dondoran Castle entrance hall
+wait 1500
+hash dondoran_castle
+warp 0x09 0 0              # Dindom Dries desert
+wait 1500
+hash dindom_dries
+tap CU                     # the spell menu
+wait 1500
+hash spell_menu
+tap B
+wait 1000
+tap S                      # the Start menu
+wait 2500
+hash start_menu
+tap B
+wait 1500
+talk 10000
+
+warp 0x0F 5 0              # Melrode Inn, ground floor
+wait 1000
+to_npc 6 18                # across the counter from Agnes, the innkeeper
+wait 500
+tap A
+wait 1500
+hash inn_1
+tap A
+wait 1500
+hash inn_2
+tap A
+wait 1500
+hash inn_3
+pos
+sincos_report
+log sincos_check finished

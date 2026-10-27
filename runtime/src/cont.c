@@ -163,8 +163,8 @@ void cont_poll(void) {
     }
 #endif
 #ifdef GFX_DIAG
-    // Both triggers and B cycle the renderer diagnostic mode, or in GFX_OPT builds the set of
-    // optimizations. B is swallowed so it does not cancel.
+    // Both triggers and B cycle the set of renderer optimizations. B is swallowed so it does not
+    // cancel.
     {
         static int diag_was;
         int l = (pads[0].buttons & N64_L) != 0;
@@ -179,8 +179,7 @@ void cont_poll(void) {
         }
         diag_was = l && r && b && !other;
     }
-#ifdef GFX_OPT
-    // Both triggers and D-pad down (the N64's C-down) cycle the diagnostic modes there.
+    // Both triggers and D-pad down (the N64's C-down) cycle the diagnostic modes.
     {
         static int mode_was;
         int l = (pads[0].buttons & N64_L) != 0;
@@ -194,7 +193,6 @@ void cont_poll(void) {
         }
         mode_was = l && r && cd;
     }
-#endif
 #endif
     pak_flush_idle();
 }

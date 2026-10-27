@@ -4,7 +4,7 @@
 #   scripts\flycast.ps1 100 -Test -Disc build/eltale-reborn-test.cdi   (without -ResetVmu)
 # {gModSave+8} is the mod's flag array (see tests/mod_story.txt).
 
-wait 14000
+wait 16000                 # the mod loads at 14-15 s, and the intro runs to about 27 s
 tap S                      # skip the intro
 wait 5000
 tap S                      # title: PUSH START

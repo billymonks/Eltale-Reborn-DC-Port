@@ -40,6 +40,10 @@ extern "C" {
 // Arguments past the fourth are on the N64 stack (o32 ABI).
 #define STACK_ARG(ctx, n) ((uint32_t)MEM_W(0x10 + 4 * ((n) - 4), (ctx)->r29))
 
+// Sets the calling thread's FPSCR the way libultra sets a new thread's FCSR (fpu.c). Every
+// thread the runtime creates calls it first.
+void fpu_thread_init(void);
+
 // Scheduler (sched.cpp).
 void sched_init(void);
 // Sends a message without blocking, from a game thread or from the runtime's own threads.
@@ -138,6 +142,8 @@ void rom_start_dma(uint32_t rom_addr, uint32_t rdram_addr, uint32_t size, uint32
 void rom_read_bytes(void* dst, uint32_t rom_addr, uint32_t size);
 // Waits until every PI DMA started so far from the audio data has finished.
 void rom_wait_audio(void);
+// Whether the reader thread has PI DMAs to read, so other disc reads can wait their turn.
+bool rom_reader_busy(void);
 
 #ifdef __cplusplus
 }

@@ -766,6 +766,9 @@ static float level_at(const Voice* v, int side, int32_t t) {
 
 #ifndef AICA_FW
 static uint8_t kos_vol(float lv) {
+#ifdef AUDIO_MUTE_GAME  // test discs: other sound (runtime/mod/ambience.c) recorded alone
+    return 0;
+#endif
     float g = exp2_fast(lv) * gain_lin * 255.0f;
     if (g >= 254.5f) {
         return 255;
@@ -806,6 +809,9 @@ static float pitch_hz(const Voice* v) {
 #ifdef AICA_FW
 // A level as the channel's TL in 8.8: 16 TL steps make a factor of 2 (6 dB).
 static uint32_t tl88(float lv) {
+#ifdef AUDIO_MUTE_GAME  // test discs: other sound (runtime/mod/ambience.c) recorded alone
+    return 65280;
+#endif
     float tl = -(lv + AICA_GAIN_DB / 6.0206f) * 4096.0f;
     if (!(tl > 0.0f)) {
         return 0;
@@ -1268,6 +1274,37 @@ void aica_ai_buffer(uint32_t frames) {
 
 bool aica_active(void) {
     return active;
+}
+
+uint32_t aica_sound_alloc(uint32_t bytes) {
+#ifdef AICA_FW
+    if (active) {
+        bytes = (bytes + 31) & ~31u;
+        if (aram_next + bytes > 0x200000u) {
+            return 0;
+        }
+        uint32_t at = aram_next;
+        aram_next += bytes;
+        return at;
+    }
+#endif
+    return snd_mem_malloc(bytes);
+}
+
+bool aica_port_firmware(void) {
+#ifdef AICA_FW
+    return active;
+#else
+    return false;
+#endif
+}
+
+uint32_t aica_port_clock(void) {
+#ifdef AICA_FW
+    return active ? clock_now() : 0;
+#else
+    return 0;
+#endif
 }
 
 uint32_t aica_take_frame_us(uint32_t* frames) {

@@ -105,6 +105,7 @@ static semaphore_t log_sem;
 
 static void* log_thread(void* param) {
     (void)param;
+    fpu_thread_init();
     for (;;) {
         sem_wait(&log_sem);
         log_progress();
@@ -424,6 +425,7 @@ static bool lockstep_step(void);
 
 static void* events_thread(void* param) {
     (void)param;
+    fpu_thread_init();
 
 #ifdef LOCKSTEP
     for (;;) {
@@ -664,6 +666,7 @@ static bool lockstep_step(void) {
 
 static void* rsp_thread(void* param) {
     (void)param;
+    fpu_thread_init();
     for (;;) {
         sem_wait(&rsp_sem);
         uint32_t task = rsp_queue[rsp_tail % RSP_QUEUE];

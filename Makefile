@@ -127,8 +127,8 @@ all: recomp
 
 tools: $(N64RECOMP)
 
-$(N64RECOMP): scripts/build_n64recomp.sh tools/patches/n64recomp-gpr32.patch tools/patches/n64recomp-return-hooks.patch \
-              tools/patches/n64recomp-codegen.patch
+$(N64RECOMP): scripts/build_n64recomp.sh $(wildcard tools/N64Recomp/src/*.cpp tools/N64Recomp/src/*.h \
+              tools/N64Recomp/include/recompiler/*.h)
 	scripts/build_n64recomp.sh $(TOOLS)/N64Recomp
 
 recomp: $(RECOMP_DIR)/funcs.h
@@ -141,7 +141,7 @@ $(ROM):
 	@echo "Put your Quest 64 (USA) ROM at $(ROM) (big-endian .z64)." && false
 
 ifneq ($(MOD),)
-# The mods' recompiler: N64Recomp's libraries (patched by build_n64recomp.sh) plus tools/modrecomp.
+# The mods' recompiler: N64Recomp's libraries (the N64Recomp-DC submodule) plus tools/modrecomp.
 $(MODRECOMP): $(N64RECOMP) tools/modrecomp/main.cpp tools/modrecomp/CMakeLists.txt
 	cmake -S tools/modrecomp -B $(TOOLS)/modrecomp -G Ninja -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(TOOLS)/modrecomp --target modrecomp
@@ -209,13 +209,22 @@ endif
 
 elf: $(TARGET)
 
-$(TARGET): $(GAME_OBJS) $(RT_OBJS) $(MOD_OBJS)
+# Hot layout: the functions in runtime/hot.txt first in .text, so the renderer's busiest paths
+# share the instruction cache. HOT_LD=<script> links with another script, HOT_LD= with
+# KallistiOS's own.
+HOT_LD ?= $(OBJ_DIR)/shlelf-hot.xc
+
+$(OBJ_DIR)/shlelf-hot.xc: runtime/hot.txt scripts/mkhot.py
+	@mkdir -p $(dir $@)
+	python3 scripts/mkhot.py $(KOS_BASE)/utils/ldscripts/shlelf.xc runtime/hot.txt $@
+
+$(TARGET): $(GAME_OBJS) $(RT_OBJS) $(MOD_OBJS) $(HOT_LD)
 	set -e; \
 	if [ -n "$(HOT_LD)" ]; then \
 	  KOS_LDFLAGS=$$(printf '%s' "$$KOS_LDFLAGS" | sed 's|-T[^ ]*shlelf\.xc|-T$(HOT_LD)|'); \
 	  export KOS_LDFLAGS; \
 	fi; \
-	kos-c++ -o $@ $^ -lm $(if $(PROF_MAP),-Wl$(comma)-Map$(comma)$(PROF_MAP))
+	kos-c++ -o $@ $(filter-out $(HOT_LD),$^) -lm $(if $(PROF_MAP),-Wl$(comma)-Map$(comma)$(PROF_MAP))
 	@sh-elf-size $@
 
 ifneq ($(PROF_BINS),)
@@ -279,6 +288,20 @@ $(VBUILD)/0GDTEX.PVR: $(COVER) scripts/make_gdtex.py
 	python3 scripts/make_gdtex.py $< $@
 endif
 
+# Eltale Reborn's ambient sound: its clips (eltale/ambience) in the AICA's ADPCM, as ambience.bin in
+# the disc's root (runtime/mod/ambience.c). tools/ambpack is a host program.
+ifneq ($(filter eltale,$(MODS)),)
+AMBPACK  := $(TOOLS)/ambpack
+AMB_PACK := $(VBUILD)/ambience.bin
+
+$(AMBPACK): tools/ambpack/ambpack.c tools/ambpack/stb_vorbis.c runtime/mod/ambience_pack.h
+	@mkdir -p $(dir $@)
+	gcc -O2 -w -o $@ tools/ambpack/ambpack.c -lm
+
+$(AMB_PACK): $(AMBPACK) eltale/ambience/ambience_clips.h $(wildcard eltale/ambience/*.ogg)
+	$(AMBPACK) eltale/ambience/ambience_clips.h eltale/ambience $@ > $(VBUILD)/ambience.txt
+endif
+
 # `make test-cdi TEST_SCRIPT=tests/<script>.txt` builds a separate disc, $(TEST_CDI), that also
 # carries a scripted-input test (see runtime/src/test.c). The normal disc never has one.
 TEST_SCRIPT ?=
@@ -293,19 +316,19 @@ test-cdi:
 	@$(MAKE) --no-print-directory all
 	@$(MAKE) --no-print-directory $(TEST_CDI)
 
-$(CDI): $(TARGET) $(ROM) $(GDTEX) $(PROF_BINS)
+$(CDI): $(TARGET) $(ROM) $(GDTEX) $(PROF_BINS) $(AMB_PACK)
 	@mkdir -p $(DISC_DIR)
 	cmp -s $(ROM) $(DISC_DIR)/quest64.z64 || cp $(ROM) $(DISC_DIR)/quest64.z64
-	mkdcdisc -e $(TARGET) -f $(DISC_DIR)/quest64.z64 $(addprefix -f ,$(GDTEX) $(PROF_BINS)) \
+	mkdcdisc -e $(TARGET) -f $(DISC_DIR)/quest64.z64 $(addprefix -f ,$(GDTEX) $(PROF_BINS) $(AMB_PACK)) \
 		-n "$(DISC_TITLE)" -a "Quest64-DC-Port" -s "$(DISC_SERIAL)" -N -o $@ --allow-overwrite
 
 # Rebuilt every time, so a changed script takes effect. Its own serial keeps its VMU apart in Flycast.
-$(TEST_CDI): $(TARGET) $(ROM) $(GDTEX) FORCE
+$(TEST_CDI): $(TARGET) $(ROM) $(GDTEX) $(AMB_PACK) FORCE
 	@mkdir -p $(TEST_DISC_DIR)
 	cmp -s $(ROM) $(TEST_DISC_DIR)/quest64.z64 || cp $(ROM) $(TEST_DISC_DIR)/quest64.z64
 	$(if $(MODS),python3 scripts/test_syms.py $(TEST_SCRIPT) $(MODGEN)/mods_layout.txt $(MOD_STAGE) > $(TEST_DISC_DIR)/q64test.txt,cp $(TEST_SCRIPT) $(TEST_DISC_DIR)/q64test.txt)
 	mkdcdisc -e $(TARGET) -f $(TEST_DISC_DIR)/quest64.z64 -f $(TEST_DISC_DIR)/q64test.txt \
-		$(addprefix -f ,$(GDTEX)) -n "$(TEST_TITLE)" -a "Quest64-DC-Port" -s "$(TEST_SERIAL)" -N -o $@ --allow-overwrite
+		$(addprefix -f ,$(GDTEX) $(AMB_PACK)) -n "$(TEST_TITLE)" -a "Quest64-DC-Port" -s "$(TEST_SERIAL)" -N -o $@ --allow-overwrite
 
 FORCE:
 
