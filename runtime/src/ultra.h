@@ -118,11 +118,16 @@ uint32_t gfx_take_frames(void);
 
 // Controllers (cont.c).
 void cont_poll(void);
+// What A+B+X+Y+Start does: in the game, back to the title screen; on the title or the intro, the
+// BIOS menu.
+void cont_soft_reset(void);
 
 // Controller Pak saves on the VMU (pak.c).
 void pak_init(void);
 // Writes pending changes to the VMU once the game has stopped writing for a moment.
 void pak_flush_idle(void);
+// Writes pending changes to the VMU now.
+void pak_flush_now(void);
 
 // ROM cache statistics (rom.c).
 void rom_print_stats(void);

@@ -324,6 +324,10 @@ void pak_flush_idle(void) {
     }
 }
 
+void pak_flush_now(void) {
+    flush();
+}
+
 void pak_init(void) {
     maple_device_t* dev = find_vmu();
     if (dev == NULL) {

@@ -1,0 +1,63 @@
+# Eltale Reborn: what a soft reset leaves behind, and Normoon's sails, which stay still until Zelse falls.
+#   make MOD=eltale,gameplay test-cdi TEST_SCRIPT=tests/mod_soft_reset.txt
+#   scripts\flycast.ps1 300 -Test -ResetVmu -Disc build/eltale-reborn-test.cdi
+# 8007D19C holds the game's 8 boss flags (bit 1: Zelse defeated), {gModSave+8} the
+# mod's, 8007BA94 the gold. The sails' angles are at byte 0x14 of each 28-byte slot of the two lists
+# at 80084180 and 80084098, which take turns a frame each.
+
+wait 14000
+wait 8000                  # the intro ignores Start for about 20 s
+tap S
+wait16 8007B2E0 FFFF 3 10000
+wait 4000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+tap A 36 700               # the mod's prologue
+talk 300000
+
+poke8 8007D19C FF          # every boss beaten (the save keeps just this byte; the next three are unused)
+setbit {gModSave+8} 16
+poke32 8007BA94 1F4        # 500 gold
+peek32 8007D19C
+peek32 {gModSave+8}
+peek32 8007BA94
+soft_reset
+wait16 8007B2E0 FFFF 3 15000
+wait 4000
+shot msr_title
+tap S
+wait 4000
+tap A                      # NEW
+wait 3000
+log after the soft reset, before the prologue
+peek32 8007D19C
+peek32 {gModSave+8}
+peek32 8007BA94
+tap A 36 700
+talk 300000
+log after the prologue
+peek32 8007D19C
+peek32 {gModSave+8}
+peek32 8007BA94
+
+warp 6 0 0                 # Normoon, the wind still out
+wait 3000
+dump 80084194 1
+dump 800840AC 1
+shot msr_normoon_still_1
+wait 2000
+dump 80084194 1
+dump 800840AC 1
+shot msr_normoon_still_2
+setbit 8007D19C 1          # Zelse defeated
+wait 2000
+dump 80084194 1
+dump 800840AC 1
+shot msr_normoon_wind_1
+wait 1000
+dump 80084194 1
+dump 800840AC 1
+shot msr_normoon_wind_2
+log mod soft reset finished

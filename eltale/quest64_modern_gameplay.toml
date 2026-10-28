@@ -3,7 +3,7 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "0.4.1"
+version = "0.4.2"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \

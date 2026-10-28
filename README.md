@@ -40,6 +40,7 @@ A 512x512 PNG at `assets/cover-eltale.png` is packed onto the disc as `0GDTEX.PV
 | Left trigger  | Scroll the item list left                   |
 | Right trigger | Scroll the item list right                  |
 | Start         | Open menu                                   |
+| A+B+X+Y+Start | Soft reset: back to the title screen; on the title screen, to the Dreamcast menu |
 
 ## Saves
 

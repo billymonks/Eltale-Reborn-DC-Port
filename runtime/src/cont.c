@@ -1,7 +1,9 @@
 // Serial interface: N64 controllers read from Dreamcast controllers, plus the Rumble Pak calls.
 
 #include <kos.h>
+#include <dc/maple/purupuru.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "audio_hle.h"
 #include "profile.h"
@@ -37,6 +39,33 @@
 #define N64_C_RIGHT 0x0001
 
 #define TRIGGER_THRESHOLD 128
+
+// Sega's soft reset: A, B, X, Y and Start held together on any controller. In the game it starts
+// over at the title screen; on the title screen or the intro before it, it leaves for the BIOS menu.
+#define RESET_CHORD (CONT_A | CONT_B | CONT_X | CONT_Y | CONT_START)
+
+#define GAME_MODE         0x8007B2E0u  // u16
+#define GAME_STATE        0x8007B2E4u  // u32
+#define GAME_MODE_TITLE   3
+#define GAME_MODE_INTRO   4
+// When a mode's loop returns with this set, the main loop (func_80000C50) initializes the game
+// again, the way the ending goes back to the intro.
+#define GAME_STATE_REINIT 0x8000
+
+// The music (UpdateBGM and func_80026658, once a frame): the song asked for, and while bit 0 of
+// the flags is set, frames to wait before the change.
+#define BGM_NEXT        0x8008FCC1u  // s8, -1 for none
+#define BGM_FLAGS       0x8008FCC2u  // u16
+#define BGM_DELAY       0x8008FCC4u  // u16
+#define BGM_CHANGE      0x1
+#define BGM_UPDATE_FUNC 0x80026658u
+#define SEQ_STOP_FUNC   0x800253F0u  // (player): stops a sequence player's song
+
+static bool reset_pending;
+// The chord's buttons stay away from the game until they are all let go.
+static bool reset_held;
+
+static void sfx_rumble_tick(void);
 
 typedef struct {
     bool connected;
@@ -92,7 +121,57 @@ static uint16_t map_buttons(const cont_state_t* st) {
     return out;
 }
 
+static void exit_to_bios(void) {
+    printf("[q64dc] soft reset on the title screen: leaving for the BIOS menu\n");
+    pak_flush_now();
+    // exit() runs the C++ destructors, and the runtime's own threads (retraces, disc reads) would
+    // otherwise still reach the scheduler's tables while they go.
+    sched_lock();
+    arch_set_exit_path(ARCH_EXIT_MENU);
+    exit(0);
+}
+
+void cont_soft_reset(void) {
+    uint16_t mode = MEM_HU(0, GAME_MODE);
+    if (mode == GAME_MODE_TITLE || mode == GAME_MODE_INTRO) {
+        exit_to_bios();
+    }
+    // Before the main loop's first pass, or for a moment between rooms; the music isn't set up
+    // for soft_reset_stop_music in the first.
+    if (mode == 0) {
+        return;
+    }
+    printf("[q64dc] soft reset in game mode %u: back to the title screen\n", (unsigned)mode);
+    reset_pending = true;
+}
+
+// The ending's way out stops its song before the main loop initializes the game again; the other
+// modes' loops don't, and a song still playing then never stops.
+void soft_reset_stop_music(uint8_t* rdram, recomp_context* ctx) {
+    if (!reset_pending) {
+        return;
+    }
+    MEM_B(0, BGM_NEXT) = -1;
+    MEM_HU(0, BGM_FLAGS) |= BGM_CHANGE;
+    MEM_HU(0, BGM_DELAY) = 0;
+    LOOKUP_FUNC(BGM_UPDATE_FUNC)(rdram, ctx);
+    // The field starts its rooms' songs on the player itself, past the music's own record of them.
+    ctx->r4 = 0;
+    LOOKUP_FUNC(SEQ_STOP_FUNC)(rdram, ctx);
+}
+
+void soft_reset_reinit(uint8_t* rdram, recomp_context* ctx) {
+    (void)rdram;
+    (void)ctx;
+    if (reset_pending) {
+        reset_pending = false;
+        MEM_HU(0, GAME_MODE) = GAME_MODE_TITLE;
+    }
+}
+
 void cont_poll(void) {
+    uint32_t chord_buttons = 0;
+    bool chord = false;
     for (int i = 0; i < MAXCONTROLLERS; i++) {
         maple_device_t* dev = maple_enum_type(i, MAPLE_FUNC_CONTROLLER);
         cont_state_t* st = dev != NULL ? (cont_state_t*)maple_dev_status(dev) : NULL;
@@ -103,6 +182,25 @@ void cont_poll(void) {
         pads[i].connected = true;
         pads[i].buttons = map_buttons(st);
         scale_stick(st->joyx, -st->joyy, &pads[i].stick_x, &pads[i].stick_y);
+        chord_buttons |= st->buttons & RESET_CHORD;
+        chord |= (st->buttons & RESET_CHORD) == RESET_CHORD;
+    }
+    if (chord && !reset_held) {
+        reset_held = true;
+        cont_soft_reset();
+    } else if (chord_buttons == 0) {
+        reset_held = false;
+    }
+    if (reset_held) {
+        for (int i = 0; i < MAXCONTROLLERS; i++) {
+            pads[i].buttons = 0;
+        }
+    }
+    // Until the main loop starts over: whatever the mode's loop was doing, it ends at its next
+    // check of the mode.
+    if (reset_pending) {
+        MEM_HU(0, GAME_MODE) = GAME_MODE_TITLE;
+        MEM_W(0, GAME_STATE) |= GAME_STATE_REINIT;
     }
     // The game needs a controller in port 1 to get past its checks; without one (an emulator
     // run with no input), report an idle controller.
@@ -195,6 +293,7 @@ void cont_poll(void) {
     }
 #endif
     pak_flush_idle();
+    sfx_rumble_tick();
 }
 
 static uint8_t write_status(uint32_t status_array) {
@@ -263,6 +362,194 @@ void osContGetReadData_recomp(uint8_t* rdram, recomp_context* ctx) {
             MEM_BU(4, entry) = CONT_NO_RESPONSE_ERROR;
         }
     }
+}
+
+// Jump pack. Quest 64 never starts the Rumble Pak (osMotorStart has no callers). The PC recomp
+// rumbles the same impacts from the sound that actually plays, and this is that table: low and high
+// are the two motors, 0-255, and frames is how many retraces the pulse holds. A hit landing (0x18)
+// is both a staff hit and Brian getting hurt. A miss plays the swing (0x17), and footsteps reuse
+// the door effect (0x21); neither of those rumbles in a fight. A flyby or a swing only
+// rumbles while a scene has Brian.
+//
+// The pack has one motor. Strength is the louder of the two, on the pack's 1-7 scale, and the mix
+// sets the rate: a heavy low motor is slower, a sharp high one is faster. The pulse is sent when
+// the controllers are next read and stopped after that many retraces. A weaker pulse waits out
+// the one already playing. The decay bit of the frequency byte makes a Sega pack ignore the command,
+// so the rate stays under it.
+
+#define PLAYER_STATE       0x8007BAB8u
+#define PLAYER_STATE_TALK  7
+#define PLAYER_STATE_ITEM  11
+#define BATTLE_STATE       0x8008C592u
+#define BATTLE_ACTIVE      0x0001
+#define GAME_MODE_GAMEPLAY 1
+#define GAME_MODE_ENDING   5
+
+#define SFX_COUNT 0x46
+
+struct SfxRumble {
+    uint8_t low;
+    uint8_t high;
+    uint8_t frames;
+    bool cutscene_only;
+};
+
+static const struct SfxRumble sfx_rumble_for[SFX_COUNT] = {
+    [0x07] = {220, 160, 16, false}, // Solvaring's rock, Mammon's last spell
+    [0x0A] = {150, 110, 12, false}, // an enemy beaten
+    [0x0C] = {200, 150, 14, false}, // a column bursting up
+    [0x0D] = {240, 190, 16, false}, // an explosion
+    [0x0F] = {100, 150, 8, false},  // Fire Ball
+    [0x10] = {255, 170, 20, false}, // Rolling Rock, an earthquake
+    [0x15] = {60, 90, 6, true},     // a projectile flying past
+    [0x16] = {140, 160, 12, false}, // Ultimate Wind
+    [0x17] = {80, 130, 7, true},    // a swing that missed, and Wind Cutter
+    [0x18] = {230, 200, 16, false}, // a hit that landed: staff hit, or Brian hurt
+    [0x29] = {200, 170, 16, false}, // a big area spell
+    [0x2A] = {150, 140, 12, false}, // Cyclone
+    [0x2C] = {140, 100, 10, false}, // Rock
+    [0x2E] = {200, 150, 14, false}, // dark magic
+    [0x31] = {200, 160, 14, false}, // Beigis's second spell
+    [0x38] = {90, 140, 8, false},   // Ice Knife
+};
+
+// The sound can start on the audio thread. The pack is commanded from the controller poll, on the
+// game thread, which is also the thread that writes the VMU.
+static int pulse_low;
+static int pulse_high;
+static int pulse_frames;
+static uint32_t pulse_vi;
+static uint32_t pulse_seq;
+static uint32_t pend_seq;
+static int pend_low;
+static int pend_high;
+static int pend_frames;
+
+static int rumble_peak(int low, int high) {
+    return low > high ? low : high;
+}
+
+static bool cutscene_playing(void) {
+    uint16_t mode = MEM_HU(0, GAME_MODE);
+    uint16_t state;
+
+    if (mode == GAME_MODE_INTRO || mode == GAME_MODE_ENDING) {
+        return true;
+    }
+    if (mode != GAME_MODE_GAMEPLAY) {
+        return false;
+    }
+    if (MEM_HU(0, BATTLE_STATE) & BATTLE_ACTIVE) {
+        return false;
+    }
+    state = MEM_HU(0, PLAYER_STATE);
+    return state == PLAYER_STATE_TALK || state == PLAYER_STATE_ITEM;
+}
+
+static void request_rumble_pulse(int low, int high, int frames) {
+    int old = irq_disable();
+    int playing = pulse_frames > 0 ? rumble_peak(pulse_low, pulse_high) : 0;
+    int pending = pend_seq != pulse_seq ? rumble_peak(pend_low, pend_high) : 0;
+    int blocked = playing > pending ? playing : pending;
+    bool busy = pulse_frames > 0 || pend_seq != pulse_seq;
+
+    if (busy && blocked > rumble_peak(low, high)) {
+        irq_restore(old);
+        return;
+    }
+    pend_low = low;
+    pend_high = high;
+    pend_frames = frames;
+    pend_seq++;
+    irq_restore(old);
+}
+
+static maple_device_t* jump_pack(void) {
+    return maple_enum_type(0, MAPLE_FUNC_PURUPURU);
+}
+
+static void jump_pack_start(int low, int high) {
+    maple_device_t* dev = jump_pack();
+    purupuru_effect_t fx = {0};
+    int peak = rumble_peak(low, high);
+    int sum = low + high;
+    int freq;
+    int power;
+
+    if (dev == NULL) {
+        return;
+    }
+    power = (peak * 7 + 127) / 255;
+    if (power < 1) {
+        power = 1;
+    }
+    freq = sum > 0 ? 12 + (high * 32) / sum : 20;
+    fx.motor = 1;
+    fx.cont = true;
+    fx.fpow = (uint32_t)power;
+    fx.freq = (uint8_t)freq;
+    purupuru_rumble(dev, &fx);
+}
+
+static void jump_pack_stop(void) {
+    maple_device_t* dev = jump_pack();
+    purupuru_effect_t fx = {0};
+
+    if (dev == NULL) {
+        return;
+    }
+    fx.motor = 1;
+    purupuru_rumble(dev, &fx);
+}
+
+static void sfx_rumble_tick(void) {
+    int low = 0;
+    int high = 0;
+    bool start = false;
+    bool stop = false;
+    int old = irq_disable();
+
+    if (pend_seq != pulse_seq) {
+        pulse_low = pend_low;
+        pulse_high = pend_high;
+        pulse_frames = pend_frames;
+        pulse_vi = stat_vi_count;
+        pulse_seq = pend_seq;
+        low = pulse_low;
+        high = pulse_high;
+        start = true;
+    } else if (pulse_frames > 0) {
+        uint32_t passed = stat_vi_count - pulse_vi;
+        if (passed > 0) {
+            pulse_vi = stat_vi_count;
+            if (passed >= (uint32_t)pulse_frames) {
+                pulse_frames = 0;
+                stop = true;
+            } else {
+                pulse_frames -= (int)passed;
+            }
+        }
+    }
+    irq_restore(old);
+    if (start) {
+        jump_pack_start(low, high);
+    } else if (stop) {
+        jump_pack_stop();
+    }
+}
+
+void sfx_rumble(uint8_t* rdram, int id, int volume) {
+    const struct SfxRumble* fx;
+
+    (void)rdram;
+    if (volume == 0 || id < 0 || id >= SFX_COUNT) {
+        return;
+    }
+    fx = &sfx_rumble_for[id];
+    if ((fx->low == 0 && fx->high == 0) || (fx->cutscene_only && !cutscene_playing())) {
+        return;
+    }
+    request_rumble_pulse(fx->low, fx->high, fx->frames);
 }
 
 // Port 1 holds the Controller Pak, so there's no Rumble Pak to find.

@@ -25,6 +25,7 @@
 //   log <text>
 //   pos                               print Brian's position and step, the retrace and frame counts and the time
 //   watch <addr>                      print every change of a halfword, checked at each controller poll (hex, up to 4)
+//   soft_reset                        what A+B+X+Y+Start does (cont.c): the title screen, or from there the BIOS menu
 //   burn <ms>                         busy-wait that long in every controller poll, to slow the game down (0: off)
 //   profile_start, profile_dump       sample the program counter in between (profile.c)
 //   pace_start, pace_dump <label>     record each vblank's flips, swaps and task hand-overs in between (events.c)
@@ -564,6 +565,10 @@ static bool step(uint64_t now) {
     if (strcmp(cmd, "burn") == 0) {
         burn_ms = 0;
         sscanf(args, "%u", &burn_ms);
+        return true;
+    }
+    if (strcmp(cmd, "soft_reset") == 0) {
+        cont_soft_reset();
         return true;
     }
     if (strcmp(cmd, "frameskip") == 0) {

@@ -43,6 +43,19 @@ func = "initPFSPaks"
 text = "pak_check(rdram, ctx); return;"
 before_vram = 0x80031ACC
 
+# The main loop, once it has initialized the game again (func_80000EEC sets the intro's game mode):
+# a soft reset goes to the title instead (cont.c).
+[[patches.hook]]
+func = "func_80000C50"
+text = "soft_reset_reinit(rdram, ctx);"
+before_vram = 0x80000E14
+
+# Where it starts initializing: a soft reset stops the music first, as the ending does.
+[[patches.hook]]
+func = "func_80000C50"
+text = "soft_reset_stop_music(rdram, ctx);"
+before_vram = 0x80000DC4
+
 # The floor probe's point-in-shape test, the game's costliest function in battle, in native code.
 [[patches.hook]]
 func = "func_8000F238"
@@ -77,3 +90,16 @@ before_vram = 0x80024690
 func = "dma_write"
 text = "load_overlays(ctx->r4, ctx->r5, ctx->r6);"
 before_vram = 0x80024260
+
+# Rumble follows a sound effect as it actually starts. Delay 0 plays here ($a0 the id, $a3 the
+# scaled volume). A delayed effect waits in func_80026658 and starts with $a0 the id and $a1 the
+# volume. The jump pack plays the same pulses as the PC recomp (cont.c).
+[[patches.hook]]
+func = "func_800268D4"
+text = "sfx_rumble(rdram, (int)(ctx->r4 & 255u), (int)(ctx->r7 & 255u));"
+before_vram = 0x80026940
+
+[[patches.hook]]
+func = "func_80026658"
+text = "sfx_rumble(rdram, (int)(ctx->r4 & 255u), (int)(ctx->r5 & 255u));"
+before_vram = 0x80026790

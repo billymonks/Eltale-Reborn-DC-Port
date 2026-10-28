@@ -450,12 +450,22 @@ void pak_check(uint8_t* rdram, recomp_context* ctx);
 // Replaces the game's floor test of a point against a shape, func_8000F238 (collision.c).
 void floor_shape_test(uint8_t* rdram, recomp_context* ctx);
 
+// In the main loop once it has initialized the game again: after a soft reset, the title's game
+// mode instead of the intro's (cont.c).
+void soft_reset_reinit(uint8_t* rdram, recomp_context* ctx);
+// Before it does: after a soft reset, stops the music the way the ending does (cont.c).
+void soft_reset_stop_music(uint8_t* rdram, recomp_context* ctx);
+
 // Replace libultra's __sinf and __cosf with the same double-precision steps in native code (sincos.c).
 void ultra_sinf(uint8_t* rdram, recomp_context* ctx);
 void ultra_cosf(uint8_t* rdram, recomp_context* ctx);
 
 // In alAudioFrame after the players' handlers: plays the voices' updates on the AICA (aica.c).
 void aica_audio_frame(uint8_t* rdram, recomp_context* ctx);
+
+// A sound effect is about to start, with the id and the volume it actually plays at. Impacts rumble
+// the jump pack (cont.c).
+void sfx_rumble(uint8_t* rdram, int id, int volume);
 
 #ifdef __cplusplus
 }
