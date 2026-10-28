@@ -272,6 +272,14 @@ MODRT_IMPORT(recomp_get_mod_version) {
     MEM_W(0, ctx->r6) = (int32_t)mod->version[2];
 }
 
+// The PC recomp can fade flickering surfaces with a smoothed alpha. This port doesn't, so the
+// option is always off and the mod keeps the original flicker.
+MODRT_IMPORT(recomp_get_smooth_transparency) {
+    (void)rdram;
+    (void)mod;
+    ctx->r2 = 0;
+}
+
 MODRT_IMPORT(recomp_is_dependency_met) {
     (void)mod;
     char id[64];

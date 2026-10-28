@@ -50,6 +50,7 @@ MODRT_IMPORT(recomp_get_config_double);
 MODRT_IMPORT(recomp_get_config_string);
 MODRT_IMPORT(recomp_free_config_string);
 MODRT_IMPORT(recomp_get_mod_version);
+MODRT_IMPORT(recomp_get_smooth_transparency);
 MODRT_IMPORT(recomp_is_dependency_met);
 MODRT_IMPORT(recomphook_get_return_s32);
 MODRT_IMPORT(recomphook_get_return_u32);

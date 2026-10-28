@@ -185,8 +185,6 @@ static struct {
     int phase, mat_phase;
     uint32_t pvr_fog_color;  // the PowerVR's vertex fog color this frame, if pvr_fog_set
     bool pvr_fog_set;
-    uint32_t fog_bg;  // first non-black fog color this frame, for the overscan background
-    bool fog_bg_set;
     HeaderKey mat_key;     // header for the material, without the offset flag
     bool mat_key_changed;
     uint32_t out_gen;      // bumped when cached vertex outputs go stale
@@ -1259,12 +1257,6 @@ static void GFX_OUTLINE update_material(bool rect, int rect_tile) {
     m->fog = FOG_NONE;
     if (fog) {
         uint32_t rgb = g.fog_color >> 8;
-        // Fog color persists across frames, and a setup list clears it to black. The overscan
-        // background wants the color geometry is actually fading toward.
-        if (!g.fog_bg_set && rgb != 0) {
-            g.fog_bg = g.fog_color;
-            g.fog_bg_set = true;
-        }
         if (m->textured && (!g.pvr_fog_set || g.pvr_fog_color == rgb)) {
             g.pvr_fog_set = true;
             g.pvr_fog_color = rgb;
@@ -3049,12 +3041,6 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
                     g.fog_color = w1;
                     g.mat_dirty = true;
                 }
-                // A setup list clears fog to black. The background wants the area color, so the first
-                // fog that isn't black wins, whether that list runs before or after it.
-                if (!g.fog_bg_set && (w1 & 0xFFFFFF00u) != 0) {
-                    g.fog_bg = w1;
-                    g.fog_bg_set = true;
-                }
                 break;
 
             case 0xF9:  // G_SETBLENDCOLOR
@@ -3136,7 +3122,6 @@ static void ensure_pvr(void) {
         .opb_overflow_count = 3,
     };
     pvr_init(&params);
-    // Frames that set a fog color replace this. See apply_fog_border.
     pvr_set_bg_color(0.0f, 0.0f, 0.0f);
     pvr_set_zclip(0.000001f);
     // KOS 2.2.1 never writes this. The compare is >=. 0x80 keeps a 1555 alpha of 1
@@ -3727,7 +3712,6 @@ void gfx_run_task(uint32_t task) {
     g.mat_dirty = true;
     g.phase = PHASE_BACKGROUND;
     g.pvr_fog_set = false;
-    g.fog_bg_set = false;
     // Look textures up again at least once a frame, which marks them as in use.
     g.tmem_gen++;
     tex_frame_begin();
@@ -3839,23 +3823,6 @@ static void submit_ram_list(int list, int direct) {
     pvr_list_finish();
 }
 
-// The world is scissored inside the 320x240 frame, leaving the margin a TV crops. Fill rectangles
-// stop at that scissor, and a cave draws no sky past it, so the margin is the PowerVR background.
-// The video border around the 640x480 picture is that same rim. Both take this frame's fog color.
-// The background polygon copies its color at scene finish, so that one stays with this frame.
-static void apply_fog_border(void) {
-    uint8_t r = 0, gc = 0, b = 0;
-    if (g.fog_bg_set) {
-        r = (uint8_t)(g.fog_bg >> 24);
-        gc = (uint8_t)(g.fog_bg >> 16);
-        b = (uint8_t)(g.fog_bg >> 8);
-    }
-    // pvr_set_bg_color truncates 255*c. The half step lands on the byte.
-    float s = 1.0f / 255.0f;
-    pvr_set_bg_color((r + 0.5f) * s, (gc + 0.5f) * s, (b + 0.5f) * s);
-    vid_border_color(r, gc, b);
-}
-
 void gfx_submit(void) {
 #ifdef GFX_DIAG
     uint64_t submit_t0 = timer_us_gettime64();
@@ -3863,7 +3830,6 @@ void gfx_submit(void) {
 #endif
     submit_ram_list(LIST_TR, 0);
     submit_ram_list(LIST_PT, 0);
-    apply_fog_border();
     // Read when rendering; the previous frame may still be rendering, so a new fog color can reach
     // its last tiles.
     if (g.pvr_fog_set) {

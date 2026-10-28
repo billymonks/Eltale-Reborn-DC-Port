@@ -44,6 +44,7 @@ const std::set<std::string> runtime_imports {
     "recomp_get_config_string",
     "recomp_free_config_string",
     "recomp_get_mod_version",
+    "recomp_get_smooth_transparency",
     "recomp_is_dependency_met",
     "recomphook_get_return_s32",
     "recomphook_get_return_u32",
