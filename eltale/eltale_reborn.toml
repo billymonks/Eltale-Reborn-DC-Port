@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.14.13"
+version = "0.14.16"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -56,6 +56,14 @@ description = "Dreamcast uses these names when dialogue names a button: the A bu
 type = "Enum"
 options = [ "Nintendo 64", "Dreamcast" ]
 default = "Dreamcast"
+
+[[manifest.config_options]]
+id = "jp_battle_circles"
+name = "Japanese battle circles"
+description = "Battle rings are smooth circles, without the orbs on the corners, and they grow into place when they appear. This is how they look in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
 
 [[manifest.config_options]]
 id = "time_log"
