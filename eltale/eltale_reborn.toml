@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.14.19"
+version = "0.18.7"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -66,6 +66,78 @@ options = [ "Off", "On" ]
 default = "On"
 
 [[manifest.config_options]]
+id = "jp_menu_slides"
+name = "Japanese menu slides"
+description = "Pause-menu pages ease into place, quick at the start and then settling. This is how they move in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_staff_hit"
+name = "Japanese staff hit"
+description = "Brian's staff throws sixteen short yellow sparks from the end of the swing when it connects, and an enemy's blow does the same when it lands on him. They fly out in every direction, slow down and fade. This is how a connecting hit looks in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_stat_glow"
+name = "Japanese stat glow"
+description = "When HP, MP, agility or defense goes up, a soft coloured glow covers Brian for a moment and a chime plays. Red is HP, yellow is defense, blue is MP, green is agility. This is how a stat increase looks in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_spirit_glow"
+name = "Japanese spirit glow"
+description = "A full spirit crystal, on the bottom left of the screen, glows and pulses in that element's colour, with a bright flash the moment it fills. This is how it looks in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_map_marker"
+name = "Japanese map marker"
+description = "The world map holds a quill pin, and a red gem on the compass points to that spot. On the map, A picks the quill up: the stick moves it, pages stay put, and B puts it back where it was. A sets it down. This is how the map works in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_battle_menu"
+name = "Japanese battle magic menu"
+description = "The magic menu uses the Japanese layout: the spell name sits at the top with a small gem for each element chosen, and the element bars wheel and fade in when the menu opens. Each element you pick lights up on the centre icon in its colour. This is how the magic menu looks in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_critical_hits"
+name = "Japanese critical hits"
+description = "Staff hits and enemy blows can land a critical hit: 1.5 times the damage, a white flash, and a bigger red damage number. The chance is 1 in 32, or 1 in 4 for Brian once all four of his spirits are at 50. Spells never land one. This is how melee works in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_hud_motion"
+name = "Japanese HUD motion"
+description = "The HP and MP bars glide to their new length, the monster panel slides in from the right, the staff icon and the talk and open prompts bob, and the element menu after a level-up fades in, lights the gem you pick and fades out. This is how the HUD moves in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_hp_meter"
+name = "HP and MP while walking"
+description = "The HP and MP bars stay on screen while Brian walks. In the original they slide away once he has been moving, and come back after he stands still. On is how the Japanese version keeps them up."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
 id = "time_log"
 name = "Log the time of day"
 description = "Debugging: once a second in towns and fields, write the clock, the lighting time and whatever is holding the clock to the log."
@@ -79,6 +151,14 @@ name = "Dev mode: jump to a test scene"
 description = "Debugging: the first time Brian is free after a new game or a load, jump straight to this scene (setting the flags it needs). Leave Off to play normally."
 type = "Enum"
 options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "dev_force_crits"
+name = "Dev mode: every melee hit is critical"
+description = "Debugging: with Japanese critical hits on, every staff hit and enemy blow is a critical, to check the flash and the big red number. Leave Off to play normally (1 in 32)."
+type = "Enum"
+options = [ "Off", "On" ]
 default = "Off"
 
 [inputs]
