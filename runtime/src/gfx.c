@@ -2941,12 +2941,27 @@ static void GFX_OUTLINE run_dl(uint32_t start) {
             case 0xEE:  // G_SETPRIMDEPTH
                 break;
 
-            case 0xED:  // G_SETSCISSOR
-                g.sc_x0 = (float)((w0 >> 12) & 0xFFF) * 0.25f;
-                g.sc_y0 = (float)(w0 & 0xFFF) * 0.25f;
-                g.sc_x1 = (float)((w1 >> 12) & 0xFFF) * 0.25f;
-                g.sc_y1 = (float)(w1 & 0xFFF) * 0.25f;
+            case 0xED: {  // G_SETSCISSOR
+                // The world scissor is 8 pixels inside 320x240, the part a TV crops. Rectangles
+                // are clipped to it, so a screen-filling background and anything in that margin
+                // (the gold counter's right edge) stop short of the frame, and the gap is black.
+                // A scissor that only trims that margin is the whole frame. A tighter one still clips.
+                float x0 = (float)((w0 >> 12) & 0xFFF) * 0.25f;
+                float y0 = (float)(w0 & 0xFFF) * 0.25f;
+                float x1 = (float)((w1 >> 12) & 0xFFF) * 0.25f;
+                float y1 = (float)(w1 & 0xFFF) * 0.25f;
+                if (x0 <= 16.0f && y0 <= 16.0f && x1 >= 320.0f - 16.0f && y1 >= 240.0f - 16.0f) {
+                    x0 = 0.0f;
+                    y0 = 0.0f;
+                    x1 = 320.0f;
+                    y1 = 240.0f;
+                }
+                g.sc_x0 = x0;
+                g.sc_y0 = y0;
+                g.sc_x1 = x1;
+                g.sc_y1 = y1;
                 break;
+            }
 
             case 0xEF:  // G_RDPSETOTHERMODE
                 if (GFX_OPT_ON(OPT_NOOP) && (w0 & 0x00FFFFFF) == g.oh && w1 == g.ol) {

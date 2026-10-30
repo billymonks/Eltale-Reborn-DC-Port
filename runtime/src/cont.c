@@ -60,6 +60,9 @@
 #define BGM_CHANGE      0x1
 #define BGM_UPDATE_FUNC 0x80026658u
 #define SEQ_STOP_FUNC   0x800253F0u  // (player): stops a sequence player's song
+// Stops the room's looping sounds (waves, water wheels), as a warp does; nothing else does before the
+// next room starts its own.
+#define ROOM_SOUNDS_STOP_FUNC 0x80026488u
 
 static bool reset_pending;
 // The chord's buttons stay away from the game until they are all let go.
@@ -137,7 +140,7 @@ void cont_soft_reset(void) {
         exit_to_bios();
     }
     // Before the main loop's first pass, or for a moment between rooms; the music isn't set up
-    // for soft_reset_stop_music in the first.
+    // for soft_reset_stop_sound in the first.
     if (mode == 0) {
         return;
     }
@@ -146,8 +149,9 @@ void cont_soft_reset(void) {
 }
 
 // The ending's way out stops its song before the main loop initializes the game again; the other
-// modes' loops don't, and a song still playing then never stops.
-void soft_reset_stop_music(uint8_t* rdram, recomp_context* ctx) {
+// modes' loops don't, and a song still playing then never stops. The room's sounds play on until
+// the next room loads.
+void soft_reset_stop_sound(uint8_t* rdram, recomp_context* ctx) {
     if (!reset_pending) {
         return;
     }
@@ -158,6 +162,7 @@ void soft_reset_stop_music(uint8_t* rdram, recomp_context* ctx) {
     // The field starts its rooms' songs on the player itself, past the music's own record of them.
     ctx->r4 = 0;
     LOOKUP_FUNC(SEQ_STOP_FUNC)(rdram, ctx);
+    LOOKUP_FUNC(ROOM_SOUNDS_STOP_FUNC)(rdram, ctx);
 }
 
 void soft_reset_reinit(uint8_t* rdram, recomp_context* ctx) {

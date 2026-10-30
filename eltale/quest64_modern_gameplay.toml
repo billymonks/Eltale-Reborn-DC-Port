@@ -3,7 +3,7 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "0.4.2"
+version = "0.4.6"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
@@ -81,7 +81,7 @@ max = 4.0
 step = 0.25
 precision = 2
 percent = false
-default = 2.5
+default = 2.0
 
 [[manifest.config_options]]
 id = "exp_rate"
@@ -93,7 +93,7 @@ max = 3.0
 step = 0.25
 precision = 2
 percent = false
-default = 2.5
+default = 2.0
 
 [[manifest.config_options]]
 id = "enemy_hp"
@@ -117,7 +117,7 @@ max = 1.5
 step = 0.05
 precision = 2
 percent = false
-default = 1
+default = 1.25
 
 [[manifest.config_options]]
 id = "healing2_power"
@@ -150,7 +150,15 @@ default = "On"
 [[manifest.config_options]]
 id = "balanced_magic"
 name = "Balanced magic"
-description = "On: every element adds to a spell, and points in that spell's element count double, so a focused build still hits hardest but the others aren't wasted. Healing uses the same rule. Avalanche is 4 rocks instead of 10 and not as heavy, Homing Arrow and the later wind spells hit harder, and Magic Barrier halves enemy spell damage instead of blocking it. Off: the original spell math."
+description = "On: every element adds to a spell, and points in that spell's element count double, so a focused build still hits hardest but the others aren't wasted. Healing uses the same rule. Avalanche is 20 softer rocks instead of 10, Homing Arrow and the later wind spells hit harder, and Magic Barrier halves enemy spell damage instead of blocking it. Off: the original spell math."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "boss_status"
+name = "Status effects on bosses"
+description = "On: Compression, Silence, Restriction and freeze can affect bosses, with the same chance they have against other enemies, and boss attacks no longer wipe Brian's buffs. Weakness and Slow already could. Extinction still fails on bosses. Off: bosses resist those four, and many boss attacks remove your buffs."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "On"

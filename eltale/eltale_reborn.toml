@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.18.7"
+version = "0.20.3"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -116,7 +116,7 @@ default = "On"
 [[manifest.config_options]]
 id = "jp_critical_hits"
 name = "Japanese critical hits"
-description = "Staff hits and enemy blows can land a critical hit: 1.5 times the damage, a white flash, and a bigger red damage number. The chance is 1 in 32, or 1 in 4 for Brian once all four of his spirits are at 50. Spells never land one. This is how melee works in the Japanese version."
+description = "Staff hits, spells and enemy blows can land a critical hit: 1.5 times the damage, a white flash, and a bigger red damage number. The chance is 1 in 32, or 1 in 4 for Brian's staff and spells once all four of his spirits are at 50. Enemy spells stay 1 in 32. This is how melee works in the Japanese version, extended to magic."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "On"
@@ -156,7 +156,7 @@ default = "Off"
 [[manifest.config_options]]
 id = "dev_force_crits"
 name = "Dev mode: every melee hit is critical"
-description = "Debugging: with Japanese critical hits on, every staff hit and enemy blow is a critical, to check the flash and the big red number. Leave Off to play normally (1 in 32)."
+description = "Debugging: with Japanese critical hits on, every staff hit, spell hit and enemy blow is a critical, to check the flash and the big red number. Leave Off to play normally (1 in 32)."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "Off"

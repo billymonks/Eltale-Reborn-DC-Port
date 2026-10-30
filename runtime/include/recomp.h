@@ -453,8 +453,9 @@ void floor_shape_test(uint8_t* rdram, recomp_context* ctx);
 // In the main loop once it has initialized the game again: after a soft reset, the title's game
 // mode instead of the intro's (cont.c).
 void soft_reset_reinit(uint8_t* rdram, recomp_context* ctx);
-// Before it does: after a soft reset, stops the music the way the ending does (cont.c).
-void soft_reset_stop_music(uint8_t* rdram, recomp_context* ctx);
+// Before it does: after a soft reset, stops the music the way the ending does, and the room's
+// sounds the way a warp does (cont.c).
+void soft_reset_stop_sound(uint8_t* rdram, recomp_context* ctx);
 
 // Replace libultra's __sinf and __cosf with the same double-precision steps in native code (sincos.c).
 void ultra_sinf(uint8_t* rdram, recomp_context* ctx);

@@ -50,10 +50,10 @@ func = "func_80000C50"
 text = "soft_reset_reinit(rdram, ctx);"
 before_vram = 0x80000E14
 
-# Where it starts initializing: a soft reset stops the music first, as the ending does.
+# Where it starts initializing: a soft reset stops the music and the room's sounds first.
 [[patches.hook]]
 func = "func_80000C50"
-text = "soft_reset_stop_music(rdram, ctx);"
+text = "soft_reset_stop_sound(rdram, ctx);"
 before_vram = 0x80000DC4
 
 # The floor probe's point-in-shape test, the game's costliest function in battle, in native code.

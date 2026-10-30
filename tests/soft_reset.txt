@@ -11,11 +11,13 @@ tap A                      # NEW
 wait 3000
 talk 150000                # the Grand Abbott's farewell
 shot sr_field
+dump 80053994 5            # the room's looping sounds (FF none): the abbey has one
 
 soft_reset
 wait16 8007B2E0 FFFF 3 15000   # the title (game mode 3)
 wait 4000
 shot sr_title_from_field
+dump 80053994 5            # all FF: stopped
 tap S                      # title: PUSH START
 wait 4000
 tap A                      # NEW
