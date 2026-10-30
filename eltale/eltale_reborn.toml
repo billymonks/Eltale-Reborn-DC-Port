@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.20.3"
+version = "0.20.17"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \

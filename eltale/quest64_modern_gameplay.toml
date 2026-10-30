@@ -3,7 +3,7 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "0.4.6"
+version = "0.4.9"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
@@ -226,7 +226,7 @@ default = "Release"
 [[manifest.config_options]]
 id = "area_attacks"
 name = "Boss area attacks"
-description = "Always hit (vanilla): some boss waves (like Solvaring's earth attack) hit Brian as soon as they start, wherever he is. Dodgeable: they only hit when the wave actually reaches him."
+description = "Always hit (vanilla): some boss waves (like Solvaring's earth attack) hit Brian as soon as they start, wherever he is. Dodgeable: they only hit when the wave actually reaches him, and Guilty's otherwise invisible ground shot is drawn as a trail of blasts."
 type = "Enum"
 options = [ "Always hit", "Dodgeable" ]
 default = "Dodgeable"
@@ -234,7 +234,7 @@ default = "Dodgeable"
 [[manifest.config_options]]
 id = "rock_shower"
 name = "Enemy Rock Shower"
-description = "Hits anywhere (vanilla): when Rocky, Cockatrice or Judgment casts Rock Shower, the small rocks only fall around the caster, but Brian is hit wherever he is. Only under the rocks: he is hit only if he is where the rocks fall. Brian's own Rock Shower is unchanged."
+description = "Hits anywhere (vanilla): when Rocky, Cockatrice or Judgment casts Rock Shower, the small rocks only fall around the caster, but Brian is hit wherever he is. Only under the rocks: he is hit only if he is where the rocks fall, and Judgment casts a bigger Avalanche instead (40 rocks, spread twice as far) so he can't be fought safely from range. Brian's own Rock Shower and Avalanche are unchanged."
 type = "Enum"
 options = [ "Hits anywhere", "Only under the rocks" ]
 default = "Only under the rocks"
