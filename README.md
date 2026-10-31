@@ -22,8 +22,8 @@ cd Eltale-Reborn-DC-Port
 docker build -t q64dc-toolchain docker
 ```
 
-2. Eltale Reborn, both mods (story and gameplay). Hold X to sprint, the triggers switch item filter, Start opens the map. Windows: `scripts\mod.ps1`. Linux and macOS: `scripts/mod.sh`. Writes `build/eltale-reborn.cdi`.
-3. Quest 64, no mods. Windows: `scripts\dc.ps1 make -j16 cdi`. Linux and macOS: `scripts/dc.sh make -j16 cdi`. Writes `build/quest64-dc.cdi`.
+2. Eltale Reborn - Windows: `scripts\mod.ps1`. Linux and macOS: `scripts/mod.sh`. Writes `build/eltale-reborn.cdi`.
+3. Quest 64 (vanilla) - Windows: `scripts\dc.ps1 make -j16 cdi`. Linux and macOS: `scripts/dc.sh make -j16 cdi`. Writes `build/quest64-dc.cdi`.
 
 A 512x512 PNG at `assets/cover-eltale.png` is packed onto the disc as `0GDTEX.PVR`. `assets/cover.png` is the fallback. Neither file is committed.
 
