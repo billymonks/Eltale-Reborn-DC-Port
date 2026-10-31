@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "0.20.19"
+version = "0.20.29"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -150,7 +150,7 @@ id = "dev_scene"
 name = "Dev mode: jump to a test scene"
 description = "Debugging: the first time Brian is free after a new game or a load, jump straight to this scene (setting the flags it needs). Leave Off to play normally."
 type = "Enum"
-options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds" ]
+options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds", "The ending (after Mammon)" ]
 default = "Off"
 
 [[manifest.config_options]]
