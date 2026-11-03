@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "1.0.0"
+version = "1.2.16"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -122,6 +122,22 @@ options = [ "Off", "On" ]
 default = "On"
 
 [[manifest.config_options]]
+id = "jp_timed_hits"
+name = "Japanese timed hits"
+description = "Press A or Z again just before Brian's staff lands and he follows through with a backhand for half damage, unless the first blow finished the enemy. The timing window grows with his spirits when they are spread across the elements: the last frame of the swing at the start, 5 frames with 40 spirits spread evenly, 16 at most. This is how the staff works in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_back_attacks"
+name = "Japanese back attacks"
+description = "Staff hits from behind an enemy, more than 135 degrees off the way it faces, do 1.5 times the damage. Spells are unaffected. This is how the staff works in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
 id = "jp_hud_motion"
 name = "Japanese HUD motion"
 description = "The HP and MP bars glide to their new length, the monster panel slides in from the right, the staff icon and the talk and open prompts bob, and the element menu after a level-up fades in, lights the gem you pick and fades out. This is how the HUD moves in the Japanese version."
@@ -157,6 +173,14 @@ default = "Off"
 id = "dev_force_crits"
 name = "Dev mode: every melee hit is critical"
 description = "Debugging: with Japanese critical hits on, every staff hit, spell hit and enemy blow is a critical, to check the flash and the big red number. Leave Off to play normally (1 in 32)."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "debug_boost_items"
+name = "Dev mode: new reward items"
+description = "Debugging: the first time Brian is free after a new game or a load, put one of each new reward item (Heart Acorn, Moon Petal, Hawk Feather, Iron Bark, Spirit Seed) in his bag, if there is room and he is not already carrying it. Leave Off to play normally."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "Off"
