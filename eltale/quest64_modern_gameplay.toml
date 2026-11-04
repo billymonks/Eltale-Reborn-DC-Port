@@ -3,7 +3,7 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "1.0.0"
+version = "1.5.1"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
@@ -190,10 +190,26 @@ default = "Distance"
 [[manifest.config_options]]
 id = "dodge_enemy_spells"
 name = "Dodge enemy spells"
-description = "Brian can walk while an enemy charges a spell (within the dodge range below), so he can get out of the way. His next turn keeps that same circle. Attacking, casting and items still wait for his turn."
+description = "Brian can walk while an enemy charges a spell (within the dodge range below), so he can get out of the way; with Enemy attack patterns on, also while it winds up a melee attack. His next turn keeps that same circle. Attacking, casting and items still wait for his turn. Off: Brian can't move during enemy turns (vanilla)."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "On"
+
+[[manifest.config_options]]
+id = "timed_block"
+name = "Timed block"
+description = "While an enemy winds up an attack, or its spell is on the way, press A to stop and hold the staff across in both hands. A hit that lands in the next few frames is blocked with a flash of sparks and does half damage (a quarter with Magic Barrier). The window grows as spirits are spread across the elements, like a timed staff hit: one frame at the start, 5 frames with 40 spirits spread evenly, 16 at most. On Brian's turn, a tap of A with no enemy in reach no longer ends the turn: hold A for one second instead, shown by a 'passing turn' bar. Off: no block, and a tap of A passes the turn (vanilla)."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "group_turns"
+name = "Enemies attack together"
+description = "On: in random battles every enemy attacks on the enemies' turn, one after another a moment apart, instead of one enemy a turn; Brian can dodge throughout (with Dodge enemy spells on), the camera stays on him, other hits pass through him while he reels from one, and his turn comes once every attack is over. The turns go Brian, all the enemies, Brian, ... Works with the original attacks or the new patterns. Bosses are unchanged. Off: one enemy a turn (vanilla)."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
 
 [[manifest.config_options]]
 id = "dodge_range"
@@ -238,6 +254,22 @@ description = "Hits anywhere (vanilla): when Rocky, Cockatrice or Judgment casts
 type = "Enum"
 options = [ "Hits anywhere", "Only under the rocks" ]
 default = "Only under the rocks"
+
+[[manifest.config_options]]
+id = "attack_patterns"
+name = "Enemy attack patterns"
+description = "On: the enemies of Holy Plain and Connor Forest pick one of several new attacks for each distance instead of always the same one: shots that glint before they appear and fly straight at once, so they can be read and dodged, and lunges, bites and pounces that hit only if Brian is in reach (instead of an Agility roll): they stalk, glint, then commit to where he is heading, so back off while they stalk and cut aside as they glint. Off: the original attacks (homing spells, melee by Agility roll), no tells, and no walking during melee wind-ups."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "attack_tells"
+name = "Attack pattern tells"
+description = "How the new attacks warn you (only with Enemy attack patterns on). Glint: a sparkle where each shot will appear, and a glow and a glint on an enemy about to strike. Glint and sound: also a chime and the power-up sound. Off: no warning but the enemy's own animation."
+type = "Enum"
+options = [ "Off", "Glint", "Glint and sound" ]
+default = "Off"
 
 [[manifest.config_options]]
 id = "area_attack_size"

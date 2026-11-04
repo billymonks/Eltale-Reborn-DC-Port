@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "1.2.20"
+version = "1.3.1"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -168,6 +168,26 @@ description = "Debugging: the first time Brian is free after a new game or a loa
 type = "Enum"
 options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds", "The ending (after Mammon)" ]
 default = "Off"
+
+[[manifest.config_options]]
+id = "dev_battle"
+name = "Dev mode: battle arena"
+description = "Debugging: the first time Brian is free after a new game or a load, fight this enemy on its own where it is met (or this boss in its room), then pick from a menu: fight again, the next one, the previous one, or stop. Story scenes stay off while the arena runs. A boss won stays beaten: reload without saving. Leave Off to play normally."
+type = "Enum"
+options = [ "Off", "Were Hare (Holy Plain)", "Hell Hound (Holy Plain)", "Man Eater (Holy Plain)", "Big Mouth (Holy Plain)", "Bumbershoot (Holy Plain)", "Parassault (Holy Plain)", "Kobold (Connor Forest)", "Man Trap (Connor Forest)", "Bat (Connor Forest)", "Frog Knight (Connor Forest)", "Marionasty (Connor Forest)", "Boss: Solvaring", "Goblin (Dondoran Flats)", "Frog King (Dondoran Flats)", "Apophis (Dondoran Flats)", "Mad Doll (Dondoran Flats)", "Death Hugger (Dondoran Flats)", "Cockatrice (Dondoran Flats)", "Dark Goblin (Glencoe Forest)", "Hot Lips (Glencoe Forest)", "Ghost Stalker (Glencoe Forest)", "Treant (Glencoe Forest)", "Ork Jr (West Carmagh)", "Gremlin (West Carmagh)", "Skeleton (West Carmagh)", "Ghosthound (West Carmagh)", "Merrow (West Carmagh)", "Wolf Goat (West Carmagh)", "Scare Crow (Cull Hazard)", "Wyvern (Cull Hazard)", "Skelebat (Cull Hazard)", "Blood Jell (Cull Hazard)", "Ork (Windward Forest)", "Jack-O'-Lantern (Windward Forest)", "Arachnoid (Windward Forest)", "Lamia (Windward Forest)", "Temptress (Windward Forest)", "Thunder Jell (Windward Forest)", "Termant (Windward Forest)", "Boss: Zelse", "Multi Optics (Blue Cave)", "Mimic (Blue Cave)", "Crawler (Blue Cave)", "Scorpion (Blue Cave)", "Pixie (Isle of Skye)", "Grangach (Isle of Skye)", "Boss: Nepty", "Cryshell (East Limelin)", "Caterpillar (East Limelin)", "Fish Man (East Limelin)", "Ghost (Baragoon Tunnel)", "Will-O'-Wisp (Baragoon Tunnel)", "Sprite (Baragoon Tunnel)", "Boss: Shilf", "Sandman (Dindom Dries)", "Were Cat (Dindom Dries)", "Nightmare (Dindom Dries)", "Blue Man (Dindom Dries)", "Magma Fish (Dindom Dries)", "Rocky (Boil Hole)", "Red Wyvern (Boil Hole)", "Flamed Mane (Boil Hole)", "Boss: Fargo", "Winged Sunfish (Baragoon Moor)", "Gloom Wing (Baragoon Moor)", "Ogre (Baragoon Moor)", "Red Rose Knight (Baragoon Moor)", "White Rose Knight (Baragoon Moor)", "Boss: Guilty", "Boss: Beigis", "Judgment (World of Mammon)", "Pale Rider (World of Mammon)", "Pin Head (World of Mammon)", "Spriggan (World of Mammon)", "Boss: Mammon" ]
+default = "Off"
+
+[[manifest.config_options]]
+id = "dev_battle_count"
+name = "Dev mode: arena enemy count"
+description = "Debugging: how many of the arena's enemy to fight at once (bosses are always one)."
+type = "Number"
+min = 1
+max = 6
+step = 1
+precision = 0
+percent = false
+default = 1
 
 [[manifest.config_options]]
 id = "dev_force_crits"
