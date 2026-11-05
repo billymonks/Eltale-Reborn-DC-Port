@@ -3,7 +3,7 @@
 [manifest]
 
 id = "quest64_modern_gameplay"
-version = "1.5.1"
+version = "1.5.4"
 display_name = "Quest 64: Modern Gameplay"
 description = """
 Modernizes Quest 64's gameplay: a field sprint, a bigger, freer battle area, no early grind, \
@@ -198,10 +198,18 @@ default = "On"
 [[manifest.config_options]]
 id = "timed_block"
 name = "Timed block"
-description = "While an enemy winds up an attack, or its spell is on the way, press A to stop and hold the staff across in both hands. A hit that lands in the next few frames is blocked with a flash of sparks and does half damage (a quarter with Magic Barrier). The window grows as spirits are spread across the elements, like a timed staff hit: one frame at the start, 5 frames with 40 spirits spread evenly, 16 at most. On Brian's turn, a tap of A with no enemy in reach no longer ends the turn: hold A for one second instead, shown by a 'passing turn' bar. Off: no block, and a tap of A passes the turn (vanilla)."
+description = "While an enemy winds up an attack, or its spell is on the way, press A to stop and hold the staff across in both hands. A hit that lands in the next few frames is blocked with a flash of sparks and does half damage (a quarter with Magic Barrier). The window grows as spirits are spread across the elements, like a timed staff hit: one frame at the start, 5 frames with 40 spirits spread evenly, 16 at most."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "Off"
+
+[[manifest.config_options]]
+id = "hold_to_pass"
+name = "Hold A to pass"
+description = "On Brian's turn, a tap of A with no enemy in reach no longer ends the turn by accident: hold A for one second instead, shown by a 'passing turn' bar. Outside the arena in a random battle, a tap still escapes at once. Off: a tap of A passes the turn (vanilla). Z still passes on a tap either way."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
 
 [[manifest.config_options]]
 id = "group_turns"
