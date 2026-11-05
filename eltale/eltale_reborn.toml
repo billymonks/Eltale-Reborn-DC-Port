@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "1.3.1"
+version = "1.3.8"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -166,7 +166,7 @@ id = "dev_scene"
 name = "Dev mode: jump to a test scene"
 description = "Debugging: the first time Brian is free after a new game or a load, jump straight to this scene (setting the flags it needs). Leave Off to play normally."
 type = "Enum"
-options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds", "The ending (after Mammon)" ]
+options = [ "Off", "Act 5: the guns and the shot's flight", "Spell visuals test (Melrode)", "Prologue: the night, from the start", "Prologue: the hounds at the wall", "Prologue: Holly's gate and home", "Prologue: after the first hounds", "The ending (after Mammon)", "Glencoe Forest: the ring's green lights" ]
 default = "Off"
 
 [[manifest.config_options]]
@@ -200,7 +200,7 @@ default = "Off"
 [[manifest.config_options]]
 id = "debug_boost_items"
 name = "Dev mode: new reward items"
-description = "Debugging: the first time Brian is free after a new game or a load, put one of each new reward item (Heart Acorn, Moon Petal, Hawk Feather, Iron Bark, Spirit Seed) in his bag, if there is room and he is not already carrying it. Leave Off to play normally."
+description = "Debugging: the first time Brian is free after a new game or a load, put one of each new item (Heart Acorn, Moon Petal, Hawk Feather, Iron Bark, Spirit Seed, Rowan Berry) in his bag, if there is room and he is not already carrying it. Leave Off to play normally."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "Off"
