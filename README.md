@@ -14,7 +14,9 @@ The PC version is https://github.com/billymonks/Eltale-Reborn
 
 Put your own Quest 64 (USA) 1.0 ROM at `quest64.us.z64` (big-endian `.z64`). The disc contains that ROM. Don't distribute it.
 
-1. Once, on Windows, Linux, or macOS. Clone with the submodules, then build the toolchain image. That compiles GCC the first time and takes 30 to 90 minutes. Every disc below uses this image.
+### 1. Set up (once)
+
+Clone with the submodules, then build the toolchain image. The first build compiles GCC and takes 30 to 90 minutes. Both discs use this image.
 
 ```
 git clone --recurse-submodules https://github.com/billymonks/Eltale-Reborn-DC-Port
@@ -22,8 +24,25 @@ cd Eltale-Reborn-DC-Port
 docker build -t q64dc-toolchain docker
 ```
 
-2. Eltale Reborn - Windows: `scripts\mod.ps1`. Linux and macOS: `scripts/mod.sh`. Writes `build/eltale-reborn.cdi`.
-3. Quest 64 (vanilla) - Windows: `scripts\dc.ps1 make -j16 cdi`. Linux and macOS: `scripts/dc.sh make -j16 cdi`. Writes `build/quest64-dc.cdi`.
+### 2. Build Eltale Reborn
+
+Writes `build/eltale-reborn.cdi`, using the mod files in `eltale/`.
+
+| System | Command |
+| --- | --- |
+| Windows | `scripts\eltale.ps1` (starts Docker Desktop if it isn't running) |
+| Linux, macOS | `scripts/mod.sh` |
+
+### 3. Build Quest 64 (vanilla)
+
+Writes `build/quest64-dc.cdi`.
+
+| System | Command |
+| --- | --- |
+| Windows | `scripts\dc.ps1 make -j16 cdi` |
+| Linux, macOS | `scripts/dc.sh make -j16 cdi` |
+
+### Cover art
 
 A 512x512 PNG at `assets/cover-eltale.png` is packed onto the disc as `0GDTEX.PVR`. `assets/cover.png` is the fallback. Neither file is committed.
 

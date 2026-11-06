@@ -14,6 +14,6 @@ if (-not $image) {
     docker image inspect q64dc-toolchain-arm *> $null
     $image = if ($LASTEXITCODE -eq 0) { "q64dc-toolchain-arm" } else { "q64dc-toolchain" }
 }
-$tty = if ([Console]::IsInputRedirected) { @() } else { @("-it") }
+[string[]] $tty = if ([Console]::IsInputRedirected) { @() } else { "-it" }
 docker run --rm @tty -v "${repo}:/src" -w /src $image bash -c $inner
 exit $LASTEXITCODE
