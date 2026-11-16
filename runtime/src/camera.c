@@ -64,14 +64,9 @@ static recomp_context* cam_ctx;
 #define gBattleCameraYawOffset  MEM_F(0, 0x80086EFCu)
 #define gBattleCenterX          MEM_F(0, 0x8008C59Cu)
 #define gBattleCenterZ          MEM_F(0, 0x8008C5A0u)
-#define gBrianState             MEM_HU(0, 0x8007BAB8u)
-#define gBrianTimer             MEM_HU(0, 0x8007BABCu)
 #define BRIAN_TRANSFORM         0x8007BACCu
 #define CAMERA_FLOOR_POLL       0x80086BA0u
 #define DEFAULT_CAMERA          0x80086B00u             // the battle camera saved during an action camera
-#define BRIAN_STATE_FIELD       0
-#define BRIAN_STATE_TURN_BACK   15                      // turns Brian back to his pre-battle facing
-
 #define B_BUTTON 0x4000
 #define L_TRIG   0x0020
 
@@ -90,8 +85,8 @@ void func_80023210(uint8_t* rdram, recomp_context* ctx);
 #define PI 3.141592653589793
 #define TWO_PI 6.283185307179586
 
-#define SNAP_FRAMES 8
-#define SNAP_PULL 0.40f
+#define SNAP_FRAMES 16
+#define SNAP_PULL 0.2f
 #define FIELD_PULL 0.005f
 #define FIELD_DRAG 0.8f
 #define BATTLE_PULL 0.5f
@@ -116,7 +111,6 @@ void func_80023210(uint8_t* rdram, recomp_context* ctx);
 #define SIDE_MIN 0.35f
 #define SWING_EASE 0.2f
 #define LOCK_LEAD 0.157f
-#define ESCAPE_TURN_FRAMES 0x1C
 
 // Camera turn speed, 0.1 to 2.0 (the PC's 10% to 200%).
 #ifndef CAMERA_TURN_SPEED
@@ -468,7 +462,6 @@ static float sFreeYaw;
 static uint32_t sFreeArea;
 static int sWasBattle;
 static int sFastYFrames;
-static int sEscapeTurn;
 
 static void free_leave(uint32_t cam) {
     if (sFree) {
@@ -486,6 +479,7 @@ static int sActTimer;
 static float sActBehind;
 static int sLockPrev;
 static int sLockSnapFrames;
+static int sLockEasing;
 
 // Brian's action cameras swing behind him, and the saved battle camera is turned to match so it stays there after.
 static void act_begin(uint32_t cam) {
@@ -577,9 +571,9 @@ static int style_modern(uint32_t cam) {
             sFastYFrames = 0;
             sAimSet = 0;
             sActCam = 0;
-            sEscapeTurn = 0;
             sLockPrev = 0;
             sLockSnapFrames = 0;
+            sLockEasing = 0;
             sWasBattle = CAM_MODE(cam) == 4;
         }
         sStyleSeen = modern;
@@ -592,7 +586,8 @@ static void modern_field(uint32_t cam) {
     int behind = 0;
     float sx;
     uint32_t target = CAM_TARGET(cam);
-    int field = CAM_MODE(cam) == 0 || CAM_MODE(cam) == 2;
+    // Mode 5 holds for over a second after a battle before handing back to the field mode.
+    int field = CAM_MODE(cam) == 0 || CAM_MODE(cam) == 2 || CAM_MODE(cam) == 5;
     int battle = CAM_MODE(cam) == 4;
     int action = CAM_FLAGS(cam) & 0x40;
     int gated = (gGameState & 0x82) || (gBattleState & 0x200) || action;
@@ -604,24 +599,14 @@ static void modern_field(uint32_t cam) {
     read_target();
 
     if (battle != sWasBattle) {
-        // After a win the game turns Brian back to his pre-battle facing; do the same after an escape.
-        if (sWasBattle && CAM_MODE(cam) == 5) {
-            sEscapeTurn = (gBattleState & 0x10) != 0;
-        }
         sWasBattle = battle;
-    }
-    if (CAM_MODE(cam) != 5) {
-        sEscapeTurn = 0;
-    } else if (sEscapeTurn && gBrianState == BRIAN_STATE_FIELD) {
-        gBrianState = BRIAN_STATE_TURN_BACK;
-        gBrianTimer = ESCAPE_TURN_FRAMES;
-        sEscapeTurn = 0;
     }
     if (!battle) {
         sAimSet = 0;
         sActCam = 0;
         sLockPrev = 0;
         sLockSnapFrames = 0;
+        sLockEasing = 0;
     }
 
     camera_stick(FREE_DEAD, &sx);
@@ -691,6 +676,10 @@ static void modern_field(uint32_t cam) {
             CAM_FLAGS(cam) |= 0x04;
             CAM_ORBIT_PULL(cam) = SNAP_PULL;
             CAM_ORBIT_DRAG(cam) = 0.0f;
+        } else if (battle && sLockEasing) {
+            // The battle spring overshoots a big swing.
+            CAM_ORBIT_PULL(cam) = SNAP_PULL;
+            CAM_ORBIT_DRAG(cam) = 0.0f;
         } else if (battle) {
             CAM_ORBIT_PULL(cam) = BATTLE_PULL;
             CAM_ORBIT_DRAG(cam) = BATTLE_DRAG;
@@ -715,6 +704,7 @@ static void modern_battle(uint32_t cam) {
     uint32_t subject;
 
     if (CAM_FLAGS(cam) & 0x40) {
+        sLockEasing = 0;
         if (sActCam == 0 || CAM_TIMER(cam) > sActTimer) {
             act_begin(cam);
         }
@@ -753,7 +743,9 @@ static void modern_battle(uint32_t cam) {
             float want = behind;
             if (!sLockPrev) {
                 sLockSnapFrames = SNAP_FRAMES;
+                CAM_ORBIT_SPEED(cam) = 0.0f;
             }
+            sLockEasing = sLockSnapFrames > 0;
             if (sLockSnapFrames > 0) {
                 sLockSnapFrames--;
             } else {
@@ -762,6 +754,7 @@ static void modern_battle(uint32_t cam) {
             }
             gBattleCameraYawOffset = wrap(want - angle);
         } else {
+            sLockEasing = 0;
             camera_stick(FREE_DEAD, &sx);
             gBattleCameraYawOffset = wrap(gBattleCameraYawOffset - BATTLE_TURN * CAMERA_TURN_SPEED * sx);
         }
