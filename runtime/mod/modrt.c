@@ -280,6 +280,14 @@ MODRT_IMPORT(recomp_get_smooth_transparency) {
     ctx->r2 = 0;
 }
 
+// The PC recomp's modern camera can be held to the original camera code. This port only has the
+// original camera.
+MODRT_IMPORT(recomp_set_original_camera) {
+    (void)rdram;
+    (void)mod;
+    (void)ctx;
+}
+
 MODRT_IMPORT(recomp_is_dependency_met) {
     (void)mod;
     char id[64];

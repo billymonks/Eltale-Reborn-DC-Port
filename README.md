@@ -72,6 +72,8 @@ The game sees a Controller Pak. Files live on the first VMU found, usually contr
 
 One save is 3 blocks. The whole 0x200-byte note is stored, including 0x160-0x1FF, which Eltale uses. The two discs do not share a file.
 
+`scripts/pc_saves_to_vmu.py <vmu image>` copies the PC recomp's Controller Pak saves onto a Flycast VMU image, e.g. `data\vmu_save_A1.bin` next to `flycast.exe`, with Flycast closed. `--disc quest64` picks the Quest 64 file instead of Eltale's, `--slots 0,3` picks pak slots, and `--list` shows what's on an image.
+
 The VMU is read at boot and when a different one is plugged in. It is written about 300 ms after the game's last write (around 0.7 s in Flycast). Leave it inserted through that. With no VMU the game reports no Controller Pak and plays on, as it would on an N64. A VMU with no room fails with the game's own "full" error.
 
 ## Quest 64

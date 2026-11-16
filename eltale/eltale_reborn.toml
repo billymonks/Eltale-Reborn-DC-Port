@@ -3,7 +3,7 @@
 [manifest]
 
 id = "eltale_reborn"
-version = "1.3.24"
+version = "1.3.51"
 display_name = "Eltale Reborn: Holy Magic Century"
 description = """
 A full overhaul of Quest 64 (Eltale in Japan, Holy Magic Century in Europe): a deeper story built on the original premise, reactive NPCs, \
@@ -106,6 +106,38 @@ options = [ "Off", "On" ]
 default = "On"
 
 [[manifest.config_options]]
+id = "ee_area_maps"
+name = "Forest and cave maps"
+description = "The Map page shows the forest or cave Brian is in on its own map, with his position, instead of the surrounding region's map with a fixed marker: Connor, Glencoe and Windward Forests, the Blue Cave, Baragoon Tunnel, Boil Hole and Cull Hazard. The quill pin and compass gem work on them too. Maps from CanadaX21's Eltale English."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "ee_monster_card"
+name = "Monster card"
+description = "The MONSTER card in battle sits in the top right corner, mirroring the HP and MP bars, and is a little wider so long names have room. Once Soul Searcher has identified an enemy, the card shows that enemy's own HP as it falls and its current attack, defense and agility, where the original shows the HP its kind starts with. As in CanadaX21's Eltale English."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "ee_status_page"
+name = "Status page layout"
+description = "The Start menu's Status page puts HP, MP, Def and Agi in a column of dark parchment, a cell for each with a rule under it, and spaces the rows evenly. As in CanadaX21's Eltale English, whose parchment it uses."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "ee_elements_page"
+name = "Elements page layout"
+description = "The Start menu's Elements page sets the four elements around the orb, each with its gem, its count and its bar, and the orb fills as Brian's spirits grow, full when all four reach 50. The EXP towards the next spirit moves to a box in the top right corner. As in CanadaX21's Eltale English."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
 id = "jp_battle_menu"
 name = "Japanese battle magic menu"
 description = "The magic menu uses the Japanese layout: the spell name sits at the top with a small gem for each element chosen, and the element bars wheel and fade in when the menu opens. Each element you pick lights up on the centre icon in its colour. This is how the magic menu looks in the Japanese version."
@@ -141,6 +173,14 @@ default = "On"
 id = "jp_hud_motion"
 name = "Japanese HUD motion"
 description = "The HP and MP bars glide to their new length, the monster panel slides in from the right, the staff icon and the talk and open prompts bob, and the element menu after a level-up fades in, lights the gem you pick and fades out. This is how the HUD moves in the Japanese version."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
+[[manifest.config_options]]
+id = "jp_ship_sway"
+name = "Japanese ship sway"
+description = "On board a ship or a ferry, the camera rises and falls gently with the swell. This is how the camera moves at sea in the Japanese version."
 type = "Enum"
 options = [ "Off", "On" ]
 default = "On"
