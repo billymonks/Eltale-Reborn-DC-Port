@@ -1,0 +1,62 @@
+# Modern controls' camera: the triggers swing the field camera, B brings it behind Brian, both
+# triggers zoom it out and back, the triggers page the item menu instead, then a battle's camera turn, lock-on and action camera.
+# make test-cdi TEST_SCRIPT=tests/camera.txt, then scripts\flycast.ps1 260 -Test.
+
+wait 14000
+tap S                      # skip the intro
+wait 5000
+tap S                      # title: PUSH START
+wait 4000
+tap A                      # NEW
+wait 3000
+talk 150000                # the Grand Abbott's farewell
+
+warp 2 0 0                 # Holy Plain
+wait 1500
+shot cam_field_start
+trig 0 255 1500            # camera right
+shot cam_field_right
+trig 255 0 3000            # camera left, twice as long
+shot cam_field_left
+trig 0 120 1500            # half pressed: half speed
+shot cam_field_half
+hold B 1500                # focus camera: behind Brian
+shot cam_field_focus
+stick 0 75 1500            # walk on, the camera follows
+shot cam_field_walk
+wait 1000
+shot cam_zoom_near
+trig 255 255 500           # both triggers: zoom out, without turning
+wait 1500
+shot cam_zoom_far
+trig 255 255 500           # and back in
+wait 1500
+shot cam_zoom_back
+
+tap R                      # item menu
+wait 1000
+shot cam_item_open
+trig 0 255 300             # next item; the camera stays put
+wait 500
+shot cam_item_next
+tap B
+wait 1000
+
+to_battle
+battle_walk 30000
+wait 3000
+shot cam_battle_start
+trig 0 255 2000            # turn the battle camera
+shot cam_battle_right
+hold B 1500                # lock on behind Brian
+shot cam_battle_lock
+tap A 1                    # swing the staff: the action camera
+wait 400
+shot cam_battle_action
+wait 2500
+shot cam_battle_after_action
+stick 0 -75 8000           # run out of the battle circle
+wait16 8008C592 1 0 90000
+wait 2000
+shot cam_after_battle
+log camera finished

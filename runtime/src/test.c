@@ -7,6 +7,8 @@
 //   hold <buttons> <ms>               hold buttons, e.g. A, S+A, CU (buttons: A B Z S L R X CU CD CL CR DU DD DL DR; X is Dreamcast X's bit)
 //   tap <buttons> [count] [gap ms]    press for 100 ms, then release for gap (default 400)
 //   stick <x> <y> <ms>                hold the stick (N64 units, -80..80); 0 ms keeps it held until changed
+//   trig <left> <right> <ms>          hold the Dreamcast triggers (0..255; Modern controls' camera); 0 ms keeps
+//                                     them held until changed
 //   talk <timeout ms>                 tap A until Brian is free to move (no text, menu, warp or load)
 //   wait_free <timeout ms>            wait until Brian is free to move
 //   wait16 <addr> <mask> <value> <timeout ms>    wait until (halfword & mask) == value
@@ -112,6 +114,9 @@ static uint16_t held_buttons;
 static int8_t held_x, held_y;
 static bool stick_latched;
 static int8_t latched_x, latched_y;
+static uint8_t held_ltrig, held_rtrig;
+static bool trig_latched;
+static uint8_t latched_ltrig, latched_rtrig;
 static bool frame_time;
 static uint32_t polls;
 
@@ -249,6 +254,7 @@ static void next(void) {
     step_started = false;
     held_buttons = 0;
     held_x = held_y = 0;
+    held_ltrig = held_rtrig = 0;
 }
 
 // Runs the current command; returns true when it's done.
@@ -291,6 +297,21 @@ static bool step(uint64_t now) {
         }
         held_x = (int8_t)x;
         held_y = (int8_t)y;
+        return elapsed >= ms;
+    }
+    if (strcmp(cmd, "trig") == 0) {
+        unsigned l = 0, r = 0, ms = 0;
+        sscanf(args, "%u %u %u", &l, &r, &ms);
+        l = l > 255 ? 255 : l;
+        r = r > 255 ? 255 : r;
+        if (ms == 0) {
+            trig_latched = l != 0 || r != 0;
+            latched_ltrig = (uint8_t)l;
+            latched_rtrig = (uint8_t)r;
+            return true;
+        }
+        held_ltrig = (uint8_t)l;
+        held_rtrig = (uint8_t)r;
         return elapsed >= ms;
     }
     if (strcmp(cmd, "talk") == 0 || strcmp(cmd, "wait_free") == 0) {
@@ -736,5 +757,18 @@ void test_input(uint16_t* buttons, int8_t* stick_x, int8_t* stick_y) {
     } else if (stick_latched) {
         *stick_x = latched_x;
         *stick_y = latched_y;
+    }
+}
+
+void test_triggers(uint8_t* ltrig, uint8_t* rtrig) {
+    if (!active) {
+        return;
+    }
+    if (held_ltrig != 0 || held_rtrig != 0) {
+        *ltrig = held_ltrig;
+        *rtrig = held_rtrig;
+    } else if (trig_latched) {
+        *ltrig = latched_ltrig;
+        *rtrig = latched_rtrig;
     }
 }

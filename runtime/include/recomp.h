@@ -468,6 +468,21 @@ void aica_audio_frame(uint8_t* rdram, recomp_context* ctx);
 // the jump pack (cont.c).
 void sfx_rumble(uint8_t* rdram, int id, int volume);
 
+// Replace the field camera (func_80013008) and the battle camera (func_80013A20) (camera.c).
+void camera_field(uint8_t* rdram, recomp_context* ctx);
+void camera_battle(uint8_t* rdram, recomp_context* ctx);
+// Mods hold both cameras to the original code with recomp_set_original_camera (camera.c).
+void camera_set_original(int on);
+
+// Modern controls (cont.c): the camera stick from the triggers, the focus camera on B, the zoom on
+// both triggers, and the triggers paging the item menu and the Start menu as controller 1's buttons
+// are read.
+int controls_modern(void);
+void cont_camera_stick(float* x, float* y);
+float cont_camera_target(void);
+float cont_camera_zoom(void);
+uint32_t cont_menu_page_buttons(uint32_t buttons);
+
 #ifdef __cplusplus
 }
 #endif

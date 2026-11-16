@@ -280,12 +280,11 @@ MODRT_IMPORT(recomp_get_smooth_transparency) {
     ctx->r2 = 0;
 }
 
-// The PC recomp's modern camera can be held to the original camera code. This port only has the
-// original camera.
+// Holds both camera modes to the original camera code (Eltale Reborn's fixed camera battles).
 MODRT_IMPORT(recomp_set_original_camera) {
     (void)rdram;
     (void)mod;
-    (void)ctx;
+    camera_set_original((int32_t)ctx->r4 != 0);
 }
 
 MODRT_IMPORT(recomp_is_dependency_met) {

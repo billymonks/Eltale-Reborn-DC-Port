@@ -48,18 +48,25 @@ A 512x512 PNG at `assets/cover-eltale.png` is packed onto the disc as `0GDTEX.PV
 
 ## Button Mapping
 
+The default controls are the PC version's Modern controls and camera, by [CanadaX21](https://github.com/CanadaX21):
+
 | Button        | Action                                      |
 | ------------- | ------------------------------------------- |
 | Stick         | Walk, and move cursors                      |
 | A             | Talk, confirm, attack                       |
-| B             | Cancel, close menus                         |
+| B             | Cancel, close menus; hold for the focus camera |
 | X             | Sprint                                      |
 | Y             | Item menu                                   |
 | D-pad         | Magic                                       |
-| Left trigger  | Scroll the item list left                   |
-| Right trigger | Scroll the item list right                  |
+| Left trigger  | Camera left; previous item or page in menus |
+| Right trigger | Camera right; next item or page in menus    |
+| Both triggers | Field camera zoom: near or far              |
 | Start         | Open menu                                   |
 | A+B+X+Y+Start | Soft reset: back to the title screen; on the title screen, to the Dreamcast menu |
+
+The triggers are analog: press harder to turn faster. In the field they swing a free camera around Brian. Press both together to switch the field camera between near and far; it comes back in a little under roofs. Hold B to bring the camera behind him. In battle the triggers turn the camera smoothly, and holding B locks it behind Brian. His attacks and spells are shown from behind him. Fixed camera rooms and Eltale Reborn's fixed camera battles keep the original camera. The PC version's camera tilt has no button on a Dreamcast pad.
+
+`make CONTROLS=classic` builds the original controls and camera instead: the left and right triggers scroll the item list, the left trigger turns the battle camera 45 degrees, and B in the field brings the camera behind Brian.
 
 ## Saves
 

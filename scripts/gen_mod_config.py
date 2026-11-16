@@ -7,7 +7,8 @@ config's own hooks, which sit at the function's first instruction):
 - a patch calls the mod's function in place of the game's, then returns;
 - a hook calls the mod's function with a copy of the context (mod_call_hook);
 - a return hook does the same before every return of the game function (at_return), in reverse
-  mod order as N64ModernRuntime runs them.
+  mod order as N64ModernRuntime runs them. When the config replaces the function with native code
+  (a hook at its first instruction that returns), the return hooks run after that code instead.
 
 usage: gen_mod_config.py <game config .toml> <mods_hooks.json> <output .toml> <recomp output dir>
 """
@@ -47,9 +48,16 @@ def main():
 
     patches = base.get("patches", {})
     blocked = set(patches.get("stubs", [])) | set(patches.get("ignored", []))
+    syms = tomllib.loads((base_path.parent / base["input"]["symbols_file_path"]).read_text())
+    func_vram = {f["name"]: f["vram"] for s in syms.get("section", []) for f in s.get("functions", [])}
     base_hooks = {}
+    # The native code that replaces a game function: its hook at the first instruction, up to its return.
+    native = {}
     for h in patches.get("hook", []):
         base_hooks.setdefault(h["func"], []).append(h["text"])
+        hook_text = h["text"].rstrip()
+        if hook_text.endswith("return;") and h.get("before_vram") == func_vram.get(h["func"]) and not h.get("at_return"):
+            native[h["func"]] = hook_text[:-len("return;")].rstrip()
 
     mod_order = list(dict.fromkeys(h["mod"] for h in hooks))
     by_func = {}
@@ -74,6 +82,9 @@ def main():
         ret_texts = [f"mod_call_hook(rdram, ctx, {e['call']});" for e in return_hooks]
         if patch:
             texts.append(f"{patch[0]['call']}(rdram, ctx); " + " ".join(ret_texts) + (" " if ret_texts else "") + "return;")
+        elif ret_texts and func in native:
+            texts.append(f"{native[func]} " + " ".join(ret_texts) + " return;")
+            ret_texts = []
         for t in texts:
             out += ["", "[[patches.hook]]", f'func = "{func}"', f'text = "{t}"']
         if not patch:

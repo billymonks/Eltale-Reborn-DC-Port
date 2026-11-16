@@ -40,6 +40,18 @@
 
 #define TRIGGER_THRESHOLD 128
 
+// Modern controls (the default; CONTROLS=classic builds the original ones): the triggers turn the
+// camera (camera.c) instead of being N64 L and Z, both together zoom the field camera, and B also
+// holds the focus camera. In the item
+// menu and the Start menu the triggers still page, as N64 L/Z and Z/R (cont_menu_page_buttons).
+#ifdef CONTROLS_CLASSIC
+#define CONTROLS_MODERN 0
+#else
+#define CONTROLS_MODERN 1
+#endif
+#define GAME_MODE_PAUSED      2
+#define GAME_STATE_ITEM_MENU  0x01
+
 // Sega's soft reset: A, B, X, Y and Start held together on any controller. In the game it starts
 // over at the title screen; on the title screen or the intro before it, it leaves for the BIOS menu.
 #define RESET_CHORD (CONT_A | CONT_B | CONT_X | CONT_Y | CONT_START)
@@ -80,6 +92,14 @@ typedef struct {
 static PadState pads[MAXCONTROLLERS];
 static uint8_t num_channels = MAXCONTROLLERS;
 
+// Controller 1's triggers (0-255), for Modern controls' camera. Both past TRIGGER_THRESHOLD is the
+// zoom; the camera doesn't turn from then until both are nearly let go.
+#define TRIGGER_RELEASED 32
+static uint8_t cam_ltrig;
+static uint8_t cam_rtrig;
+static bool cam_zoom_held;
+static bool cam_zoom_chord;
+
 // The Dreamcast stick reports -128..127 per axis and rests within a few units of the centre; an
 // N64 stick reaches about 80 at full tilt. Below STICK_DEADZONE (as a distance from the centre)
 // the stick is centred, and from there to STICK_FULL it ramps up to N64_STICK_MAX, keeping its
@@ -106,7 +126,7 @@ static void scale_stick(int x, int y, int8_t* out_x, int8_t* out_y) {
 
 // Dreamcast A/B are N64 A/B. The D-pad is the C buttons (the four spirits in battle). Y is R
 // (the item menu). X is the unused N64_X bit. The left trigger is L, the right trigger is Z
-// (chests), Start is Start.
+// (chests), Start is Start. Modern controls take L and Z back off in cont_poll.
 static uint16_t map_buttons(const cont_state_t* st) {
     uint32_t b = st->buttons;
     uint16_t out = 0;
@@ -187,6 +207,10 @@ void cont_poll(void) {
         pads[i].connected = true;
         pads[i].buttons = map_buttons(st);
         scale_stick(st->joyx, -st->joyy, &pads[i].stick_x, &pads[i].stick_y);
+        if (i == 0) {
+            cam_ltrig = (uint8_t)st->ltrig;
+            cam_rtrig = (uint8_t)st->rtrig;
+        }
         chord_buttons |= st->buttons & RESET_CHORD;
         chord |= (st->buttons & RESET_CHORD) == RESET_CHORD;
     }
@@ -196,9 +220,20 @@ void cont_poll(void) {
     } else if (chord_buttons == 0) {
         reset_held = false;
     }
+    if (!pads[0].connected || reset_held) {
+        cam_ltrig = 0;
+        cam_rtrig = 0;
+    }
     if (reset_held) {
         for (int i = 0; i < MAXCONTROLLERS; i++) {
             pads[i].buttons = 0;
+        }
+    }
+    uint16_t trigger_bits = 0;
+    if (CONTROLS_MODERN) {
+        trigger_bits = pads[0].buttons & (N64_L | N64_Z);
+        for (int i = 0; i < MAXCONTROLLERS; i++) {
+            pads[i].buttons &= (uint16_t)~(N64_L | N64_Z);
         }
     }
     // Until the main loop starts over: whatever the mode's loop was doing, it ends at its next
@@ -216,6 +251,20 @@ void cont_poll(void) {
         pads[0].stick_y = 0;
     }
     test_input(&pads[0].buttons, &pads[0].stick_x, &pads[0].stick_y);
+    test_triggers(&cam_ltrig, &cam_rtrig);
+    cam_zoom_held = cam_ltrig >= TRIGGER_THRESHOLD && cam_rtrig >= TRIGGER_THRESHOLD;
+    if (cam_zoom_held) {
+        cam_zoom_chord = true;
+    } else if (cam_ltrig < TRIGGER_RELEASED && cam_rtrig < TRIGGER_RELEASED) {
+        cam_zoom_chord = false;
+    }
+#if defined(PERF_HUD) || defined(GFX_DIAG)
+    // The chords below hold both triggers, whichever controls are built.
+    uint16_t chord_triggers = trigger_bits & (uint16_t)~pads[0].buttons;
+    pads[0].buttons |= chord_triggers;
+#else
+    (void)trigger_bits;
+#endif
 #ifdef PERF_HUD
     // Both triggers and X. Quest 64 never reads X, and the three are swallowed so L and the
     // right trigger do not reach the game while the chord is held.
@@ -297,8 +346,59 @@ void cont_poll(void) {
         mode_was = l && r && cd;
     }
 #endif
+#if defined(PERF_HUD) || defined(GFX_DIAG)
+    pads[0].buttons &= (uint16_t)~chord_triggers;
+#endif
     pak_flush_idle();
     sfx_rumble_tick();
+}
+
+int controls_modern(void) {
+    return CONTROLS_MODERN;
+}
+
+static bool in_paging_menu(void) {
+    return MEM_HU(0, GAME_MODE) == GAME_MODE_PAUSED || (MEM_W(0, GAME_STATE) & GAME_STATE_ITEM_MENU);
+}
+
+// The camera stick for camera.c: right trigger minus left trigger, -1 to 1, and no tilt. Nothing
+// while the triggers page a menu or make the zoom chord.
+void cont_camera_stick(float* x, float* y) {
+    *y = 0.0f;
+    if (!CONTROLS_MODERN || in_paging_menu() || cam_zoom_chord) {
+        *x = 0.0f;
+        return;
+    }
+    *x = ((int)cam_rtrig - (int)cam_ltrig) / 255.0f;
+}
+
+// Both triggers: the field camera's zoom (camera.c toggles it on the press).
+float cont_camera_zoom(void) {
+    return CONTROLS_MODERN && cam_zoom_held && !in_paging_menu() ? 1.0f : 0.0f;
+}
+
+// The focus camera is N64 B, which only Dreamcast B gives.
+float cont_camera_target(void) {
+    return CONTROLS_MODERN && (pads[0].buttons & N64_B) ? 1.0f : 0.0f;
+}
+
+// The controller read (func_800314C0) has just loaded controller 1's buttons. Modern controls page
+// with the triggers: N64 Z/R in the Start menu, L/Z in the item menu.
+uint32_t cont_menu_page_buttons(uint32_t buttons) {
+    bool next, prev;
+
+    if (!CONTROLS_MODERN) {
+        return buttons;
+    }
+    next = cam_rtrig >= TRIGGER_THRESHOLD;
+    prev = cam_ltrig >= TRIGGER_THRESHOLD;
+    if (MEM_HU(0, GAME_MODE) == GAME_MODE_PAUSED) {
+        buttons &= ~(uint32_t)(N64_R | N64_Z);
+        buttons |= (next ? N64_R : 0) | (prev ? N64_Z : 0);
+    } else if (MEM_W(0, GAME_STATE) & GAME_STATE_ITEM_MENU) {
+        buttons |= (next ? N64_Z : 0) | (prev ? N64_L : 0);
+    }
+    return buttons;
 }
 
 static uint8_t write_status(uint32_t status_array) {

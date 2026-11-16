@@ -81,6 +81,24 @@ func = "func_80036A68"
 text = "aica_audio_frame(rdram, ctx);"
 before_vram = 0x80036C20
 
+# The field and battle cameras, in native code with Modern controls' camera (runtime/src/camera.c).
+[[patches.hook]]
+func = "func_80013008"
+text = "camera_field(rdram, ctx); return;"
+before_vram = 0x80013008
+
+[[patches.hook]]
+func = "func_80013A20"
+text = "camera_battle(rdram, ctx); return;"
+before_vram = 0x80013A20
+
+# The controller read has just loaded controller 1's buttons into $v1. Modern controls page menus
+# with the triggers here (cont.c).
+[[patches.hook]]
+func = "func_800314C0"
+text = "ctx->r3 = cont_menu_page_buttons(ctx->r3 & 0xFFFFu);"
+before_vram = 0x80031528
+
 [[patches.hook]]
 func = "func_80024690"
 text = "load_overlays(ctx->r4, ctx->r5, ctx->r6);"

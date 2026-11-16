@@ -15,6 +15,8 @@
 # Other mod lists build build/quest64-<mods>.elf/.cdi. The .nrm packages are in eltale/.
 # scripts\mod.ps1 unpacks them and builds this target. MOD_CONFIG=eltale.time_log=Off,...
 # overrides mod.toml config defaults.
+#
+# CONTROLS=classic builds the original controls and camera instead of the modern ones.
 
 ROM        := quest64.us.z64
 BUILD      := build
@@ -106,10 +108,17 @@ CFLAGS_GAME  := $(COMMON_FLAGS) -ffunction-sections $(RECOMP_OPT) $(RECOMP_FP) -
 # build of one variant does not leak into the other.
 # RT_DEFINES=-DSCREEN_LOG prints startup on the TV and leaves the framebuffer up until the first frame.
 RT_DEFINES    ?=
+# CONTROLS=classic: the original controls and camera. The default, modern, turns the camera with the
+# triggers and holds the focus camera on B (runtime/src/camera.c).
+CONTROLS      ?= modern
+ifeq ($(filter modern classic,$(CONTROLS)),)
+$(error CONTROLS is modern or classic, not $(CONTROLS))
+endif
+CONTROLS_DEFINES := $(if $(filter classic,$(CONTROLS)),-DCONTROLS_CLASSIC)
 RT_DEFS_STAMP := $(OBJ_DIR)/rt_defines
-$(shell mkdir -p $(OBJ_DIR) && (echo '$(RT_DEFINES)' | cmp -s - $(RT_DEFS_STAMP) || echo '$(RT_DEFINES)' > $(RT_DEFS_STAMP)))
+$(shell mkdir -p $(OBJ_DIR) && (echo '$(RT_DEFINES) $(CONTROLS_DEFINES)' | cmp -s - $(RT_DEFS_STAMP) || echo '$(RT_DEFINES) $(CONTROLS_DEFINES)' > $(RT_DEFS_STAMP)))
 RT_DEPS       := $(RT_DEFS_STAMP)
-CFLAGS_RT     := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES) $(MOD_DEFINES)
+CFLAGS_RT     := $(COMMON_FLAGS) -O2 -Wall $(RT_DEFINES) $(CONTROLS_DEFINES) $(MOD_DEFINES)
 
 # On-device profiler: a linker map plus address and name tables packed on the disc.
 ifneq ($(findstring PERF_HUD,$(RT_DEFINES)),)
